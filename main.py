@@ -1,22 +1,20 @@
 #!/usr/bin/env python3
-import time
 import csv
-from simulation import Simulation, FlightGearVisualizer
+from simulation import Simulation
 
 # create a simulation object
-sim = Simulation(fdm_frequency_hz=60.0, aircraft_id="c172p")
+sim = Simulation(fdm_frequency_hz=60.0, aircraft_id='c172p', viz_time_factor=1.6 ,enable_fgear_viz=True)
+
 # properties = sim.fdm.query_property_catalog("position")
 # sim.fdm.print_property_catalog()
 # print("********PROPERTIES***********\n", properties)
 
-fg_viz = FlightGearVisualizer(sim, fg_time_factor=1.6)
-
+# create flight_data csv file with header
 with open('data/flight_data.csv', 'w') as csv_file:
     csv_writer = csv.DictWriter(csv_file, fieldnames=['latitude', 'longitude', 'altitude', 'roll', 'pitch', 'yaw'])
     csv_writer.writeheader()
 
-# for _ in range(9000):
-run = True
+# simulation loop
 while sim.run_step():
     latitude = sim.fdm.get_property_value("position/lat-gc-deg")
     longitude = sim.fdm.get_property_value("position/long-gc-deg")
@@ -26,9 +24,9 @@ while sim.run_step():
     roll = sim.fdm.get_property_value("attitude/roll-rad")
     pitch = sim.fdm.get_property_value("attitude/pitch-rad")
     yaw = sim.fdm.get_property_value("attitude/heading-true-rad")
-    time.sleep(0.1)
     # print(f"r: {roll}, p: {pitch}, y: {yaw}")
 
+    # write flight data to csv
     with open('data/flight_data.csv', 'a') as csv_file:
         csv_writer = csv.DictWriter(csv_file, fieldnames=['latitude', 'longitude', 'altitude', 'roll', 'pitch', 'yaw'])
         info = {
