@@ -65,7 +65,8 @@ class FlightGearVisualizer(object):
         time.sleep(2)
 
     def launch_flightgear(self, aircraft_fgear_id: str = 'c172p'):
-        cmd = f'fgfs --fdm=null --native-fdm=socket,in,60,,5550,udp --aircraft={aircraft_fgear_id} --timeofday=noon --disable-ai-traffic --disable-real-weather-fetch'
+        cmd = f'fgfs --fdm=null --native-fdm=socket,in,60,,5550,udp --aircraft={aircraft_fgear_id} --timeofday=noon \
+        --disable-ai-traffic --disable-real-weather-fetch'
 
         flightgear_process = subprocess.Popen(cmd,
                                               shell=True,
