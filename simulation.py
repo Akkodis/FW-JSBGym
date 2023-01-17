@@ -4,14 +4,16 @@ import os
 import subprocess
 import time
 
+
 class Simulation(object):
     FG_OUT_FILE = 'flightgear.xml'
+
     def __init__(self,
                  fdm_frequency_hz: float = 60.0,
                  aircraft_id: str = 'c172p',
                  viz_time_factor: float = 1.0,
                  enable_fgear_viz: bool = False) -> None:
-        
+
         self.fdm = jsbsim.FGFDMExec(None)
         self.fdm.set_debug_level(1)
         self.aircraft_id = aircraft_id
@@ -23,7 +25,7 @@ class Simulation(object):
             self.fdm.set_output_directive(os.path.join(os.path.dirname(os.path.abspath(__file__)), self.FG_OUT_FILE))
             self.fgear_viz = FlightGearVisualizer(self)
 
-        # set the vizualization time factor (plot and/or flightgear visualization)
+        # set the visualization time factor (plot and/or flightgear visualization)
         self.set_viz_time_factor(time_factor=viz_time_factor)
 
         # initialize the simulation : load aircraft model, load initial conditions
@@ -48,6 +50,7 @@ class Simulation(object):
             raise ValueError("The time factor must be strictly positive.")
         else:
             self.viz_dt = self.fdm_dt / time_factor
+
 
 class FlightGearVisualizer(object):
     TYPE = 'socket'
