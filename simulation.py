@@ -68,7 +68,12 @@ class FlightGearVisualizer(object):
         time.sleep(2)
 
     def launch_flightgear(self, aircraft_fgear_id: str = 'c172p'):
-        cmd = f'fgfs --fdm=null --native-fdm=socket,in,60,,5550,udp --aircraft={aircraft_fgear_id} --timeofday=noon \
+        ## cmd for running flightgear(binary apt package version 2020.3.13) from terminal
+        # cmd = f'fgfs --fdm=null --native-fdm=socket,in,60,,5550,udp --aircraft={aircraft_fgear_id} --timeofday=noon \
+        # --disable-ai-traffic --disable-real-weather-fetch'
+
+        ## cmd for running flightgear(.AppImage version 2020.3.17) from terminal
+        cmd = f'exec $HOME/Apps/FlightGear-2020.3.17/FlightGear-2020.3.17-x86_64.AppImage --fdm=null --native-fdm=socket,in,60,,5550,udp --aircraft={aircraft_fgear_id} --timeofday=noon \
         --disable-ai-traffic --disable-real-weather-fetch'
 
         flightgear_process = subprocess.Popen(cmd,
