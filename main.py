@@ -1,13 +1,18 @@
 #!/usr/bin/env python3
 import csv
 from simulation import Simulation
+import os
 
 # create a simulation object
-sim = Simulation(fdm_frequency_hz=60.0, aircraft_id='c172p', viz_time_factor=1.6 ,enable_fgear_viz=True)
+sim = Simulation(fdm_frequency_hz=60.0, aircraft_id='x8', viz_time_factor=1.0 ,enable_fgear_viz=False)
 
 # properties = sim.fdm.query_property_catalog("position")
 # sim.fdm.print_property_catalog()
 # print("********PROPERTIES***********\n", properties)
+
+# create data folder if it doesn't exist
+if not os.path.exists('data'):
+    os.makedirs('data')
 
 # create flight_data csv file with header
 with open('data/flight_data.csv', 'w') as csv_file:

@@ -29,7 +29,7 @@ class Simulation(object):
         self.set_viz_time_factor(time_factor=viz_time_factor)
 
         # initialize the simulation : load aircraft model, load initial conditions
-        ic_path = 'initial_conditions/basic_ic.xml'
+        ic_path = f'initial_conditions/{aircraft_id}_basic_ic.xml'
         self.fdm.load_ic(ic_path, False)
         self.fdm.load_model(aircraft_id)
         self.fdm.set_dt(self.fdm_dt)
@@ -67,7 +67,7 @@ class FlightGearVisualizer(object):
         self.flightgear_process = self.launch_flightgear(aircraft_fgear_id=sim.aircraft_id)
         time.sleep(2)
 
-    def launch_flightgear(self, aircraft_fgear_id: str = 'c172p'):
+    def launch_flightgear(self, aircraft_fgear_id: str = 'c172p') -> subprocess.Popen:
         ## cmd for running flightgear(binary apt package version 2020.3.13) from terminal
         # cmd = f'fgfs --fdm=null --native-fdm=socket,in,60,,5550,udp --aircraft={aircraft_fgear_id} --timeofday=noon \
         # --disable-ai-traffic --disable-real-weather-fetch'

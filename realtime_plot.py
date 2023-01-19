@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 
-def animate(i, axis):
+def animate(i, axis) -> None:
     data = pd.read_csv('data/flight_data.csv')
     lat = data['latitude']
     lon = data['longitude']
@@ -17,5 +17,5 @@ def animate(i, axis):
 
 
 ax = plt.figure().add_subplot(projection='3d')
-ani = FuncAnimation(plt.gcf(), animate, fargs=(ax, ), interval=100)
+ani = FuncAnimation(plt.gcf(), animate, fargs=(ax, ), interval=50)
 plt.show()
