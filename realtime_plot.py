@@ -17,5 +17,6 @@ def animate(i, axis) -> None:
 
 
 ax = plt.figure().add_subplot(projection='3d')
+ax.set_aspect('equal')
 ani = FuncAnimation(plt.gcf(), animate, fargs=(ax, ), interval=50)
 plt.show()
