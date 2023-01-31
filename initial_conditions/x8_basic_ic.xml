@@ -3,7 +3,7 @@
   <!--
     Basic set of initial conditions at 1000 ft with engines running.
   -->
-  <ubody unit="M/SEC">    22  </ubody>
+  <ubody unit="M/SEC">    22.0  </ubody> <!-- approx. 80 km/h -->
   <vbody unit="M/SEC">    0.0  </vbody>
   <wbody unit="M/SEC">    0.0  </wbody>
   <longitude unit="DEG">   2.3273  </longitude> <!-- UoBath campus -->

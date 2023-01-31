@@ -4,7 +4,10 @@ from simulation import Simulation
 import os
 
 # create a simulation object
-sim = Simulation(aircraft_id='x8', viz_time_factor=2.0, enable_fgear_viz=False)
+sim = Simulation(fdm_frequency_hz=240.0, # going up to 240Hz solves some spin instability issues -> NaNs
+                 aircraft_id='x8',
+                 viz_time_factor=2.0,
+                 enable_fgear_viz=False)
 
 properties = sim.fdm.query_property_catalog("atmosphere")
 # sim.fdm.print_property_catalog()
@@ -24,14 +27,13 @@ with open('data/flight_data.csv', 'w') as csv_file:
 # simulation loop
 while sim.run_step():
 
-    sim.fdm.set_property_value("fcs/aileron-cmd-norm", 0.0)
-    sim.fdm.set_property_value("fcs/elevator-cmd-norm", -0.1)
-    sim.fdm.set_property_value("fcs/throttle-cmd-norm", 0.3)
+    # sim.fdm.set_property_value("fcs/aileron-cmd-norm", -0.3)
+    # sim.fdm.set_property_value("fcs/elevator-cmd-norm", -0.1)
+    # sim.fdm.set_property_value("fcs/throttle-cmd-norm", 0.3)
 
     latitude = sim.fdm.get_property_value("position/lat-gc-deg")
     longitude = sim.fdm.get_property_value("position/long-gc-deg")
     altitude = sim.fdm.get_property_value("position/h-sl-meters")
-    # print(f"lat: {latitude}, lon: {longitude}, alt: {altitude}")
 
     roll = sim.fdm.get_property_value("attitude/roll-rad")
     pitch = sim.fdm.get_property_value("attitude/pitch-rad")
