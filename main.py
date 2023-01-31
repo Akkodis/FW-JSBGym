@@ -24,6 +24,12 @@ with open('data/flight_data.csv', 'w') as csv_file:
     csv_writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
     csv_writer.writeheader()
 
+# set turbulences
+sim.fdm.set_property_value("atmosphere/turb-type", 4) # Tustin turbulence type
+sim.fdm.set_property_value("atmosphere/turbulence/milspec/windspeed_at_20ft_AGL-fps", 75)
+sim.fdm.set_property_value("atmosphere/turbulence/milspec/severity", 6)
+
+
 # simulation loop
 while sim.run_step():
 
