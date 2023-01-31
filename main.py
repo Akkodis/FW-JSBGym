@@ -4,11 +4,11 @@ from simulation import Simulation
 import os
 
 # create a simulation object
-sim = Simulation(fdm_frequency_hz=60.0, aircraft_id='x8', viz_time_factor=2.0 ,enable_fgear_viz=True)
+sim = Simulation(aircraft_id='x8', viz_time_factor=2.0, enable_fgear_viz=False)
 
-# properties = sim.fdm.query_property_catalog("position")
+properties = sim.fdm.query_property_catalog("atmosphere")
 # sim.fdm.print_property_catalog()
-# print("********PROPERTIES***********\n", properties)
+print("********PROPERTIES***********\n", properties)
 
 # create data folder if it doesn't exist
 if not os.path.exists('data'):
@@ -24,7 +24,9 @@ with open('data/flight_data.csv', 'w') as csv_file:
 # simulation loop
 while sim.run_step():
 
-    sim.fdm.set_property_value("fcs/aileron-cmd-norm", -0.4)
+    sim.fdm.set_property_value("fcs/aileron-cmd-norm", 0.0)
+    sim.fdm.set_property_value("fcs/elevator-cmd-norm", -0.1)
+    sim.fdm.set_property_value("fcs/throttle-cmd-norm", 0.3)
 
     latitude = sim.fdm.get_property_value("position/lat-gc-deg")
     longitude = sim.fdm.get_property_value("position/long-gc-deg")
@@ -53,6 +55,7 @@ while sim.run_step():
             "yaw": yaw,
             "roll_rate": roll_rate,
             "pitch_rate": pitch_rate,
-            "yaw_rate": yaw_rate
+            "yaw_rate": yaw_rate,
+            "airspeed": airspeed
         }
         csv_writer.writerow(info)

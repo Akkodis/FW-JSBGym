@@ -28,14 +28,14 @@ with open('data/flight_data.csv', 'w') as csv_file:
 
 cnt = 0
 while fdm.run():
-    fdm.set_property_value("fcs/aileron-cmd-norm", -0.4)
+    fdm.set_property_value("fcs/aileron-cmd-norm", -0.3)
     # fdm.set_property_value("fcs/elevator-cmd-norm", -0.1)
-    # fdm.set_property_value("fcs/throttle-cmd-norm", 0.1)
+    fdm.set_property_value("fcs/throttle-cmd-norm", 0.1)
 
     latitude = fdm.get_property_value("position/lat-gc-deg")
     longitude = fdm.get_property_value("position/long-gc-deg")
-    # altitude = fdm.get_property_value("position/h-sl-meters")
-    altitude = fdm.get_property_value("position/h-agl-km")
+    altitude = fdm.get_property_value("position/h-sl-meters")
+    # altitude = fdm.get_property_value("position/h-agl-km")
     # print(f"lat: {latitude}, lon: {longitude}, alt: {altitude}")
 
     roll = fdm.get_property_value("attitude/roll-rad")
