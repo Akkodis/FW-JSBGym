@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<initialize name="basic_ic">
+<initialize name="c172p_basic_ic">
   <!--
     Basic set of initial conditions at 3000 ft with engines running.
   -->
