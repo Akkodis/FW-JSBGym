@@ -2,10 +2,11 @@
 from matplotlib.animation import FuncAnimation
 import matplotlib.pyplot as plt
 import pandas as pd
+from os import path
 
 
 def animate(i, axis) -> None:
-    data = pd.read_csv('data/flight_data.csv')
+    data = pd.read_csv(f'{path.dirname(path.abspath(__file__))}/../data/flight_data.csv')
     lat = data['latitude']
     lon = data['longitude']
     alt = data['altitude']

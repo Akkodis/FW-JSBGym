@@ -2,9 +2,10 @@
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
+from os import path
 
 
-data = pd.read_csv('data/flight_data.csv')
+data = pd.read_csv(f'{path.dirname(path.abspath(__file__))}/../data/flight_data.csv')
 lat = data['latitude']
 lon = data['longitude']
 alt = data['altitude']
