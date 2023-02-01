@@ -9,7 +9,7 @@ class Simulation(object):
     FG_OUT_FILE = 'flightgear.xml'
 
     def __init__(self,
-                 fdm_frequency_hz: float = 120.0, # 120.0 Hz is the default frequency of the JSBSim FDM
+                 fdm_frequency: float = 120.0, # 120.0 Hz is the default frequency of the JSBSim FDM
                  aircraft_id: str = 'c172p',
                  viz_time_factor: float = 1.0,
                  enable_fgear_viz: bool = False) -> None:
@@ -17,7 +17,7 @@ class Simulation(object):
         self.fdm = jsbsim.FGFDMExec(None)
         self.fdm.set_debug_level(1)
         self.aircraft_id = aircraft_id
-        self.fdm_dt = 1 / fdm_frequency_hz
+        self.fdm_dt = 1 / fdm_frequency
         self.viz_dt = None
 
         # code for flightgear output here :
