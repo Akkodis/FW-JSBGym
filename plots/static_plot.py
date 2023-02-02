@@ -45,11 +45,17 @@ def plot(data) -> None:
     ax[1,1].plot(lon, lat, alt, label='Aircraft Trajectory')
     ax[1,1].legend()
 
-    plt.tight_layout()
-
-    plt.show()
-
 if __name__ == '__main__':
     # read flight data
-    df = pd.read_csv(f'{path.dirname(path.abspath(__file__))}/../data/flight_data.csv')
-    plot(df)
+    df_temoin = pd.read_csv(f'{path.dirname(path.abspath(__file__))}/../data/flight_data.csv')
+    df_stdturb = pd.read_csv(f'{path.dirname(path.abspath(__file__))}/../data/std_turb.csv')
+
+    np_temoin = df_temoin.to_numpy()
+    np_stdturb = df_stdturb.to_numpy()
+
+    print(np.array_equal(np_temoin, np_stdturb))
+
+    plot(df_temoin)
+    plot(df_stdturb)
+    plt.tight_layout()
+    plt.show()
