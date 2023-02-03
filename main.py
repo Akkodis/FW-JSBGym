@@ -3,6 +3,7 @@ import csv
 from simulation import Simulation
 import os
 import argparse
+import random
 
 # parse command line arguments
 parser = argparse.ArgumentParser(description='Run JSBSim simulation.')
@@ -21,7 +22,7 @@ sim = Simulation(fdm_frequency=args.fdm_frequency, # going up to 240Hz solves so
                  viz_time_factor=args.viz_time_factor,
                  enable_fgear_viz=args.fgear_viz)
 
-properties = sim.fdm.query_property_catalog("seed")
+properties = sim.fdm.query_property_catalog("atmosphere")
 # sim.fdm.print_property_catalog()
 print("********PROPERTIES***********\n", properties)
 
@@ -37,22 +38,32 @@ with open(args.flight_data, 'w') as csv_file:
     csv_writer.writeheader()
 
 # set seed for random number generator
-sim.fdm.set_property_value("simulation/randomseed", 1234)
-# rand_seed = sim.fdm.get_property_value("simulation/randomseed")
+rand_seed = random.randint(0, 1000000)
+sim.fdm.set_property_value("simulation/randomseed", rand_seed)
 
 # set wind
-# sim.fdm.set_property_value("atmosphere/wind-north-fps", 10)
-# sim.fdm.set_property_value("atmosphere/wind-east-fps", 20)
+# sim.fdm.set_property_value("atmosphere/wind-north-fps", 100)
+# sim.fdm.set_property_value("atmosphere/wind-east-fps", 100)
 
 # set turbulences
-sim.fdm.set_property_value("atmosphere/turb-type", 3) # Tustin turbulence type
-sim.fdm.set_property_value("atmosphere/turbulence/milspec/windspeed_at_20ft_AGL-fps", 75)
-sim.fdm.set_property_value("atmosphere/turbulence/milspec/severity", 6)
+# sim.fdm.set_property_value("atmosphere/turb-type", 5) # Tustin turbulence type
+# sim.fdm.set_property_value("atmosphere/turbulence/milspec/windspeed_at_20ft_AGL-fps", 75)
+# sim.fdm.set_property_value("atmosphere/turbulence/milspec/severity", 6)
+
+# set wind gust
+sim.fdm.set_property_value("atmosphere/cosine-gust/startup-duration-sec", 1)
+sim.fdm.set_property_value("atmosphere/cosine-gust/steady-duration-sec", 1.5)
+sim.fdm.set_property_value("atmosphere/cosine-gust/end-duration-sec", 1)
+sim.fdm.set_property_value("atmosphere/cosine-gust/magnitude-ft_sec", 70)
+sim.fdm.set_property_value("atmosphere/cosine-gust/frame", 2)
+sim.fdm.set_property_value("atmosphere/cosine-gust/X-velocity-ft_sec", 1)
+sim.fdm.set_property_value("atmosphere/cosine-gust/Y-velocity-ft_sec", 0)
+sim.fdm.set_property_value("atmosphere/cosine-gust/Z-velocity-ft_sec", 0)
 
 timestep = 0
 
 # simulation loop
-while sim.run_step() and timestep < 10000:
+while sim.run_step() and timestep < 15000:
 
     # sim.fdm.set_property_value("fcs/aileron-cmd-norm", -0.3)
     # sim.fdm.set_property_value("fcs/elevator-cmd-norm", -0.05)
@@ -88,5 +99,9 @@ while sim.run_step() and timestep < 10000:
             "airspeed": airspeed
         }
         csv_writer.writerow(info)
+
+    if timestep == 6000:
+        sim.fdm.set_property_value("atmosphere/cosine-gust/start", 1)
+        print("Wind Gust started !")
 
     timestep += 1
