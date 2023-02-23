@@ -26,7 +26,7 @@ sim = Simulation(fdm_frequency=args.fdm_frequency, # going up to 240Hz solves so
                  enable_fgear_viz=args.fgear_viz)
 
 properties = sim.fdm.query_property_catalog("atmosphere")
-sim.fdm.print_property_catalog()
+# sim.fdm.print_property_catalog()
 # print("********PROPERTIES***********\n", properties)
 
 # create data folder if it doesn't exist
@@ -43,6 +43,7 @@ with open(args.flight_data, 'w') as csv_file:
 # set seed for random number generator
 rand_seed = random.randint(0, 1000000)
 sim.fdm.set_property_value("simulation/randomseed", rand_seed)
+print("rho = ", sim.fdm.get_property_value("atmosphere/rho-slugs_ft3"))
 
 # set wind
 if args.wind:
