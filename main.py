@@ -4,6 +4,7 @@ from simulation import Simulation
 import os
 import argparse
 import random
+import models.aerodynamics
 
 # parse command line arguments
 parser = argparse.ArgumentParser(description='Run JSBSim simulation.')
@@ -26,7 +27,7 @@ sim = Simulation(fdm_frequency=args.fdm_frequency, # going up to 240Hz solves so
                  enable_fgear_viz=args.fgear_viz)
 
 properties = sim.fdm.query_property_catalog("atmosphere")
-# sim.fdm.print_property_catalog()
+sim.fdm.print_property_catalog()
 # print("********PROPERTIES***********\n", properties)
 
 # create data folder if it doesn't exist
@@ -67,11 +68,11 @@ if args.gust:
     sim.fdm.set_property_value("atmosphere/cosine-gust/Y-velocity-ft_sec", 0)
     sim.fdm.set_property_value("atmosphere/cosine-gust/Z-velocity-ft_sec", 0)
 
-timestep = 0
+aero_model = models.aerodynamics.AeroModel(sim.fdm)
 
 # simulation loop
+timestep = 0
 while sim.run_step() and timestep < 20000:
-
     # sim.fdm.set_property_value("fcs/aileron-cmd-norm", -0.3)
     # sim.fdm.set_property_value("fcs/elevator-cmd-norm", -0.05)
     sim.fdm.set_property_value("fcs/throttle-cmd-norm", 0.2)

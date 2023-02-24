@@ -10,7 +10,7 @@ class Simulation(object):
 
     def __init__(self,
                  fdm_frequency: float = 120.0, # 120.0 Hz is the default frequency of the JSBSim FDM
-                 aircraft_id: str = 'c172p',
+                 aircraft_id: str = 'x8',
                  viz_time_factor: float = 1.0,
                  enable_fgear_viz: bool = False) -> None:
 
