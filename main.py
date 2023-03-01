@@ -43,53 +43,53 @@ with open(args.flight_data, 'w') as csv_file:
 
 # set seed for random number generator
 rand_seed = random.randint(0, 1000000)
-sim.fdm.set_property_value("simulation/randomseed", rand_seed)
-print("rho = ", sim.fdm.get_property_value("atmosphere/rho-slugs_ft3"))
+sim.fdm["simulation/randomseed"] = rand_seed
+print("rho = ", sim.fdm["atmosphere/rho-slugs_ft3"])
 
 # set wind
 if args.wind:
-    # sim.fdm.set_property_value("atmosphere/wind-north-fps", 100)
-    sim.fdm.set_property_value("atmosphere/wind-east-fps", 40)
+    # sim.fdm["atmosphere/wind-north-fps"] = 100
+    sim.fdm["atmosphere/wind-east-fps"] = 40
 
 # set turbulences
 if args.turb:
-    sim.fdm.set_property_value("atmosphere/turb-type", 4) # Tustin turbulence type
-    sim.fdm.set_property_value("atmosphere/turbulence/milspec/windspeed_at_20ft_AGL-fps", 30)
-    sim.fdm.set_property_value("atmosphere/turbulence/milspec/severity", 3)
+    sim.fdm["atmosphere/turb-type"] = 4 # Tustin turbulence type
+    sim.fdm["atmosphere/turbulence/milspec/windspeed_at_20ft_AGL-fps"] = 30
+    sim.fdm["atmosphere/turbulence/milspec/severity"] = 3
 
 # set wind gust
 if args.gust:
-    sim.fdm.set_property_value("atmosphere/cosine-gust/startup-duration-sec", 2)
-    sim.fdm.set_property_value("atmosphere/cosine-gust/steady-duration-sec", 2)
-    sim.fdm.set_property_value("atmosphere/cosine-gust/end-duration-sec", 2)
-    sim.fdm.set_property_value("atmosphere/cosine-gust/magnitude-ft_sec", 40)
-    sim.fdm.set_property_value("atmosphere/cosine-gust/frame", 2)
-    sim.fdm.set_property_value("atmosphere/cosine-gust/X-velocity-ft_sec", 1)
-    sim.fdm.set_property_value("atmosphere/cosine-gust/Y-velocity-ft_sec", 0)
-    sim.fdm.set_property_value("atmosphere/cosine-gust/Z-velocity-ft_sec", 0)
+    sim.fdm["atmosphere/cosine-gust/startup-duration-sec"] = 2
+    sim.fdm["atmosphere/cosine-gust/steady-duration-sec"] = 2
+    sim.fdm["atmosphere/cosine-gust/end-duration-sec"] = 2
+    sim.fdm["atmosphere/cosine-gust/magnitude-ft_sec"] = 40
+    sim.fdm["atmosphere/cosine-gust/frame"] = 2
+    sim.fdm["atmosphere/cosine-gust/X-velocity-ft_sec"] = 1
+    sim.fdm["atmosphere/cosine-gust/Y-velocity-ft_sec"] = 0
+    sim.fdm["atmosphere/cosine-gust/Z-velocity-ft_sec"] = 0
 
 aero_model = models.aerodynamics.AeroModel(sim.fdm)
 
 # simulation loop
 timestep = 0
 while sim.run_step() and timestep < 20000:
-    # sim.fdm.set_property_value("fcs/aileron-cmd-norm", -0.3)
-    # sim.fdm.set_property_value("fcs/elevator-cmd-norm", -0.05)
-    sim.fdm.set_property_value("fcs/throttle-cmd-norm", 0.2)
+    # sim.fdm["fcs/aileron-cmd-norm"] = -0.3
+    # sim.fdm["fcs/elevator-cmd-norm"] = -0.05
+    sim.fdm["fcs/throttle-cmd-norm"] = 0.2
 
-    latitude = sim.fdm.get_property_value("position/lat-gc-deg")
-    longitude = sim.fdm.get_property_value("position/long-gc-deg")
-    altitude = sim.fdm.get_property_value("position/h-sl-meters")
+    latitude = sim.fdm["position/lat-gc-deg"]
+    longitude = sim.fdm["position/long-gc-deg"]
+    altitude = sim.fdm["position/h-sl-meters"]
 
-    roll = sim.fdm.get_property_value("attitude/roll-rad")
-    pitch = sim.fdm.get_property_value("attitude/pitch-rad")
-    yaw = sim.fdm.get_property_value("attitude/heading-true-rad")
+    roll = sim.fdm["attitude/roll-rad"]
+    pitch = sim.fdm["attitude/pitch-rad"]
+    yaw = sim.fdm["attitude/heading-true-rad"]
 
-    roll_rate = sim.fdm.get_property_value("velocities/p-rad_sec")
-    pitch_rate = sim.fdm.get_property_value("velocities/q-rad_sec")
-    yaw_rate = sim.fdm.get_property_value("velocities/r-rad_sec")
+    roll_rate = sim.fdm["velocities/p-rad_sec"]
+    pitch_rate = sim.fdm["velocities/q-rad_sec"]
+    yaw_rate = sim.fdm["velocities/r-rad_sec"]
 
-    airspeed = sim.fdm.get_property_value("velocities/vc-kts")
+    airspeed = sim.fdm["velocities/vc-kts"]
 
     # write flight data to csv
     with open(args.flight_data, 'a') as csv_file:
@@ -109,7 +109,7 @@ while sim.run_step() and timestep < 20000:
         csv_writer.writerow(info)
 
     if timestep == 6000 and args.gust:
-        sim.fdm.set_property_value("atmosphere/cosine-gust/start", 1)
+        sim.fdm["atmosphere/cosine-gust/start"] = 1
         print("Wind Gust started !")
 
     timestep += 1
