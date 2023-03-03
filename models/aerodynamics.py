@@ -51,8 +51,6 @@ class AeroModel(object):
         self.a_roll1 = -1 / 2 * self.air_density * self.Va_trim ** 2 * self.S * self.b * self.Cpp * (
                         self.b / (2 * self.Va_trim))
         self.a_roll2 = 1 / 2 * self.air_density * self.Va_trim ** 2 * self.S * self.b * self.Cpda
-        print("a_roll1 = ", self.a_roll1)
-        print("a_roll2 = ", self.a_roll2)
 
         self.aileron_limit = 30.0 * (math.pi / 180)  # aileron actuator max deflection : deg to rad
         self.roll_max = 45.0 * (math.pi / 180)  # roll max angle : deg to rad
@@ -62,7 +60,6 @@ class AeroModel(object):
         self.course_damping = 1.5  # ask if needed to plot the step responses for various damping ratios in something
         # like simulink
 
-        self.compute_lat_pid_gains()
 
         # longitutinal TF coefficients
         # pitch
@@ -71,7 +68,7 @@ class AeroModel(object):
         self.a_pitch3 = ((self.air_density * self.Va_trim**2 * self.c * self.S) / (2 * self.Iyy)) * self.Cmde
 
         # airspeed
-        self.a_v1 = ((self.air_density * self.Va_trim * self.S) / self.mass) * (self.CDo + self.CDa * )
+        # self.a_v1 = ((self.air_density * self.Va_trim * self.S) / self.mass) * (self.CDo + self.CDa * )
 
         self.elevator_limit = 30.0 * (math.pi / 180)  # elevator actuator max deflection : deg to rad
         self.pitch_max = 45.0 * (math.pi / 180)  # pitch max angle : deg to rad
@@ -80,26 +77,41 @@ class AeroModel(object):
         self.h_damping = 1.5 # same as above but for altitude
         self.compute_long_pid_gains()
 
-    def compute_lat_pid_gains(self):
+    def compute_lat_pid_gains(self) -> tuple[dict[str, float], dict[str, float]]:
         # PID gains for roll attitude control (inner loop)
-        kp_roll = self.aileron_limit / self.roll_err_max * math.copysign(1, self.a_roll2)
-        puls_roll = math.sqrt(abs(self.a_roll2) * self.aileron_limit / self.roll_err_max)  # rad.s^-1
-        freq_roll = puls_roll / (2 * math.pi)  # Hz
-        response_time_roll = 1 / freq_roll  # sec
-        kd_roll = (2 * self.roll_damping * puls_roll - self.a_roll1) / self.a_roll2
+        kp_roll: float = self.aileron_limit / self.roll_err_max * math.copysign(1, self.a_roll2)
+        puls_roll: float = math.sqrt(abs(self.a_roll2) * self.aileron_limit / self.roll_err_max)  # rad.s^-1
+        freq_roll: float = puls_roll / (2 * math.pi)  # Hz
+        response_time_roll: float = 1 / freq_roll  # sec
+        kd_roll: float = (2 * self.roll_damping * puls_roll - self.a_roll1) / self.a_roll2
 
         # ask if needed to plot the roots as a function of ki in something like simulink
         # (using small value as recommended in the book for now)
-        ki_roll = 0.01
+        ki_roll: float = 0.01
 
         # PI gains for the course angle hold control (outer loop)
-        bw_factor_roll = 5  # bandwidth factor between roll and course
-        puls_course = (1 / bw_factor_roll) * puls_roll  # rad.s^-1
-        freq_course = puls_course / (2 * math.pi)  # Hz
-        response_time_course = 1 / freq_course  # sec
-        kp_course = 2 * self.course_damping * puls_course * (self.Va_trim / self.G)
-        kd_course = puls_course ** 2 * (self.Va_trim / self.G)
-        pass
+        bw_factor_roll: int = 5  # bandwidth factor between roll and course
+        puls_course: float = (1 / bw_factor_roll) * puls_roll  # rad.s^-1
+        freq_course: float = puls_course / (2 * math.pi)  # Hz
+        response_time_course: float = 1 / freq_course  # sec
+        kp_course: float = 2 * self.course_damping * puls_course * (self.Va_trim / self.G)
+        kd_course: float = puls_course ** 2 * (self.Va_trim / self.G)
+
+        lat_pid_gains: dict[str, float] = {
+            "kp_roll": kp_roll,
+            "ki_roll": ki_roll,
+            "kd_roll": kd_roll,
+            "kp_course": kp_course,
+            "kd_course": kd_course
+        }
+
+        lat_resp_times: dict[str, float] = {
+            "roll": response_time_roll,
+            "course": response_time_course
+        }
+
+        return lat_pid_gains, lat_resp_times
+
 
     def compute_long_pid_gains(self):
         # pitch attitude hold (inner loop)
