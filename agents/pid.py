@@ -1,6 +1,6 @@
 import jsbsim
 class PID:
-    def __init__(self, kp: float, ki: float, kd: float, dt: float, limit: float):
+    def __init__(self, kp: float = 0, ki: float = 0, kd: float = 0, dt: float = 0, limit: float = 0):
         self.kp = kp
         self.ki = ki
         self.kd = kd

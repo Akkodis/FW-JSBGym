@@ -78,11 +78,11 @@ lat_pid_gains, lat_resp_times = aero_model.compute_lat_pid_gains()
 
 # create lateral PID controller
 # roll PID (inner loop)
-roll_pid: PID = PID(kp=lat_pid_gains["roll_kp"], kd=lat_pid_gains["roll_kd"], ki=lat_pid_gains["roll_ki"],
+roll_pid: PID = PID(kp=lat_pid_gains["kp_roll"], ki=lat_pid_gains["ki_roll"], kd=lat_pid_gains["kd_roll"],
                     dt=sim.fdm_dt, limit=aero_model.aileron_limit)
 
 # course angle PID (outer loop)
-course_pid: PID = PID(kp=lat_pid_gains["course_kp"], kd=lat_pid_gains["course_kd"], ki=lat_pid_gains["course_ki"],
+course_pid: PID = PID(kp=lat_pid_gains["kp_course"], kd=lat_pid_gains["kd_course"],
                       dt=sim.fdm_dt, limit=aero_model.roll_max)
 
 # simulation loop
