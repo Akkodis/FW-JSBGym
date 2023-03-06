@@ -1,10 +1,9 @@
-name: jsb
+name: jsbrl
 channels:
   - conda-forge
   - defaults
 dependencies:
-  - python=3.8
-  - jsbsim
+  - python=3.11
   - matplotlib
   - pandas
   - executing
@@ -66,4 +65,5 @@ dependencies:
   - _libgcc_mutex
   - jedi
   - ipykernel
+  - jsbsim
 prefix: /d/dolivare/Apps/miniconda3/envs/jsb
