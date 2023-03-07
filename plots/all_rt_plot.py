@@ -13,8 +13,13 @@ def animate(i, axis) -> None:
     alt = data['altitude']
 
     roll = data['roll']
-    pitch = data['pitch']
-    yaw = data['yaw']
+    # pitch = data['pitch']
+    # yaw = data['yaw']
+
+    course = data['course']
+    # heading = data['heading-true-rad']
+    # psi = data['psi-rad']
+    # psi_gt = data['psi-gt-rad']
 
     roll_rate = data['roll_rate']
     pitch_rate = data['pitch_rate']
@@ -29,11 +34,18 @@ def animate(i, axis) -> None:
     num_steps = len(data.index)
     tsteps = np.linspace(0, num_steps-1, num=num_steps)
 
+    # axis[0, 0].plot(tsteps, roll, label='roll')
+    # axis[0, 0].plot(tsteps, pitch, label='pitch')
+    # axis[0, 0].plot(tsteps, yaw, label='yaw')
+    # axis[0, 0].set_title("attitude angles")
+    # axis[0, 0].legend()
+
     axis[0, 0].plot(tsteps, roll, label='roll')
-    axis[0, 0].plot(tsteps, pitch, label='pitch')
-    axis[0, 0].plot(tsteps, yaw, label='yaw')
-    axis[0, 0].set_title("attitude angles")
+    axis[0, 0].plot(tsteps, course, label='course')
+    axis[0, 0].plot(tsteps, roll_rate, label='roll_rate')
+    axis[0, 0].set_title("course angles ?")
     axis[0, 0].legend()
+
 
     axis[0, 1].plot(tsteps, roll_rate, label='roll_rate')
     axis[0, 1].plot(tsteps, pitch_rate, label='pitch_rate')

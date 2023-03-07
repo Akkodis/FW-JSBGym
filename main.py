@@ -6,6 +6,8 @@ import argparse
 import random
 import models.aerodynamics
 from agents.pid import PID
+from math import pi as PI
+from math import atan2
 
 # parse command line arguments
 parser = argparse.ArgumentParser(description='Run JSBSim simulation.')
@@ -35,7 +37,8 @@ properties = sim.fdm.query_property_catalog("atmosphere")
 if not os.path.exists('data'):
     os.makedirs('data')
 
-fieldnames: list[str] = ['latitude', 'longitude', 'altitude', 'roll', 'pitch', 'yaw', 'roll_rate', 'pitch_rate', 'yaw_rate', 'airspeed']
+# fieldnames: list[str] = ['latitude', 'longitude', 'altitude', 'roll', 'pitch', 'yaw', 'roll_rate', 'pitch_rate', 'yaw_rate', 'airspeed']
+fieldnames: list[str] = ['latitude', 'longitude', 'altitude', 'roll', 'course', 'roll_rate', 'pitch_rate', 'yaw_rate', 'airspeed']
 
 # create flight_data csv file with header
 with open(args.flight_data, 'w') as csv_file:
@@ -88,6 +91,15 @@ course_pid: PID = PID(kp=lat_pid_gains["kp_course"], kd=lat_pid_gains["kd_course
 # simulation loop
 timestep: int = 0
 while sim.run_step() and timestep < 20000:
+    # set the ref course angle to be a 90° right turn
+    course_pid.set_reference(PI/2)
+    course_angle = atan2(sim.fdm["velocities/v-east-fps"], sim.fdm["velocities/v-north-fps"])
+    course_cmd = course_pid.update(state=course_angle, normalize=True)
+
+    roll_pid.set_reference(course_cmd)
+    roll_cmd = roll_pid.update(state=sim.fdm["attitude/roll-rad"], state_dot=sim.fdm["velocities/p-rad_sec"], normalize=True)
+    sim.fdm["fcs/aileron-cmd-norm"] = roll_cmd
+
     # sim.fdm["fcs/aileron-cmd-norm"] = -0.3
     # sim.fdm["fcs/elevator-cmd-norm"] = -0.05
     sim.fdm["fcs/throttle-cmd-norm"] = 0.2
@@ -98,7 +110,11 @@ while sim.run_step() and timestep < 20000:
 
     roll: float = sim.fdm["attitude/roll-rad"]
     pitch: float = sim.fdm["attitude/pitch-rad"]
-    yaw: float = sim.fdm["attitude/heading-true-rad"]
+    heading: float = sim.fdm["attitude/heading-true-rad"]
+    psi: float = sim.fdm["attitude/psi-rad"]
+    psi_gt: float = sim.fdm["flight-path/psi-gt-rad"]
+
+    # print(f"2PI = {2*PI} | psi-gt = {psi_gt}")
 
     roll_rate: float = sim.fdm["velocities/p-rad_sec"]
     pitch_rate: float = sim.fdm["velocities/q-rad_sec"]
@@ -110,16 +126,20 @@ while sim.run_step() and timestep < 20000:
     with open(args.flight_data, 'a') as csv_file:
         csv_writer: csv.DictWriter = csv.DictWriter(csv_file, fieldnames=fieldnames)
         info: dict[str, float] = {
-            "latitude": latitude,
-            "longitude": longitude,
-            "altitude": altitude,
-            "roll": roll,
-            "pitch": pitch,
-            "yaw": yaw,
-            "roll_rate": roll_rate,
-            "pitch_rate": pitch_rate,
-            "yaw_rate": yaw_rate,
-            "airspeed": airspeed
+            fieldnames[0]: latitude,
+            fieldnames[1]: longitude,
+            fieldnames[2]: altitude,
+            fieldnames[3]: roll,
+            # "heading-true-rad": heading,
+            fieldnames[4]: course_angle,
+            # "pitch": pitch,
+            # "psi-rad": psi,
+            # "yaw": yaw,
+            # "psi-gt-rad": psi_gt,
+            fieldnames[5]: roll_rate,
+            fieldnames[6]: pitch_rate,
+            fieldnames[7]: yaw_rate,
+            fieldnames[8]: airspeed
         }
         csv_writer.writerow(info)
 

@@ -3,7 +3,7 @@
   <!--
     Basic set of initial conditions at 3000 ft with engines running.
   -->
-  <ubody unit="M/SEC">    100.0  </ubody> <!-- approx. 100 m/s -->
+  <ubody unit="M/SEC">    36.0  </ubody> <!-- approx. 100 m/s -->
   <vbody unit="M/SEC">    0.0  </vbody>
   <wbody unit="M/SEC">    0.0  </wbody>
   <longitude unit="DEG">   2.3273  </longitude> <!-- UoBath campus -->

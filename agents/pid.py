@@ -22,9 +22,17 @@ class PID:
             u_sat = u
         return u_sat
 
-    def update(self, state: float, state_dot: float) -> float:
+    def update(self, state: float, state_dot: float = 0, normalize: bool = True) -> float:
         error: float = self.ref - state
         self.integral += error * self.dt
         self.prev_error = error
         output = self.kp * error + self.ki * self.integral + self.kd * state_dot
-        return self._saturate(output)
+        output = self._saturate(output)
+        if normalize:
+            output = self._normalize(output)
+        return output
+
+    def _normalize(self, input: float) -> float:
+        t_min = -1 # target min
+        t_max = 1 # target max
+        return (input - (-self.limit)) / (self.limit - (-self.limit)) * (t_max - t_min) + t_min

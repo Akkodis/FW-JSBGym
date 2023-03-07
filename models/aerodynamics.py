@@ -95,14 +95,14 @@ class AeroModel(object):
         freq_course: float = puls_course / (2 * math.pi)  # Hz
         response_time_course: float = 1 / freq_course  # sec
         kp_course: float = 2 * self.course_damping * puls_course * (self.Va_trim / self.G)
-        kd_course: float = puls_course ** 2 * (self.Va_trim / self.G)
+        ki_course: float = puls_course ** 2 * (self.Va_trim / self.G)
 
         lat_pid_gains: dict[str, float] = {
             "kp_roll": kp_roll,
             "ki_roll": ki_roll,
             "kd_roll": kd_roll,
             "kp_course": kp_course,
-            "kd_course": kd_course
+            "kd_course": ki_course
         }
 
         lat_resp_times: dict[str, float] = {
