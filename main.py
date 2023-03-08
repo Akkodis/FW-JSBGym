@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import csv
-from simulation import Simulation
+from simulation.jsb_simulation import Simulation
 import os
 import argparse
 import random
