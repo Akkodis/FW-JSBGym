@@ -23,25 +23,24 @@
 import jsbsim
 import matplotlib.pyplot as plt
 import math
+import csv
 
 # Global variables that must be modified to match your particular need
 # The aircraft name
 # Note - It should match the exact spelling of the model file
-AIRCRAFT_NAME="737"
+AIRCRAFT_NAME="x8"
 # Path to JSBSim files, location of the folders "aircraft", "engines" and "systems"
-PATH_TO_JSBSIM_FILES="../.."
 
 # Avoid flooding the console with log messages
 jsbsim.FGJSBBase().debug_lvl = 0
 
-fdm = jsbsim.FGFDMExec(PATH_TO_JSBSIM_FILES)
+fdm = jsbsim.FGFDMExec(None)
 
 # Load the aircraft model
 fdm.load_model(AIRCRAFT_NAME)
 
 # Set engines running
-fdm['propulsion/engine[0]/set-running'] = 1
-fdm['propulsion/engine[1]/set-running'] = 1
+fdm['propulsion/engine/set-running'] = 1
 
 # Set alpha range for trim solutions
 fdm['aero/alpha-max-rad'] = math.radians(12)
@@ -52,19 +51,24 @@ results = []
 
 # Iterate over a range of speeds and for each speed a range of flight path angles (gamma)
 # and check whether a trim point is possible
-for speed in range(120, 460, 10):
+for speed in range(16, 37, 1):
     for gamma in range(-10, 10, 1):
-        fdm['ic/h-sl-ft'] = 15000
+        fdm['ic/h-sl-ft'] = 1960
         fdm['ic/vc-kts'] = speed
         fdm['ic/gamma-deg'] = gamma
 
         # Initialize the aircraft with initial conditions
         fdm.run_ic()
 
+        with open('JSBoutX8.csv', 'r') as f:
+            reader = csv.reader(f)
+            for row in reader:
+                print(row)
+
         # Trim
         try:
             fdm['simulation/do_simple_trim'] = 1
-            results.append((fdm['velocities/vc-kts'], fdm['aero/alpha-deg'], gamma, fdm['fcs/throttle-cmd-norm[0]']))
+            results.append((fdm['velocities/vc-kts'], fdm['aero/alpha-deg'], gamma, fdm['fcs/throttle-cmd-norm']))
         except RuntimeError as e:
             # The trim cannot succeed. Just make sure that the raised exception
             # is due to the trim failure otherwise rethrow.

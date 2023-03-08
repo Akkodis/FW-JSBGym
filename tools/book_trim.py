@@ -8,9 +8,22 @@ import sys
 sys.path.append('..')
 import numpy as np
 from scipy.optimize import minimize
-from tools.rotations import Euler2Quaternion
 from message_types.msg_delta import MsgDelta
 import time
+
+def Euler2Quaternion(phi, theta, psi):
+    """
+    Converts an euler angle attitude to a quaternian attitude
+    :param euler: Euler angle attitude in a np.matrix(phi, theta, psi)
+    :return: Quaternian attitude in np.array(e0, e1, e2, e3)
+    """
+
+    e0 = np.cos(psi/2.0) * np.cos(theta/2.0) * np.cos(phi/2.0) + np.sin(psi/2.0) * np.sin(theta/2.0) * np.sin(phi/2.0)
+    e1 = np.cos(psi/2.0) * np.cos(theta/2.0) * np.sin(phi/2.0) - np.sin(psi/2.0) * np.sin(theta/2.0) * np.cos(phi/2.0)
+    e2 = np.cos(psi/2.0) * np.sin(theta/2.0) * np.cos(phi/2.0) + np.sin(psi/2.0) * np.cos(theta/2.0) * np.sin(phi/2.0)
+    e3 = np.sin(psi/2.0) * np.cos(theta/2.0) * np.cos(phi/2.0) - np.cos(psi/2.0) * np.sin(theta/2.0) * np.sin(phi/2.0)
+
+    return np.array([[e0],[e1],[e2],[e3]])
 
 def compute_trim(mav, Va, gamma):
     # define initial state and input
