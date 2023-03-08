@@ -85,7 +85,7 @@ roll_pid: PID = PID(kp=lat_pid_gains["kp_roll"], ki=lat_pid_gains["ki_roll"], kd
                     dt=sim.fdm_dt, limit=aero_model.aileron_limit)
 
 # course angle PID (outer loop)
-course_pid: PID = PID(kp=lat_pid_gains["kp_course"], kd=lat_pid_gains["kd_course"],
+course_pid: PID = PID(kp=lat_pid_gains["kp_course"], ki=lat_pid_gains["ki_course"],
                       dt=sim.fdm_dt, limit=aero_model.roll_max)
 
 # simulation loop
@@ -93,11 +93,12 @@ timestep: int = 0
 while sim.run_step() and timestep < 20000:
     # set the ref course angle to be a 90° right turn
     course_pid.set_reference(PI/2)
-    course_angle = atan2(sim.fdm["velocities/v-east-fps"], sim.fdm["velocities/v-north-fps"])
-    course_cmd = course_pid.update(state=course_angle, normalize=True)
-
+    course_angle: float = atan2(sim.fdm["velocities/v-east-fps"], sim.fdm["velocities/v-north-fps"])
+    course_cmd: float = course_pid.update(state=course_angle, normalize=False) # don't normalize it between -1 and 1
     roll_pid.set_reference(course_cmd)
-    roll_cmd = roll_pid.update(state=sim.fdm["attitude/roll-rad"], state_dot=sim.fdm["velocities/p-rad_sec"], normalize=True)
+    roll_cmd: float = roll_pid.update(state=sim.fdm["attitude/roll-rad"], state_dot=sim.fdm["velocities/p-rad_sec"], normalize=True)
+    print(f"roll_cmd: {roll_cmd} | course_cmd: {course_cmd}")
+
     sim.fdm["fcs/aileron-cmd-norm"] = roll_cmd
 
     # sim.fdm["fcs/aileron-cmd-norm"] = -0.3

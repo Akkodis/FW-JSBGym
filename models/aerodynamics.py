@@ -102,7 +102,7 @@ class AeroModel(object):
             "ki_roll": ki_roll,
             "kd_roll": kd_roll,
             "kp_course": kp_course,
-            "kd_course": ki_course
+            "ki_course": ki_course
         }
 
         lat_resp_times: dict[str, float] = {
