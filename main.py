@@ -97,7 +97,7 @@ while sim.run_step() and timestep < 20000:
     course_cmd: float = course_pid.update(state=course_angle, normalize=False) # don't normalize it between -1 and 1
     roll_pid.set_reference(course_cmd)
     roll_cmd: float = roll_pid.update(state=sim.fdm["attitude/roll-rad"], state_dot=sim.fdm["velocities/p-rad_sec"], normalize=True)
-    print(f"roll_cmd: {roll_cmd} | course_cmd: {course_cmd}")
+    # print(f"roll_cmd: {roll_cmd} | course_cmd: {course_cmd}")
 
     sim.fdm["fcs/aileron-cmd-norm"] = roll_cmd
 
