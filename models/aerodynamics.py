@@ -31,30 +31,50 @@ class AeroModel(object):
         self.b: float = 2.10  # wing span m
         self.c: float = 0.3571 # mean aerodynamic chord m
 
-        # TODO: Propeller parameters : TO BE UPDATED !!
+        # Propeller parameters according to Small Unmanned Aircrafts Book
+        # the jsb simulated x8 doesn't use this, keeping it here for reference
         self.Sprop: float = 0.3048 * math.pi # propeller area m2 diam*PI
         self.Cprop: float = 1.0  # propeller coefficient
         self.k_motor: float = 80.0  # motor constant
 
+        # Direct Thruster Parameters:
+        self.Khp2w: float = 745.7  # hp to watts constant
+        self.Khp2ftlbsec: float = 550.0  # hp to ft-lb/sec constant
+        self.Pwatt = 8.0  # power in watts
+
         # Aero coeffs of the x8
+        # Lift
         self.CLo: float = 0.0867
         self.CLalpha: float = 4.0203
         self.CLq: float = 3.87
         self.CLde: float = 0.2781
+
+        # Drag
         self.CDo: float = 0.0197
         self.CDalpha: float = 0.0791
         self.CDde: float = 0.0633
         self.CDq: float = 0.0000
 
+        # Sideforce: Y
+        self.CYo: float = 0.0
+        self.CYb: float = -0.2239
+        self.CYp: float = -0.1374
+        self.CYr: float = 0.0839
+        self.CYda: float = 0.0433
+
+        # roll moment : l
         self.Clp: float = -0.4042
         self.Cnp: float = 0.0044
         self.Clda: float = 0.1202
-        self.Cnda: float = 0.1202
+
+        # pitch moment : m
         self.Cmq: float = -1.3012
         self.Cma: float = -0.4629
         self.Cmde: float = -0.2292
         self.Cmo: float = 0.0227
 
+        # yaw moment : n
+        self.Cnda: float = 0.1202
 
         # intermediate values of aero coeffs weighted by inertia
         self.Cpp: float = self.gamma3 * self.Clp + self.gamma4 * self.Cnp
