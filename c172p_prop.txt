@@ -1,0 +1,3507 @@
+
+
+     JSBSim Flight Dynamics Model v1.1.13 [GitHub build 986/commit a09715f01b9e568ce75ca2635ba0a78ce57f7cdd] Dec  3 2022 18:07:08
+            [JSBSim-ML v2.0]
+
+JSBSim startup beginning ...
+
+[4mReading Aircraft Configuration File[24m: [1mc172[22m
+                            Version: [1m2.0[22m
+
+
+[1mThis aircraft model is a [31mBETA[0m[1m release!!!
+
+[0mThis aircraft model probably will not fly as expected.
+
+[34m[1mUse this model for development purposes ONLY!!![22m[0m
+
+  Description:   Cessna C-172
+  Model Author:  Unknown
+  Creation Date: 2002-01-01
+  Version:       $Id: c172p.xml,v 1.29 2013/10/25 15:32:49 jentron Exp $
+
+  Aircraft Metrics:
+    WingArea: 174
+    WingSpan: 35.8
+    Incidence: 0
+    Chord: 4.9
+    H. Tail Area: 21.9
+    H. Tail Arm: 15.7
+    V. Tail Area: 16.5
+    V. Tail Arm: 0
+    Eyepoint (x, y, z): 37 , 0 , 48
+    Ref Pt (x, y, z): 43.2 , 0 , 59.4
+    Visual Ref Pt (x, y, z): 42.6 , 0 , 38.5
+
+  Mass and Balance:
+    baseIxx: 948 slug-ft2
+    baseIyy: 1346 slug-ft2
+    baseIzz: 1967 slug-ft2
+    baseIxy: 0 slug-ft2
+    baseIxz: -0 slug-ft2
+    baseIyz: 0 slug-ft2
+    Empty Weight: 1500 lbm
+    CG (x, y, z): 41 , 0 , 36.5
+    Point Mass Object: 180 lbs. at X, Y, Z (in.): 36  -14  24
+    Point Mass Object: 0 lbs. at X, Y, Z (in.): 36  14  24
+    Point Mass Object: 0 lbs. at X, Y, Z (in.): 70  -14  24
+    Point Mass Object: 0 lbs. at X, Y, Z (in.): 70  14  24
+    Point Mass Object: 0 lbs. at X, Y, Z (in.): 95  0  24
+
+  Ground Reactions: 
+    BOGEY NOSE
+      Location: -6.8 , 0 , -19.5
+      Spring Constant:  1800
+      Damping Constant: 600 (linear)
+      Rebound Damping Constant: 600 (linear)
+      Dynamic Friction: 0.5
+      Static Friction:  0.8
+      Rolling Friction: 0.02
+      Steering Type:    STEERABLE
+      Grouping:         NONE
+      Max Steer Angle:  10
+      Retractable:      0
+    BOGEY LEFT_MAIN
+      Location: 58.2 , -43 , -15.5
+      Spring Constant:  5400
+      Damping Constant: 1600 (linear)
+      Rebound Damping Constant: 1600 (linear)
+      Dynamic Friction: 0.5
+      Static Friction:  0.8
+      Rolling Friction: 0.02
+      Steering Type:    FIXED
+      Grouping:         LEFT
+      Max Steer Angle:  0
+      Retractable:      0
+    BOGEY RIGHT_MAIN
+      Location: 58.2 , 43 , -15.5
+      Spring Constant:  5400
+      Damping Constant: 1600 (linear)
+      Rebound Damping Constant: 1600 (linear)
+      Dynamic Friction: 0.5
+      Static Friction:  0.8
+      Rolling Friction: 0.02
+      Steering Type:    FIXED
+      Grouping:         RIGHT
+      Max Steer Angle:  0
+      Retractable:      0
+    STRUCTURE NOSE_SKID
+      Location: -37.7 , 0 , 26.6
+      Spring Constant:  20000
+      Damping Constant: 2000 (linear)
+      Rebound Damping Constant: 2000 (linear)
+      Dynamic Friction: 0.2
+      Static Friction:  0.2
+    STRUCTURE TAIL_SKID
+      Location: 188 , 0 , 8
+      Spring Constant:  20000
+      Damping Constant: 2000 (linear)
+      Rebound Damping Constant: 2000 (linear)
+      Dynamic Friction: 0.2
+      Static Friction:  0.2
+    STRUCTURE LEFT_TIP
+      Location: 43.2 , -214.8 , 59.4
+      Spring Constant:  20000
+      Damping Constant: 2000 (linear)
+      Rebound Damping Constant: 2000 (linear)
+      Dynamic Friction: 0.2
+      Static Friction:  0.2
+    STRUCTURE RIGHT_TIP
+      Location: 43.2 , 214.8 , 59.4
+      Spring Constant:  20000
+      Damping Constant: 2000 (linear)
+      Rebound Damping Constant: 2000 (linear)
+      Dynamic Friction: 0.2
+      Static Friction:  0.2
+
+  Propulsion:
+      FUEL tank holds 185 lbs. FUEL
+      currently at 54.0541% of maximum capacity
+      Tank location (X, Y, Z): 56, -112, 59.4
+      Effective radius: 0 inches
+      Initial temperature: -9999 Fahrenheit
+      Priority: 1
+      FUEL tank holds 185 lbs. FUEL
+      currently at 54.0541% of maximum capacity
+      Tank location (X, Y, Z): 56, 112, 59.4
+      Effective radius: 0 inches
+      Initial temperature: -9999 Fahrenheit
+      Priority: 1
+    1 dimensional table with 25 rows.
+	0.0000	0.0730	
+	0.1000	0.0730	
+	0.2000	0.0720	
+	0.3000	0.0710	
+	0.4000	0.0690	
+	0.5000	0.0660	
+	0.6000	0.0620	
+	0.7000	0.0550	
+	0.8000	0.0450	
+	0.9000	0.0340	
+	1.0000	0.0240	
+	1.1000	0.0130	
+	1.2000	-0.0060	
+	1.3000	-0.0130	
+	1.4000	-0.0240	
+	1.5000	-0.0340	
+	1.6000	-0.0450	
+	1.7000	-0.0550	
+	1.8000	-0.0620	
+	1.9000	-0.0660	
+	2.0000	-0.0690	
+	2.1000	-0.0710	
+	2.2000	-0.0720	
+	2.3000	-0.0730	
+	5.0000	-0.0730	
+    1 dimensional table with 26 rows.
+	0.0000	0.0660	
+	0.1000	0.0700	
+	0.2000	0.0700	
+	0.3000	0.0660	
+	0.4000	0.0600	
+	0.5000	0.0530	
+	0.6000	0.0501	
+	0.7000	0.0469	
+	0.8000	0.0426	
+	0.9000	0.0360	
+	1.0000	0.0282	
+	1.1000	0.0191	
+	1.2000	0.0155	
+	1.3000	0.0191	
+	1.4000	0.0282	
+	1.5000	0.0360	
+	1.6000	0.0426	
+	1.7000	0.0469	
+	1.8000	0.0501	
+	1.9000	0.0516	
+	2.0000	0.0525	
+	2.1000	0.0525	
+	2.2000	0.0522	
+	2.3000	0.0511	
+	2.4000	0.0504	
+	5.0000	0.0493	
+    1 dimensional table with 2 rows.
+	0.8500	1.0000	
+	1.0500	0.8000	
+    1 dimensional table with 3 rows.
+	0.8500	1.0000	
+	1.0500	1.8000	
+	2.0000	1.4000	
+
+    Propeller Name: Fixed-Pitch 75-inch Two-Blade Propeller
+      IXX = 1.6700
+      Diameter = 6.2500 ft.
+      Number of Blades  = 2
+      Gear Ratio  = 1.0000
+      Minimum Pitch  = 22.0000
+      Maximum Pitch  = 22.0000
+      Minimum RPM  = 0.0000
+      Maximum RPM  = 0.0000
+      X = -37.7000
+      Y = 0.0000
+      Z = 26.6000
+      Pitch = 0.0000 degrees
+      Yaw = 0.0000 degrees
+
+    Engine Name: IO320
+      MinManifoldPressure: 10.0000
+      MaxManifoldPressure: 28.5000
+      MinMaP (Pa):         33863.8000
+      MaxMaP (Pa):         96511.8300
+      Displacement: 320.0000
+      Bore: 5.1250
+      Stroke: 4.3750
+      Cylinders: 4.0000
+      Cylinders Head Mass: 2.0000
+      Compression Ratio: 8.5000
+      MaxHP: 160.0000
+      Cycles: 4.0000
+      IdleRPM: 550.0000
+      MaxRPM: 2700.0000
+      Throttle Constant: 29.6506
+      ISFC: 0.3200
+      Volumetric Efficiency: 0.8500
+      PeakMeanPistonSpeed_fps: 100.0000
+      Intake Impedance Factor: 0.1519
+      Dynamic FMEP Factor: 18400.0000
+      Static FMEP Factor: 46500.0000
+      Starter Motor Torque: 64.0000
+      Starter Motor RPM:    1100.0000
+
+      Combustion Efficiency table:
+    1 dimensional table with 12 rows.
+	0.0000	0.9800	
+	0.9000	0.9800	
+	1.0000	0.9700	
+	1.0500	0.9500	
+	1.1000	0.9000	
+	1.1500	0.8500	
+	1.2000	0.7900	
+	1.3000	0.7000	
+	1.4000	0.6300	
+	1.5000	0.5700	
+	1.6000	0.5250	
+	2.0000	0.3450	
+
+
+      Mixture Efficiency Correlation table:
+    1 dimensional table with 15 rows.
+	0.0500	0.0000	
+	0.0514	0.0086	
+	0.0518	0.2155	
+	0.0543	0.4828	
+	0.0584	0.7069	
+	0.0631	0.8362	
+	0.0694	0.9310	
+	0.0779	1.0000	
+	0.0885	1.0000	
+	0.0927	0.9828	
+	0.1012	0.9310	
+	0.1145	0.7241	
+	0.1216	0.4569	
+	0.1244	0.2328	
+	0.1250	0.0000	
+
+
+  FCS: FCS: c172
+
+[1m[34m    Channel [22mPitch[0m
+
+    Loading Component "Pitch Trim Sum" of type: SUMMER
+      Minimum limit: constant value -1.000000
+      Maximum limit: constant value 1.000000
+      INPUTS: 
+       elevator-cmd-norm
+       pitch-trim-cmd-norm
+      OUTPUT: pitch-trim-sum
+
+    Loading Component "Elevator Control" of type: AEROSURFACE_SCALE
+      INPUT: pitch-trim-sum
+      GAIN: constant value 0.017450
+      OUTPUT: elevator-pos-rad
+      OUTPUT: elevator-control
+      In/Out Mapping:
+        Input MIN: -1.0000
+        Input MAX: 1.0000
+        Output MIN: -28.0000
+        Output MAX: 23.0000
+
+    Loading Component "Elevator Position Normalized" of type: AEROSURFACE_SCALE
+      INPUT: elevator-pos-deg
+      GAIN: constant value 1.000000
+      OUTPUT: elevator-pos-norm
+      OUTPUT: elevator-position-normalized
+      In/Out Mapping:
+        Input MIN: -28.0000
+        Input MAX: 23.0000
+        Output MIN: -1.0000
+        Output MAX: 1.0000
+
+[1m[34m    Channel [22mRoll[0m
+
+    Loading Component "Roll Trim Sum" of type: SUMMER
+      Minimum limit: constant value -1.000000
+      Maximum limit: constant value 1.000000
+      INPUTS: 
+       aileron-cmd-norm
+       roll-trim-cmd-norm
+      OUTPUT: roll-trim-sum
+
+    Loading Component "Left Aileron Control" of type: AEROSURFACE_SCALE
+      INPUT: roll-trim-sum
+      GAIN: constant value 0.017450
+      OUTPUT: left-aileron-pos-rad
+      OUTPUT: left-aileron-control
+      In/Out Mapping:
+        Input MIN: -1.0000
+        Input MAX: 1.0000
+        Output MIN: -20.0000
+        Output MAX: 15.0000
+
+    Loading Component "Left Aileron Position Normalized" of type: AEROSURFACE_SCALE
+      INPUT: left-aileron-pos-deg
+      GAIN: constant value 1.000000
+      OUTPUT: left-aileron-pos-norm
+      OUTPUT: left-aileron-position-normalized
+      In/Out Mapping:
+        Input MIN: -20.0000
+        Input MAX: 15.0000
+        Output MIN: -1.0000
+        Output MAX: 1.0000
+
+    Loading Component "Right Aileron Control" of type: AEROSURFACE_SCALE
+      INPUT: roll-trim-sum
+      GAIN: constant value -0.017450
+      OUTPUT: right-aileron-pos-rad
+      OUTPUT: right-aileron-control
+      In/Out Mapping:
+        Input MIN: -1.0000
+        Input MAX: 1.0000
+        Output MIN: -20.0000
+        Output MAX: 15.0000
+
+    Loading Component "Right Aileron Position Normalized" of type: AEROSURFACE_SCALE
+      INPUT: right-aileron-pos-deg
+      GAIN: constant value 1.000000
+      OUTPUT: right-aileron-pos-norm
+      OUTPUT: right-aileron-position-normalized
+      In/Out Mapping:
+        Input MIN: -15.0000
+        Input MAX: 20.0000
+        Output MIN: 1.0000
+        Output MAX: -1.0000
+
+[1m[34m    Channel [22mYaw[0m
+
+    Loading Component "Yaw Trim Sum" of type: SUMMER
+      Minimum limit: constant value -1.000000
+      Maximum limit: constant value 1.000000
+      INPUTS: 
+       rudder-cmd-norm
+       yaw-trim-cmd-norm
+      OUTPUT: yaw-trim-sum
+
+    Loading Component "Rudder Control" of type: AEROSURFACE_SCALE
+      INPUT: yaw-trim-sum
+      GAIN: constant value 0.017450
+      OUTPUT: rudder-pos-rad
+      OUTPUT: rudder-control
+      In/Out Mapping:
+        Input MIN: -1.0000
+        Input MAX: 1.0000
+        Output MIN: -16.0000
+        Output MAX: 16.0000
+
+    Loading Component "Rudder Position Normalized" of type: AEROSURFACE_SCALE
+      INPUT: rudder-pos-deg
+      GAIN: constant value 1.000000
+      OUTPUT: rudder-pos-norm
+      OUTPUT: rudder-position-normalized
+      In/Out Mapping:
+        Input MIN: -16.0000
+        Input MAX: 16.0000
+        Output MIN: -1.0000
+        Output MAX: 1.0000
+
+[1m[34m    Channel [22mFlaps[0m
+
+    Loading Component "Flaps Control" of type: KINEMATIC
+      INPUT: flap-cmd-norm
+      DETENTS: 4
+        0.0000 0.0000
+        10.0000 2.0000
+        20.0000 1.0000
+        30.0000 1.0000
+      OUTPUT: flap-pos-deg
+      OUTPUT: flaps-control
+
+    Loading Component "Flap Position Normalizer" of type: AEROSURFACE_SCALE
+      INPUT: flap-pos-deg
+      GAIN: constant value 1.000000
+      OUTPUT: flap-pos-norm
+      OUTPUT: flap-position-normalizer
+      In/Out Mapping:
+        Input MIN: 0.0000
+        Input MAX: 30.0000
+        Output MIN: 0.0000
+        Output MAX: 1.0000
+    1 dimensional table with 13 rows.
+	0.0000	0.4800	
+	0.1000	0.5150	
+	0.1500	0.6290	
+	0.2000	0.7090	
+	0.3000	0.8150	
+	0.4000	0.8820	
+	0.5000	0.9280	
+	0.6000	0.9620	
+	0.7000	0.9880	
+	0.8000	1.0000	
+	0.9000	1.0000	
+	1.0000	1.0000	
+	1.1000	1.0000	
+    Function: aero/function/kCDge
+    1 dimensional table with 13 rows.
+	0.0000	1.2030	
+	0.1000	1.1270	
+	0.1500	1.0900	
+	0.2000	1.0730	
+	0.3000	1.0460	
+	0.4000	1.0550	
+	0.5000	1.0190	
+	0.6000	1.0130	
+	0.7000	1.0080	
+	0.8000	1.0060	
+	0.9000	1.0030	
+	1.0000	1.0020	
+	1.1000	1.0000	
+    Function: aero/function/kCLge
+    Function: aero/function/velocity-induced-fps
+    Function: aero/function/qbar-induced-psf
+
+  Aerodynamics (Lift|Side|Drag axes):
+
+    Function: aero/coefficient/CDo
+    1 dimensional table with 4 rows.
+	0.0000	0.0000	
+	10.0000	0.0070	
+	20.0000	0.0120	
+	30.0000	0.0180	
+    Function: aero/coefficient/CDDf
+    2 dimensional table with 26 rows, 4 columns.
+		0.0000	10.0000	20.0000	30.0000	
+	-0.0873	0.0041	0.0000	0.0005	0.0014	
+	-0.0698	0.0013	0.0004	0.0025	0.0041	
+	-0.0524	0.0001	0.0023	0.0059	0.0084	
+	-0.0349	0.0003	0.0057	0.0108	0.0141	
+	-0.0175	0.0020	0.0105	0.0172	0.0212	
+	0.0000	0.0052	0.0168	0.0251	0.0299	
+	0.0175	0.0099	0.0248	0.0346	0.0402	
+	0.0349	0.0162	0.0342	0.0457	0.0521	
+	0.0524	0.0240	0.0452	0.0583	0.0655	
+	0.0698	0.0334	0.0577	0.0724	0.0804	
+	0.0873	0.0442	0.0718	0.0881	0.0968	
+	0.1047	0.0566	0.0874	0.1053	0.1148	
+	0.1222	0.0706	0.1045	0.1240	0.1343	
+	0.1396	0.0860	0.1232	0.1442	0.1554	
+	0.1571	0.0962	0.1353	0.1573	0.1690	
+	0.1745	0.1069	0.1479	0.1708	0.1830	
+	0.1920	0.1180	0.1610	0.1849	0.1975	
+	0.2094	0.1298	0.1746	0.1995	0.2126	
+	0.2269	0.1424	0.1892	0.2151	0.2286	
+	0.2443	0.1565	0.2054	0.2323	0.2464	
+	0.2618	0.1727	0.2240	0.2521	0.2667	
+	0.2793	0.1782	0.2302	0.2587	0.2735	
+	0.2967	0.1716	0.2227	0.2507	0.2653	
+	0.3142	0.1618	0.2115	0.2388	0.2531	
+	0.3316	0.1475	0.1951	0.2214	0.2351	
+	0.3491	0.1097	0.1512	0.1744	0.1866	
+    Function: aero/coefficient/CDwbh
+    Function: aero/coefficient/CDDe
+    Function: aero/coefficient/CDbeta
+    2 dimensional table with 3 rows, 2 columns.
+		0.0000	30.0000	
+	-0.3490	0.1370	0.1060	
+	0.0000	0.0000	0.0000	
+	0.3490	-0.1370	-0.1060	
+    Function: aero/coefficient/CYb
+    Function: aero/coefficient/CYda
+    Function: aero/coefficient/CYdr
+    2 dimensional table with 2 rows, 2 columns.
+		0.0000	30.0000	
+	0.0000	-0.0750	-0.1610	
+	0.0940	-0.1450	-0.2310	
+    Function: aero/coefficient/CYp
+    2 dimensional table with 2 rows, 2 columns.
+		0.0000	30.0000	
+	0.0000	0.2140	0.1620	
+	0.0940	0.2670	0.2150	
+    Function: aero/coefficient/CYr
+    2 dimensional table with 17 rows, 2 columns.
+		0.0000	1.0000	
+	-0.0900	-0.2200	-0.2200	
+	0.0000	0.2500	0.2500	
+	0.0900	0.7300	0.7300	
+	0.1000	0.8300	0.7800	
+	0.1200	0.9200	0.7900	
+	0.1400	1.0200	0.8100	
+	0.1600	1.0800	0.8200	
+	0.1700	1.1300	0.8300	
+	0.1900	1.1900	0.8500	
+	0.2100	1.2500	0.8600	
+	0.2400	1.3500	0.8800	
+	0.2600	1.4400	0.9000	
+	0.2800	1.4700	0.9200	
+	0.3000	1.4300	0.9500	
+	0.3200	1.3800	0.9900	
+	0.3400	1.3000	1.0500	
+	0.3600	1.1500	1.1500	
+    Function: aero/coefficient/CLwbh
+    1 dimensional table with 4 rows.
+	0.0000	0.0000	
+	10.0000	0.2000	
+	20.0000	0.3000	
+	30.0000	0.3500	
+    Function: aero/coefficient/CLDf
+    Function: aero/coefficient/CLDe
+    Function: aero/coefficient/CLadot
+    Function: aero/coefficient/CLq
+    1 dimensional table with 3 rows.
+	-0.3490	0.0322	
+	0.0000	0.0000	
+	0.3490	-0.0322	
+    Function: aero/coefficient/Clb
+    Function: aero/coefficient/Clp
+    2 dimensional table with 2 rows, 2 columns.
+		0.0000	30.0000	
+	0.0000	0.0798	0.1246	
+	0.0940	0.1869	0.2317	
+    Function: aero/coefficient/Clr
+    Function: aero/coefficient/ClDa
+    Function: aero/coefficient/Cldr
+    Function: aero/coefficient/Cmo
+    Function: aero/coefficient/Cmalpha
+    Function: aero/coefficient/Cmq
+    Function: aero/coefficient/Cmadot
+    Function: aero/coefficient/Cmde
+    1 dimensional table with 4 rows.
+	0.0000	0.0000	
+	10.0000	-0.0654	
+	20.0000	-0.0981	
+	30.0000	-0.1140	
+    Function: aero/coefficient/Cmdf
+    1 dimensional table with 3 rows.
+	-0.3490	-0.0205	
+	0.0000	0.0000	
+	0.3490	0.0205	
+    Function: aero/coefficient/Cnb
+    Function: aero/coefficient/Cnp
+    Function: aero/coefficient/Cnr
+    Function: aero/coefficient/Cnda
+    Function: aero/coefficient/Cndr
+
+[34m[1m  Mass Properties Report (English units: lbf, in, slug-ft^2)[0m
+                                  [4m    Weight    CG-X    CG-Y    CG-Z         Ixx         Iyy         Izz         Ixy         Ixz         Iyz[24m
+[1m    Base Vehicle                  [22m    1500.0    41.0     0.0    36.5       948.0      1346.0      1967.0         0.0        -0.0         0.0
+[1m0   Pilot                         [22m     180.0    36.0   -14.0    24.0         0.0         0.0         0.0        -0.0         0.0        -0.0
+[1m1   Co-Pilot                      [22m       0.0    36.0    14.0    24.0         0.0         0.0         0.0        -0.0         0.0        -0.0
+[1m2   Left Passenger                [22m       0.0    70.0   -14.0    24.0         0.0         0.0         0.0        -0.0         0.0        -0.0
+[1m3   Right Passenger               [22m       0.0    70.0    14.0    24.0         0.0         0.0         0.0        -0.0         0.0        -0.0
+[1m4   Baggage                       [22m       0.0    95.0     0.0    24.0         0.0         0.0         0.0        -0.0         0.0        -0.0
+[1m0   Fuel                          [22m       100      56    -112    59.4           0           0           0
+[1m1   Fuel                          [22m       100      56     112    59.4           0           0           0
+    [4m                                                                                                                                        [24m
+[1m    Total:                            1880.0    42.1    -1.3    37.7      1524.5      1384.3      2525.6         3.3       -16.7         7.5[22m
+
+[34m[1mEnd of vehicle configuration loading.
+-------------------------------------------------------------------------------[0m
+
+  [34m[1m[4mProperty Catalog for c172p[0m
+
+    inertial/sea-level-radius_ft (R)
+    simulation/gravity-model (RW)
+    simulation/integrator/rate/rotational (RW)
+    simulation/integrator/rate/translational (RW)
+    simulation/integrator/position/rotational (RW)
+    simulation/integrator/position/translational (RW)
+    simulation/write-state-file (W)
+    simulation/channel-dt (R)
+    simulation/gravitational-torque (RW)
+    simulation/force-output (W)
+    simulation/do_simple_trim (W)
+    simulation/reset (W)
+    simulation/disperse (R)
+    simulation/randomseed (RW)
+    simulation/terminate (RW)
+    simulation/pause (RW)
+    simulation/sim-time-sec (R)
+    simulation/dt (R)
+    simulation/jsbsim-debug (RW)
+    simulation/frame (RW)
+    simulation/trim-completed (RW)
+    velocities/h-dot-fps (R)
+    velocities/v-north-fps (R)
+    velocities/v-east-fps (R)
+    velocities/v-down-fps (R)
+    velocities/u-fps (R)
+    velocities/v-fps (R)
+    velocities/w-fps (R)
+    velocities/p-rad_sec (R)
+    velocities/q-rad_sec (R)
+    velocities/r-rad_sec (R)
+    velocities/pi-rad_sec (R)
+    velocities/qi-rad_sec (R)
+    velocities/ri-rad_sec (R)
+    velocities/eci-x-fps (R)
+    velocities/eci-y-fps (R)
+    velocities/eci-z-fps (R)
+    velocities/eci-velocity-mag-fps (R)
+    velocities/ned-velocity-mag-fps (R)
+    velocities/vc-fps (R)
+    velocities/vc-kts (R)
+    velocities/ve-fps (R)
+    velocities/ve-kts (R)
+    velocities/vtrue-fps (R)
+    velocities/vtrue-kts (R)
+    velocities/machU (R)
+    velocities/p-aero-rad_sec (R)
+    velocities/q-aero-rad_sec (R)
+    velocities/r-aero-rad_sec (R)
+    velocities/phidot-rad_sec (R)
+    velocities/thetadot-rad_sec (R)
+    velocities/psidot-rad_sec (R)
+    velocities/u-aero-fps (R)
+    velocities/v-aero-fps (R)
+    velocities/w-aero-fps (R)
+    velocities/vt-fps (R)
+    velocities/mach (R)
+    velocities/vg-fps (R)
+    position/h-sl-ft (RW)
+    position/h-sl-meters (RW)
+    position/lat-gc-rad (RW)
+    position/long-gc-rad (RW)
+    position/lat-gc-deg (RW)
+    position/long-gc-deg (RW)
+    position/lat-geod-rad (R)
+    position/lat-geod-deg (R)
+    position/geod-alt-ft (R)
+    position/h-agl-ft (RW)
+    position/geod-alt-km (R)
+    position/h-agl-km (RW)
+    position/radius-to-vehicle-ft (R)
+    position/terrain-elevation-asl-ft (RW)
+    position/eci-x-ft (R)
+    position/eci-y-ft (R)
+    position/eci-z-ft (R)
+    position/ecef-x-ft (R)
+    position/ecef-y-ft (R)
+    position/ecef-z-ft (R)
+    position/epa-rad (R)
+    position/distance-from-start-lon-mt (R)
+    position/distance-from-start-lat-mt (R)
+    position/distance-from-start-mag-mt (R)
+    position/vrp-gc-latitude_deg (R)
+    position/vrp-longitude_deg (R)
+    position/vrp-radius-ft (R)
+    metrics/terrain-radius (R)
+    metrics/Sw-sqft (RW)
+    metrics/bw-ft (R)
+    metrics/cbarw-ft (R)
+    metrics/iw-rad (R)
+    metrics/iw-deg (R)
+    metrics/Sh-sqft (R)
+    metrics/lh-ft (R)
+    metrics/Sv-sqft (R)
+    metrics/lv-ft (R)
+    metrics/lh-norm (R)
+    metrics/lv-norm (R)
+    metrics/vbarh-norm (R)
+    metrics/vbarv-norm (R)
+    metrics/aero-rp-x-in (RW)
+    metrics/aero-rp-y-in (RW)
+    metrics/aero-rp-z-in (RW)
+    metrics/eyepoint-x-in (R)
+    metrics/eyepoint-y-in (R)
+    metrics/eyepoint-z-in (R)
+    metrics/visualrefpoint-x-in (R)
+    metrics/visualrefpoint-y-in (R)
+    metrics/visualrefpoint-z-in (R)
+    attitude/phi-rad (R)
+    attitude/theta-rad (R)
+    attitude/psi-rad (R)
+    attitude/phi-deg (R)
+    attitude/theta-deg (R)
+    attitude/psi-deg (R)
+    attitude/roll-rad (R)
+    attitude/pitch-rad (R)
+    attitude/heading-true-rad (R)
+    atmosphere/T-R (R)
+    atmosphere/rho-slugs_ft3 (R)
+    atmosphere/P-psf (R)
+    atmosphere/a-fps (R)
+    atmosphere/T-sl-R (R)
+    atmosphere/rho-sl-slugs_ft3 (R)
+    atmosphere/a-sl-fps (R)
+    atmosphere/theta (R)
+    atmosphere/sigma (R)
+    atmosphere/delta (R)
+    atmosphere/a-ratio (R)
+    atmosphere/density-altitude (R)
+    atmosphere/pressure-altitude (R)
+    atmosphere/delta-T (RW)
+    atmosphere/SL-graded-delta-T (RW)
+    atmosphere/P-sl-psf (RW)
+    atmosphere/dew-point-R (RW)
+    atmosphere/vapor-pressure-psf (RW)
+    atmosphere/saturated-vapor-pressure-psf (R)
+    atmosphere/RH (RW)
+    atmosphere/vapor-fraction-ppm (RW)
+    atmosphere/psiw-rad (RW)
+    atmosphere/wind-north-fps (RW)
+    atmosphere/wind-east-fps (RW)
+    atmosphere/wind-down-fps (RW)
+    atmosphere/wind-mag-fps (RW)
+    atmosphere/gust-north-fps (RW)
+    atmosphere/gust-east-fps (RW)
+    atmosphere/gust-down-fps (RW)
+    atmosphere/cosine-gust/startup-duration-sec (W)
+    atmosphere/cosine-gust/steady-duration-sec (W)
+    atmosphere/cosine-gust/end-duration-sec (W)
+    atmosphere/cosine-gust/magnitude-ft_sec (W)
+    atmosphere/cosine-gust/frame (W)
+    atmosphere/cosine-gust/X-velocity-ft_sec (W)
+    atmosphere/cosine-gust/Y-velocity-ft_sec (W)
+    atmosphere/cosine-gust/Z-velocity-ft_sec (W)
+    atmosphere/cosine-gust/start (W)
+    atmosphere/updownburst/number-of-cells (W)
+    atmosphere/turb-north-fps (RW)
+    atmosphere/turb-east-fps (RW)
+    atmosphere/turb-down-fps (RW)
+    atmosphere/p-turb-rad_sec (R)
+    atmosphere/q-turb-rad_sec (R)
+    atmosphere/r-turb-rad_sec (R)
+    atmosphere/turb-type (RW)
+    atmosphere/turb-rate (RW)
+    atmosphere/turb-gain (RW)
+    atmosphere/turb-rhythmicity (RW)
+    atmosphere/turbulence/milspec/windspeed_at_20ft_AGL-fps (RW)
+    atmosphere/turbulence/milspec/severity (RW)
+    atmosphere/total-wind-north-fps (R)
+    atmosphere/total-wind-east-fps (R)
+    atmosphere/total-wind-down-fps (R)
+    fcs/aileron-cmd-norm (RW)
+    fcs/elevator-cmd-norm (RW)
+    fcs/rudder-cmd-norm (RW)
+    fcs/flap-cmd-norm (RW)
+    fcs/speedbrake-cmd-norm (RW)
+    fcs/spoiler-cmd-norm (RW)
+    fcs/pitch-trim-cmd-norm (RW)
+    fcs/roll-trim-cmd-norm (RW)
+    fcs/yaw-trim-cmd-norm (RW)
+    fcs/left-aileron-pos-rad (RW)
+    fcs/left-aileron-pos-deg (RW)
+    fcs/left-aileron-pos-norm (RW)
+    fcs/mag-left-aileron-pos-rad (R)
+    fcs/right-aileron-pos-rad (RW)
+    fcs/right-aileron-pos-deg (RW)
+    fcs/right-aileron-pos-norm (RW)
+    fcs/mag-right-aileron-pos-rad (R)
+    fcs/elevator-pos-rad (RW)
+    fcs/elevator-pos-deg (RW)
+    fcs/elevator-pos-norm (RW)
+    fcs/mag-elevator-pos-rad (R)
+    fcs/rudder-pos-rad (RW)
+    fcs/rudder-pos-deg (RW)
+    fcs/rudder-pos-norm (RW)
+    fcs/mag-rudder-pos-rad (R)
+    fcs/flap-pos-rad (RW)
+    fcs/flap-pos-deg (RW)
+    fcs/flap-pos-norm (RW)
+    fcs/speedbrake-pos-rad (RW)
+    fcs/speedbrake-pos-deg (RW)
+    fcs/speedbrake-pos-norm (RW)
+    fcs/mag-speedbrake-pos-rad (R)
+    fcs/spoiler-pos-rad (RW)
+    fcs/spoiler-pos-deg (RW)
+    fcs/spoiler-pos-norm (RW)
+    fcs/mag-spoiler-pos-rad (R)
+    fcs/left-brake-cmd-norm (RW)
+    fcs/right-brake-cmd-norm (RW)
+    fcs/center-brake-cmd-norm (RW)
+    fcs/wing-fold-pos-norm (RW)
+    fcs/steer-cmd-norm (RW)
+    fcs/steer-pos-deg (RW)
+    fcs/throttle-cmd-norm (RW)
+    fcs/throttle-pos-norm (RW)
+    fcs/mixture-cmd-norm (RW)
+    fcs/mixture-pos-norm (RW)
+    fcs/advance-cmd-norm (RW)
+    fcs/advance-pos-norm (RW)
+    fcs/feather-cmd-norm (RW)
+    fcs/feather-pos-norm (RW)
+    fcs/pitch-trim-sum (RW)
+    fcs/elevator-control (RW)
+    fcs/elevator-position-normalized (RW)
+    fcs/roll-trim-sum (RW)
+    fcs/left-aileron-control (RW)
+    fcs/left-aileron-position-normalized (RW)
+    fcs/right-aileron-control (RW)
+    fcs/right-aileron-position-normalized (RW)
+    fcs/yaw-trim-sum (RW)
+    fcs/rudder-control (RW)
+    fcs/rudder-position-normalized (RW)
+    fcs/flaps-control (RW)
+    fcs/flap-position-normalizer (RW)
+    gear/gear-pos-norm (RW)
+    gear/gear-cmd-norm (RW)
+    gear/tailhook-pos-norm (RW)
+    gear/num-units (R)
+    gear/wow (R)
+    gear/unit/solid (RW)
+    gear/unit/bumpiness (RW)
+    gear/unit/maximum-force-lbs (RW)
+    gear/unit/rolling_friction-factor (RW)
+    gear/unit/static-friction-factor (RW)
+    gear/unit/WOW (RW)
+    gear/unit/x-position (RW)
+    gear/unit/y-position (RW)
+    gear/unit/z-position (RW)
+    gear/unit/compression-ft (RW)
+    gear/unit/compression-velocity-fps (RW)
+    gear/unit/static_friction_coeff (RW)
+    gear/unit/dynamic_friction_coeff (RW)
+    gear/unit/slip-angle-deg (RW)
+    gear/unit/wheel-speed-fps (R)
+    gear/unit/side_friction_coeff (RW)
+    gear/unit/rolling_friction_coeff (RW)
+    gear/unit[1]/solid (RW)
+    gear/unit[1]/bumpiness (RW)
+    gear/unit[1]/maximum-force-lbs (RW)
+    gear/unit[1]/rolling_friction-factor (RW)
+    gear/unit[1]/static-friction-factor (RW)
+    gear/unit[1]/WOW (RW)
+    gear/unit[1]/x-position (RW)
+    gear/unit[1]/y-position (RW)
+    gear/unit[1]/z-position (RW)
+    gear/unit[1]/compression-ft (RW)
+    gear/unit[1]/compression-velocity-fps (RW)
+    gear/unit[1]/static_friction_coeff (RW)
+    gear/unit[1]/dynamic_friction_coeff (RW)
+    gear/unit[1]/slip-angle-deg (RW)
+    gear/unit[1]/wheel-speed-fps (R)
+    gear/unit[1]/side_friction_coeff (RW)
+    gear/unit[1]/rolling_friction_coeff (RW)
+    gear/unit[2]/solid (RW)
+    gear/unit[2]/bumpiness (RW)
+    gear/unit[2]/maximum-force-lbs (RW)
+    gear/unit[2]/rolling_friction-factor (RW)
+    gear/unit[2]/static-friction-factor (RW)
+    gear/unit[2]/WOW (RW)
+    gear/unit[2]/x-position (RW)
+    gear/unit[2]/y-position (RW)
+    gear/unit[2]/z-position (RW)
+    gear/unit[2]/compression-ft (RW)
+    gear/unit[2]/compression-velocity-fps (RW)
+    gear/unit[2]/static_friction_coeff (RW)
+    gear/unit[2]/dynamic_friction_coeff (RW)
+    gear/unit[2]/slip-angle-deg (RW)
+    gear/unit[2]/wheel-speed-fps (R)
+    gear/unit[2]/side_friction_coeff (RW)
+    gear/unit[2]/rolling_friction_coeff (RW)
+    inertia/mass-slugs (R)
+    inertia/weight-lbs (R)
+    inertia/empty-weight-lbs (R)
+    inertia/cg-x-in (R)
+    inertia/cg-y-in (R)
+    inertia/cg-z-in (R)
+    inertia/ixx-slugs_ft2 (R)
+    inertia/iyy-slugs_ft2 (R)
+    inertia/izz-slugs_ft2 (R)
+    inertia/ixy-slugs_ft2 (R)
+    inertia/ixz-slugs_ft2 (R)
+    inertia/iyz-slugs_ft2 (R)
+    inertia/print-mass-properties (W)
+    inertia/pointmass-weight-lbs (RW)
+    inertia/pointmass-location-X-inches (RW)
+    inertia/pointmass-location-Y-inches (RW)
+    inertia/pointmass-location-Z-inches (RW)
+    inertia/pointmass-weight-lbs[1] (RW)
+    inertia/pointmass-location-X-inches[1] (RW)
+    inertia/pointmass-location-Y-inches[1] (RW)
+    inertia/pointmass-location-Z-inches[1] (RW)
+    inertia/pointmass-weight-lbs[2] (RW)
+    inertia/pointmass-location-X-inches[2] (RW)
+    inertia/pointmass-location-Y-inches[2] (RW)
+    inertia/pointmass-location-Z-inches[2] (RW)
+    inertia/pointmass-weight-lbs[3] (RW)
+    inertia/pointmass-location-X-inches[3] (RW)
+    inertia/pointmass-location-Y-inches[3] (RW)
+    inertia/pointmass-location-Z-inches[3] (RW)
+    inertia/pointmass-weight-lbs[4] (RW)
+    inertia/pointmass-location-X-inches[4] (RW)
+    inertia/pointmass-location-Y-inches[4] (RW)
+    inertia/pointmass-location-Z-inches[4] (RW)
+    propulsion/tat-r (R)
+    propulsion/tat-c (R)
+    propulsion/pt-lbs_sqft (R)
+    propulsion/tank/contents-lbs (RW)
+    propulsion/tank/unusable-volume-gal (RW)
+    propulsion/tank/pct-full (R)
+    propulsion/tank/density-lbs_per_gal (R)
+    propulsion/tank/priority (RW)
+    propulsion/tank/external-flow-rate-pps (RW)
+    propulsion/tank/local-ixx-slug_ft2 (R)
+    propulsion/tank/local-iyy-slug_ft2 (R)
+    propulsion/tank/local-izz-slug_ft2 (R)
+    propulsion/tank/x-position (RW)
+    propulsion/tank/y-position (RW)
+    propulsion/tank/z-position (RW)
+    propulsion/tank[1]/contents-lbs (RW)
+    propulsion/tank[1]/unusable-volume-gal (RW)
+    propulsion/tank[1]/pct-full (R)
+    propulsion/tank[1]/density-lbs_per_gal (R)
+    propulsion/tank[1]/priority (RW)
+    propulsion/tank[1]/external-flow-rate-pps (RW)
+    propulsion/tank[1]/local-ixx-slug_ft2 (R)
+    propulsion/tank[1]/local-iyy-slug_ft2 (R)
+    propulsion/tank[1]/local-izz-slug_ft2 (R)
+    propulsion/tank[1]/x-position (RW)
+    propulsion/tank[1]/y-position (RW)
+    propulsion/tank[1]/z-position (RW)
+    propulsion/set-running (W)
+    propulsion/starter_cmd (RW)
+    propulsion/magneto_cmd (W)
+    propulsion/active_engine (RW)
+    propulsion/total-fuel-lbs (RW)
+    propulsion/total-oxidizer-lbs (RW)
+    propulsion/refuel (RW)
+    propulsion/fuel_dump (RW)
+    propulsion/fuel_freeze (W)
+    propulsion/engine/pitch-angle-rad (RW)
+    propulsion/engine/yaw-angle-rad (RW)
+    propulsion/engine/engine-rpm (R)
+    propulsion/engine/advance-ratio (RW)
+    propulsion/engine/blade-angle (RW)
+    propulsion/engine/thrust-coefficient (R)
+    propulsion/engine/propeller-rpm (R)
+    propulsion/engine/helical-tip-Mach (R)
+    propulsion/engine/constant-speed-mode (RW)
+    propulsion/engine/prop-induced-velocity_fps (RW)
+    propulsion/engine/propeller-power-ftlbps (RW)
+    propulsion/engine/propeller-torque-ftlb (R)
+    propulsion/engine/propeller-sense (RW)
+    propulsion/engine/set-running (RW)
+    propulsion/engine/thrust-lbs (R)
+    propulsion/engine/fuel-flow-rate-pps (R)
+    propulsion/engine/fuel-flow-rate-gph (R)
+    propulsion/engine/fuel-used-lbs (R)
+    propulsion/engine/power-hp (RW)
+    propulsion/engine/friction-hp (RW)
+    propulsion/engine/bsfc-lbs_hphr (RW)
+    propulsion/engine/starter-norm (RW)
+    propulsion/engine/volumetric-efficiency (RW)
+    propulsion/engine/map-pa (RW)
+    propulsion/engine/map-inhg (RW)
+    propulsion/engine/air-intake-impedance-factor (RW)
+    propulsion/engine/ram-air-factor (RW)
+    propulsion/engine/cooling-factor (RW)
+    propulsion/engine/boost-speed (RW)
+    propulsion/engine/cht-degF (R)
+    propulsion/engine/oil-temperature-degF (R)
+    propulsion/engine/oil-pressure-psi (R)
+    propulsion/engine/egt-degF (R)
+    propulsion/engine/AFR (R)
+    accelerations/a-pilot-x-ft_sec2 (R)
+    accelerations/a-pilot-y-ft_sec2 (R)
+    accelerations/a-pilot-z-ft_sec2 (R)
+    accelerations/n-pilot-x-norm (R)
+    accelerations/n-pilot-y-norm (R)
+    accelerations/n-pilot-z-norm (R)
+    accelerations/Nx (R)
+    accelerations/Ny (R)
+    accelerations/Nz (R)
+    accelerations/pdot-rad_sec2 (R)
+    accelerations/qdot-rad_sec2 (R)
+    accelerations/rdot-rad_sec2 (R)
+    accelerations/pidot-rad_sec2 (R)
+    accelerations/qidot-rad_sec2 (R)
+    accelerations/ridot-rad_sec2 (R)
+    accelerations/udot-ft_sec2 (R)
+    accelerations/vdot-ft_sec2 (R)
+    accelerations/wdot-ft_sec2 (R)
+    accelerations/uidot-ft_sec2 (R)
+    accelerations/vidot-ft_sec2 (R)
+    accelerations/widot-ft_sec2 (R)
+    accelerations/gravity-ft_sec2 (R)
+    forces/load-factor (R)
+    forces/fbx-aero-lbs (R)
+    forces/fby-aero-lbs (R)
+    forces/fbz-aero-lbs (R)
+    forces/fwx-aero-lbs (R)
+    forces/fwy-aero-lbs (R)
+    forces/fwz-aero-lbs (R)
+    forces/fsx-aero-lbs (R)
+    forces/fsy-aero-lbs (R)
+    forces/fsz-aero-lbs (R)
+    forces/lod-norm (R)
+    forces/fbx-weight-lbs (R)
+    forces/fby-weight-lbs (R)
+    forces/fbz-weight-lbs (R)
+    forces/fbx-total-lbs (R)
+    forces/fby-total-lbs (R)
+    forces/fbz-total-lbs (R)
+    forces/fbx-gear-lbs (R)
+    forces/fby-gear-lbs (R)
+    forces/fbz-gear-lbs (R)
+    forces/hold-down (RW)
+    forces/fbx-prop-lbs (R)
+    forces/fby-prop-lbs (R)
+    forces/fbz-prop-lbs (R)
+    aero/alpha-rad (R)
+    aero/beta-rad (R)
+    aero/mag-beta-rad (R)
+    aero/alpha-deg (R)
+    aero/beta-deg (R)
+    aero/mag-beta-deg (R)
+    aero/Re (R)
+    aero/qbar-psf (R)
+    aero/qbarUW-psf (R)
+    aero/qbarUV-psf (R)
+    aero/alphadot-rad_sec (R)
+    aero/betadot-rad_sec (R)
+    aero/alphadot-deg_sec (R)
+    aero/betadot-deg_sec (R)
+    aero/h_b-cg-ft (R)
+    aero/h_b-mac-ft (R)
+    aero/cl-squared (R)
+    aero/qbar-area (RW)
+    aero/alpha-max-rad (RW)
+    aero/alpha-min-rad (RW)
+    aero/bi2vel (R)
+    aero/ci2vel (R)
+    aero/alpha-wing-rad (R)
+    aero/stall-hyst-norm (R)
+    aero/function/kCDge (R)
+    aero/function/kCLge (R)
+    aero/function/velocity-induced-fps (R)
+    aero/function/qbar-induced-psf (R)
+    aero/coefficient/CDo (R)
+    aero/coefficient/CDDf (R)
+    aero/coefficient/CDwbh (R)
+    aero/coefficient/CDDe (R)
+    aero/coefficient/CDbeta (R)
+    aero/coefficient/CYb (R)
+    aero/coefficient/CYda (R)
+    aero/coefficient/CYdr (R)
+    aero/coefficient/CYp (R)
+    aero/coefficient/CYr (R)
+    aero/coefficient/CLwbh (R)
+    aero/coefficient/CLDf (R)
+    aero/coefficient/CLDe (R)
+    aero/coefficient/CLadot (R)
+    aero/coefficient/CLq (R)
+    aero/coefficient/Clb (R)
+    aero/coefficient/Clp (R)
+    aero/coefficient/Clr (R)
+    aero/coefficient/ClDa (R)
+    aero/coefficient/Cldr (R)
+    aero/coefficient/Cmo (R)
+    aero/coefficient/Cmalpha (R)
+    aero/coefficient/Cmq (R)
+    aero/coefficient/Cmadot (R)
+    aero/coefficient/Cmde (R)
+    aero/coefficient/Cmdf (R)
+    aero/coefficient/Cnb (R)
+    aero/coefficient/Cnp (R)
+    aero/coefficient/Cnr (R)
+    aero/coefficient/Cnda (R)
+    aero/coefficient/Cndr (R)
+    flight-path/gamma-rad (R)
+    flight-path/gamma-deg (R)
+    flight-path/psi-gt-rad (R)
+    moments/l-aero-lbsft (R)
+    moments/m-aero-lbsft (R)
+    moments/n-aero-lbsft (R)
+    moments/roll-stab-aero-lbsft (R)
+    moments/pitch-stab-aero-lbsft (R)
+    moments/yaw-stab-aero-lbsft (R)
+    moments/roll-wind-aero-lbsft (R)
+    moments/pitch-wind-aero-lbsft (R)
+    moments/yaw-wind-aero-lbsft (R)
+    moments/l-total-lbsft (R)
+    moments/m-total-lbsft (R)
+    moments/n-total-lbsft (R)
+    moments/l-gear-lbsft (R)
+    moments/m-gear-lbsft (R)
+    moments/n-gear-lbsft (R)
+    moments/l-prop-lbsft (R)
+    moments/m-prop-lbsft (R)
+    moments/n-prop-lbsft (R)
+    systems/stall-warn-norm (R)
+    ground/solid (RW)
+    ground/bumpiness (RW)
+    ground/maximum-force-lbs (RW)
+    ground/rolling_friction-factor (RW)
+    ground/static-friction-factor (RW)
+    ic/vc-kts (RW)
+    ic/ve-kts (RW)
+    ic/vg-kts (RW)
+    ic/vt-kts (RW)
+    ic/mach (RW)
+    ic/roc-fpm (RW)
+    ic/gamma-deg (RW)
+    ic/alpha-deg (RW)
+    ic/beta-deg (RW)
+    ic/theta-deg (RW)
+    ic/phi-deg (RW)
+    ic/psi-true-deg (RW)
+    ic/lat-gc-deg (RW)
+    ic/long-gc-deg (RW)
+    ic/h-sl-ft (RW)
+    ic/h-agl-ft (RW)
+    ic/terrain-elevation-ft (RW)
+    ic/vg-fps (RW)
+    ic/vt-fps (RW)
+    ic/vw-bx-fps (R)
+    ic/vw-by-fps (R)
+    ic/vw-bz-fps (R)
+    ic/vw-north-fps (R)
+    ic/vw-east-fps (R)
+    ic/vw-down-fps (R)
+    ic/vw-mag-fps (R)
+    ic/vw-dir-deg (RW)
+    ic/roc-fps (RW)
+    ic/u-fps (RW)
+    ic/v-fps (RW)
+    ic/w-fps (RW)
+    ic/vn-fps (RW)
+    ic/ve-fps (RW)
+    ic/vd-fps (RW)
+    ic/gamma-rad (RW)
+    ic/alpha-rad (RW)
+    ic/theta-rad (RW)
+    ic/beta-rad (RW)
+    ic/phi-rad (RW)
+    ic/psi-true-rad (RW)
+    ic/lat-gc-rad (RW)
+    ic/long-gc-rad (RW)
+    ic/p-rad_sec (RW)
+    ic/q-rad_sec (RW)
+    ic/r-rad_sec (RW)
+    ic/lat-geod-rad (RW)
+    ic/lat-geod-deg (RW)
+    ic/geod-alt-ft (R)
+    ic/targetNlf (RW)
+    contact/unit[3]/solid (RW)
+    contact/unit[3]/bumpiness (RW)
+    contact/unit[3]/maximum-force-lbs (RW)
+    contact/unit[3]/rolling_friction-factor (RW)
+    contact/unit[3]/static-friction-factor (RW)
+    contact/unit[3]/WOW (RW)
+    contact/unit[3]/x-position (RW)
+    contact/unit[3]/y-position (RW)
+    contact/unit[3]/z-position (RW)
+    contact/unit[3]/compression-ft (RW)
+    contact/unit[3]/compression-velocity-fps (RW)
+    contact/unit[3]/static_friction_coeff (RW)
+    contact/unit[3]/dynamic_friction_coeff (RW)
+    contact/unit[4]/solid (RW)
+    contact/unit[4]/bumpiness (RW)
+    contact/unit[4]/maximum-force-lbs (RW)
+    contact/unit[4]/rolling_friction-factor (RW)
+    contact/unit[4]/static-friction-factor (RW)
+    contact/unit[4]/WOW (RW)
+    contact/unit[4]/x-position (RW)
+    contact/unit[4]/y-position (RW)
+    contact/unit[4]/z-position (RW)
+    contact/unit[4]/compression-ft (RW)
+    contact/unit[4]/compression-velocity-fps (RW)
+    contact/unit[4]/static_friction_coeff (RW)
+    contact/unit[4]/dynamic_friction_coeff (RW)
+    contact/unit[5]/solid (RW)
+    contact/unit[5]/bumpiness (RW)
+    contact/unit[5]/maximum-force-lbs (RW)
+    contact/unit[5]/rolling_friction-factor (RW)
+    contact/unit[5]/static-friction-factor (RW)
+    contact/unit[5]/WOW (RW)
+    contact/unit[5]/x-position (RW)
+    contact/unit[5]/y-position (RW)
+    contact/unit[5]/z-position (RW)
+    contact/unit[5]/compression-ft (RW)
+    contact/unit[5]/compression-velocity-fps (RW)
+    contact/unit[5]/static_friction_coeff (RW)
+    contact/unit[5]/dynamic_friction_coeff (RW)
+    contact/unit[6]/solid (RW)
+    contact/unit[6]/bumpiness (RW)
+    contact/unit[6]/maximum-force-lbs (RW)
+    contact/unit[6]/rolling_friction-factor (RW)
+    contact/unit[6]/static-friction-factor (RW)
+    contact/unit[6]/WOW (RW)
+    contact/unit[6]/x-position (RW)
+    contact/unit[6]/y-position (RW)
+    contact/unit[6]/z-position (RW)
+    contact/unit[6]/compression-ft (RW)
+    contact/unit[6]/compression-velocity-fps (RW)
+    contact/unit[6]/static_friction_coeff (RW)
+    contact/unit[6]/dynamic_friction_coeff (RW)
+roll_cmd: 0.07675066420310905 | course_cmd: 0.12901298457887067
+roll_cmd: 0.07632080941411656 | course_cmd: 0.12901561293324748
+roll_cmd: 0.10113328398225274 | course_cmd: 0.12901824194988204
+roll_cmd: 0.1252244829311453 | course_cmd: 0.12902087370287724
+roll_cmd: 0.15849816678309248 | course_cmd: 0.1290235071945681
+roll_cmd: 0.20050051849733275 | course_cmd: 0.12902614321900746
+roll_cmd: 0.2546700045504704 | course_cmd: 0.1290287821481084
+roll_cmd: 0.3242047540710722 | course_cmd: 0.129031424645139
+roll_cmd: 0.41359443784358096 | course_cmd: 0.12903407149297993
+roll_cmd: 0.5285029253472706 | course_cmd: 0.12903672370782582
+roll_cmd: 0.6762546496931483 | course_cmd: 0.1290393825829779
+roll_cmd: 0.8662663693818 | course_cmd: 0.129042049777165
+roll_cmd: 1.0 | course_cmd: 0.12904472741895037
+roll_cmd: 1.0 | course_cmd: 0.1290474182446914
+roll_cmd: 1.0 | course_cmd: 0.12905012577595437
+roll_cmd: 1.0 | course_cmd: 0.1290528501774606
+roll_cmd: 1.0 | course_cmd: 0.12905558670541128
+roll_cmd: 1.0 | course_cmd: 0.12905833251133045
+roll_cmd: 1.0 | course_cmd: 0.1290610846972701
+roll_cmd: 1.0 | course_cmd: 0.1290638403180122
+roll_cmd: 1.0 | course_cmd: 0.12906659638273735
+roll_cmd: 1.0 | course_cmd: 0.12906934985680907
+roll_cmd: 1.0 | course_cmd: 0.12907209766366354
+roll_cmd: 1.0 | course_cmd: 0.1290748366868123
+roll_cmd: 1.0 | course_cmd: 0.129077563771586
+roll_cmd: 1.0 | course_cmd: 0.12908027572759495
+roll_cmd: 1.0 | course_cmd: 0.12908296933092028
+roll_cmd: 1.0 | course_cmd: 0.12908564132637093
+roll_cmd: 1.0 | course_cmd: 0.12908828842981535
+roll_cmd: 1.0 | course_cmd: 0.12909090733055867
+roll_cmd: 1.0 | course_cmd: 0.1290934946937616
+roll_cmd: 1.0 | course_cmd: 0.12909604716289172
+roll_cmd: 1.0 | course_cmd: 0.12909856136220463
+roll_cmd: 1.0 | course_cmd: 0.12910103389924563
+roll_cmd: 1.0 | course_cmd: 0.12910346136736808
+roll_cmd: 1.0 | course_cmd: 0.12910584034826322
+roll_cmd: 1.0 | course_cmd: 0.1291081674144953
+roll_cmd: 1.0 | course_cmd: 0.1291104391320381
+roll_cmd: 1.0 | course_cmd: 0.12911265206280687
+roll_cmd: 1.0 | course_cmd: 0.1291148027671835
+roll_cmd: 1.0 | course_cmd: 0.12911688780652827
+roll_cmd: 1.0 | course_cmd: 0.1291189037456757
+roll_cmd: 1.0 | course_cmd: 0.12912084715493957
+roll_cmd: 1.0 | course_cmd: 0.12912271461025993
+roll_cmd: 1.0 | course_cmd: 0.1291245027021531
+roll_cmd: 1.0 | course_cmd: 0.12912620803336544
+roll_cmd: 1.0 | course_cmd: 0.12912782722181404
+roll_cmd: 1.0 | course_cmd: 0.12912935690319852
+roll_cmd: 1.0 | course_cmd: 0.1291307937333165
+roll_cmd: 1.0 | course_cmd: 0.1291321343902672
+roll_cmd: 1.0 | course_cmd: 0.12913337557664423
+roll_cmd: 1.0 | course_cmd: 0.12913451402168138
+roll_cmd: 1.0 | course_cmd: 0.12913554648335082
+roll_cmd: 1.0 | course_cmd: 0.12913646975041118
+roll_cmd: 1.0 | course_cmd: 0.12913728064440405
+roll_cmd: 1.0 | course_cmd: 0.12913797602159846
+roll_cmd: 1.0 | course_cmd: 0.1291385527748789
+roll_cmd: 1.0 | course_cmd: 0.1291390078355795
+roll_cmd: 1.0 | course_cmd: 0.12913933817525902
+roll_cmd: 1.0 | course_cmd: 0.12913954080741974
+roll_cmd: 1.0 | course_cmd: 0.12913961278916553
+roll_cmd: 1.0 | course_cmd: 0.12913955122280044
+roll_cmd: 1.0 | course_cmd: 0.12913935325736672
+roll_cmd: 1.0 | course_cmd: 0.12913901609012135
+roll_cmd: 1.0 | course_cmd: 0.12913853696795038
+roll_cmd: 1.0 | course_cmd: 0.1291379131887211
+roll_cmd: 1.0 | course_cmd: 0.12913714210257107
+roll_cmd: 1.0 | course_cmd: 0.12913622111313477
+roll_cmd: 1.0 | course_cmd: 0.1291351476787064
+roll_cmd: 1.0 | course_cmd: 0.1291339193132095
+roll_cmd: 1.0 | course_cmd: 0.12913253358719884
+roll_cmd: 1.0 | course_cmd: 0.12913098812927293
+roll_cmd: 1.0 | course_cmd: 0.12912928062549806
+roll_cmd: 1.0 | course_cmd: 0.12912740882154025
+roll_cmd: 1.0 | course_cmd: 0.1291253705231637
+roll_cmd: 1.0 | course_cmd: 0.12912316359695056
+roll_cmd: 1.0 | course_cmd: 0.12912078597095417
+roll_cmd: 1.0 | course_cmd: 0.12911823563529226
+roll_cmd: 1.0 | course_cmd: 0.12911551064267984
+roll_cmd: 1.0 | course_cmd: 0.12911260910890346
+roll_cmd: 1.0 | course_cmd: 0.12910952921323615
+roll_cmd: 1.0 | course_cmd: 0.12910626919879484
+roll_cmd: 1.0 | course_cmd: 0.1291028273728407
+roll_cmd: 1.0 | course_cmd: 0.12909920210702308
+roll_cmd: 1.0 | course_cmd: 0.1290953918375683
+roll_cmd: 1.0 | course_cmd: 0.12909139506541387
+roll_cmd: 1.0 | course_cmd: 0.1290872103562897
+roll_cmd: 1.0 | course_cmd: 0.1290828363407455
+roll_cmd: 1.0 | course_cmd: 0.1290782717141286
+roll_cmd: 1.0 | course_cmd: 0.1290735152365097
+roll_cmd: 1.0 | course_cmd: 0.1290685657325602
+roll_cmd: 1.0 | course_cmd: 0.1290634220913814
+roll_cmd: 1.0 | course_cmd: 0.129058083266286
+roll_cmd: 1.0 | course_cmd: 0.12905254827453397
+roll_cmd: 1.0 | course_cmd: 0.12904681619702355
+roll_cmd: 1.0 | course_cmd: 0.12904088617793977
+roll_cmd: 1.0 | course_cmd: 0.1290347574243587
+roll_cmd: 1.0 | course_cmd: 0.12902842920581187
+roll_cmd: 1.0 | course_cmd: 0.12902190085381113
+roll_cmd: 1.0 | course_cmd: 0.12901517176133356
+roll_cmd: 1.0 | course_cmd: 0.12900824138227027
+roll_cmd: 1.0 | course_cmd: 0.12900110923083824
+roll_cmd: 1.0 | course_cmd: 0.1289937748809579
+roll_cmd: 1.0 | course_cmd: 0.1289862379655972
+roll_cmd: 1.0 | course_cmd: 0.12897849817608228
+roll_cmd: 1.0 | course_cmd: 0.12897055526137896
+roll_cmd: 1.0 | course_cmd: 0.1289624090273428
+roll_cmd: 1.0 | course_cmd: 0.1289540593359416
+roll_cmd: 1.0 | course_cmd: 0.1289455061044508
+roll_cmd: 1.0 | course_cmd: 0.12893674930462237
+roll_cmd: 1.0 | course_cmd: 0.12892778896182935
+roll_cmd: 1.0 | course_cmd: 0.12891862515418726
+roll_cmd: 1.0 | course_cmd: 0.12890925801165254
+roll_cmd: 1.0 | course_cmd: 0.12889968771510127
+roll_cmd: 1.0 | course_cmd: 0.12888991444716758
+roll_cmd: 1.0 | course_cmd: 0.12887993842024778
+roll_cmd: 1.0 | course_cmd: 0.12886975998720798
+roll_cmd: 1.0 | course_cmd: 0.1288593795217618
+roll_cmd: 1.0 | course_cmd: 0.12884879744362426
+roll_cmd: 1.0 | course_cmd: 0.12883801421771698
+roll_cmd: 1.0 | course_cmd: 0.12882703035313503
+roll_cmd: 1.0 | course_cmd: 0.12881584640210436
+roll_cmd: 1.0 | course_cmd: 0.12880446295892686
+roll_cmd: 1.0 | course_cmd: 0.1287928806589175
+roll_cmd: 1.0 | course_cmd: 0.1287811001773313
+roll_cmd: 1.0 | course_cmd: 0.1287691222282839
+roll_cmd: 1.0 | course_cmd: 0.12875694756357242
+roll_cmd: 1.0 | course_cmd: 0.1287445769718434
+roll_cmd: 1.0 | course_cmd: 0.12873201127717143
+roll_cmd: 1.0 | course_cmd: 0.12871925133799142
+roll_cmd: 1.0 | course_cmd: 0.12870629804614805
+roll_cmd: 1.0 | course_cmd: 0.12869315232575704
+roll_cmd: 1.0 | course_cmd: 0.1286798151321063
+roll_cmd: 1.0 | course_cmd: 0.12866628745055728
+roll_cmd: 1.0 | course_cmd: 0.1286525702954465
+roll_cmd: 1.0 | course_cmd: 0.1286386647089903
+roll_cmd: 1.0 | course_cmd: 0.12862457176019118
+roll_cmd: 1.0 | course_cmd: 0.1286102925437483
+roll_cmd: 1.0 | course_cmd: 0.12859582817897258
+roll_cmd: 1.0 | course_cmd: 0.128581179808707
+roll_cmd: 1.0 | course_cmd: 0.12856634859825147
+roll_cmd: 1.0 | course_cmd: 0.12855133573429564
+roll_cmd: 1.0 | course_cmd: 0.12853614242385883
+roll_cmd: 1.0 | course_cmd: 0.12852076989309097
+roll_cmd: 1.0 | course_cmd: 0.12850521938665024
+roll_cmd: 1.0 | course_cmd: 0.12848949216606215
+roll_cmd: 1.0 | course_cmd: 0.1284735895089313
+roll_cmd: 1.0 | course_cmd: 0.12845751270796538
+roll_cmd: 1.0 | course_cmd: 0.12844126306994263
+roll_cmd: 1.0 | course_cmd: 0.12842484191471382
+roll_cmd: 1.0 | course_cmd: 0.12840825057421523
+roll_cmd: 1.0 | course_cmd: 0.12839149039149372
+roll_cmd: 1.0 | course_cmd: 0.12837456271974437
+roll_cmd: 1.0 | course_cmd: 0.12835746892136163
+roll_cmd: 1.0 | course_cmd: 0.12834021036700377
+roll_cmd: 1.0 | course_cmd: 0.12832278843467104
+roll_cmd: 1.0 | course_cmd: 0.12830520450879868
+roll_cmd: 1.0 | course_cmd: 0.12828745997936314
+roll_cmd: 1.0 | course_cmd: 0.12826955624100508
+roll_cmd: 1.0 | course_cmd: 0.12825149469216623
+roll_cmd: 1.0 | course_cmd: 0.12823327673424198
+roll_cmd: 1.0 | course_cmd: 0.1282149037707501
+roll_cmd: 1.0 | course_cmd: 0.12819637720651506
+roll_cmd: 1.0 | course_cmd: 0.1281776984468685
+roll_cmd: 1.0 | course_cmd: 0.12815886889686665
+roll_cmd: 1.0 | course_cmd: 0.1281398899605234
+roll_cmd: 1.0 | course_cmd: 0.12812076304006106
+roll_cmd: 1.0 | course_cmd: 0.12810148953517758
+roll_cmd: 1.0 | course_cmd: 0.1280820708423306
+roll_cmd: 1.0 | course_cmd: 0.12806250835403868
+roll_cmd: 1.0 | course_cmd: 0.1280428034582004
+roll_cmd: 1.0 | course_cmd: 0.12802295753742973
+roll_cmd: 1.0 | course_cmd: 0.12800297196840982
+roll_cmd: 1.0 | course_cmd: 0.12798284812126304
+roll_cmd: 1.0 | course_cmd: 0.1279625873589397
+roll_cmd: 1.0 | course_cmd: 0.12794219103662335
+roll_cmd: 1.0 | course_cmd: 0.12792166050115367
+roll_cmd: 1.0 | course_cmd: 0.1279009970904675
+roll_cmd: 1.0 | course_cmd: 0.12788020213305676
+roll_cmd: 1.0 | course_cmd: 0.12785927694744312
+roll_cmd: 1.0 | course_cmd: 0.12783822284167137
+roll_cmd: 1.0 | course_cmd: 0.12781704111281963
+roll_cmd: 1.0 | course_cmd: 0.1277957330465259
+roll_cmd: 1.0 | course_cmd: 0.12777429991653325
+roll_cmd: 1.0 | course_cmd: 0.12775274298425074
+roll_cmd: 1.0 | course_cmd: 0.12773106349833202
+roll_cmd: 1.0 | course_cmd: 0.1277092626942706
+roll_cmd: 1.0 | course_cmd: 0.12768734179401187
+roll_cmd: 1.0 | course_cmd: 0.12766530195544032
+roll_cmd: 1.0 | course_cmd: 0.1276431441076719
+roll_cmd: 1.0 | course_cmd: 0.12762086952260493
+roll_cmd: 1.0 | course_cmd: 0.1275984793649478
+roll_cmd: 1.0 | course_cmd: 0.12757597478408325
+roll_cmd: 1.0 | course_cmd: 0.12755335691416034
+roll_cmd: 1.0 | course_cmd: 0.12753062687381678
+roll_cmd: 1.0 | course_cmd: 0.12750778576591537
+roll_cmd: 1.0 | course_cmd: 0.1274848346772961
+roll_cmd: 1.0 | course_cmd: 0.1274617746785429
+roll_cmd: 1.0 | course_cmd: 0.12743860682376484
+roll_cmd: 1.0 | course_cmd: 0.12741533215039264
+roll_cmd: 1.0 | course_cmd: 0.12739195167898815
+roll_cmd: 1.0 | course_cmd: 0.12736846641306937
+roll_cmd: 1.0 | course_cmd: 0.12734487733894773
+roll_cmd: 1.0 | course_cmd: 0.12732118542558
+roll_cmd: 1.0 | course_cmd: 0.12729739162443326
+roll_cmd: 1.0 | course_cmd: 0.12727349686936332
+roll_cmd: 1.0 | course_cmd: 0.12724950207650512
+roll_cmd: 1.0 | course_cmd: 0.1272254081441769
+roll_cmd: 1.0 | course_cmd: 0.12720121595279632
+roll_cmd: 1.0 | course_cmd: 0.12717692636480868
+roll_cmd: 1.0 | course_cmd: 0.12715254022462708
+roll_cmd: 1.0 | course_cmd: 0.12712805835858496
+roll_cmd: 1.0 | course_cmd: 0.12710348157489876
+roll_cmd: 1.0 | course_cmd: 0.12707881066364315
+roll_cmd: 1.0 | course_cmd: 0.12705404639673626
+roll_cmd: 1.0 | course_cmd: 0.1270291895279365
+roll_cmd: 1.0 | course_cmd: 0.12700424079284872
+roll_cmd: 1.0 | course_cmd: 0.12697920090894177
+roll_cmd: 1.0 | course_cmd: 0.1269540705755748
+roll_cmd: 1.0 | course_cmd: 0.1269288504740346
+roll_cmd: 1.0 | course_cmd: 0.12690354126758122
+roll_cmd: 1.0 | course_cmd: 0.1268781436015033
+roll_cmd: 1.0 | course_cmd: 0.12685265810318253
+roll_cmd: 1.0 | course_cmd: 0.12682708538216614
+roll_cmd: 1.0 | course_cmd: 0.12680142603024894
+roll_cmd: 1.0 | course_cmd: 0.12677568062156197
+roll_cmd: 1.0 | course_cmd: 0.12674984971267067
+roll_cmd: 1.0 | course_cmd: 0.12672393384268008
+roll_cmd: 1.0 | course_cmd: 0.12669793353334696
+roll_cmd: 1.0 | course_cmd: 0.12667184928920028
+roll_cmd: 1.0 | course_cmd: 0.12664568159766762
+roll_cmd: 1.0 | course_cmd: 0.12661943092920883
+roll_cmd: 1.0 | course_cmd: 0.12659309773745606
+roll_cmd: 1.0 | course_cmd: 0.12656668245936023
+roll_cmd: 1.0 | course_cmd: 0.12654018551534302
+roll_cmd: 1.0 | course_cmd: 0.12651360730945513
+roll_cmd: 1.0 | course_cmd: 0.12648694822953968
+roll_cmd: 1.0 | course_cmd: 0.12646020864740165
+roll_cmd: 1.0 | course_cmd: 0.12643338891898157
+roll_cmd: 1.0 | course_cmd: 0.12640648938453442
+roll_cmd: 1.0 | course_cmd: 0.12637951036830064
+roll_cmd: 1.0 | course_cmd: 0.12635245217945007
+roll_cmd: 1.0 | course_cmd: 0.12632531511202805
+roll_cmd: 1.0 | course_cmd: 0.12629809944289203
+roll_cmd: 1.0 | course_cmd: 0.12627080543432712
+roll_cmd: 1.0 | course_cmd: 0.1262434333337255
+roll_cmd: 1.0 | course_cmd: 0.1262159833738104
+roll_cmd: 1.0 | course_cmd: 0.1261884557728533
+roll_cmd: 1.0 | course_cmd: 0.12616085073489372
+roll_cmd: 1.0 | course_cmd: 0.12613316844996295
+roll_cmd: 1.0 | course_cmd: 0.12610540909430984
+roll_cmd: 1.0 | course_cmd: 0.12607757283062962
+roll_cmd: 1.0 | course_cmd: 0.1260496598082946
+roll_cmd: 1.0 | course_cmd: 0.12602167016358767
+roll_cmd: 1.0 | course_cmd: 0.1259936040199375
+roll_cmd: 1.0 | course_cmd: 0.1259654614881554
+roll_cmd: 1.0 | course_cmd: 0.12593724266667428
+roll_cmd: 1.0 | course_cmd: 0.12590894764178884
+roll_cmd: 1.0 | course_cmd: 0.1258805764878969
+roll_cmd: 1.0 | course_cmd: 0.12585212926774209
+roll_cmd: 1.0 | course_cmd: 0.1258236060326578
+roll_cmd: 1.0 | course_cmd: 0.12579500682281133
+roll_cmd: 1.0 | course_cmd: 0.12576633166744897
+roll_cmd: 1.0 | course_cmd: 0.12573758058514198
+roll_cmd: 1.0 | course_cmd: 0.1257087535840325
+roll_cmd: 1.0 | course_cmd: 0.12567985066207946
+roll_cmd: 1.0 | course_cmd: 0.12565087172725048
+roll_cmd: 1.0 | course_cmd: 0.12562181672158707
+roll_cmd: 1.0 | course_cmd: 0.12559268563782125
+roll_cmd: 1.0 | course_cmd: 0.12556347843772944
+roll_cmd: 1.0 | course_cmd: 0.12553419507416624
+roll_cmd: 1.0 | course_cmd: 0.12550483549135638
+roll_cmd: 1.0 | course_cmd: 0.12547539962513515
+roll_cmd: 1.0 | course_cmd: 0.12544588740318902
+roll_cmd: 1.0 | course_cmd: 0.12541629874529397
+roll_cmd: 1.0 | course_cmd: 0.125386633563554
+roll_cmd: 1.0 | course_cmd: 0.12535689176263795
+roll_cmd: 1.0 | course_cmd: 0.12532707324001552
+roll_cmd: 1.0 | course_cmd: 0.12529717788619096
+roll_cmd: 1.0 | course_cmd: 0.12526720558493717
+roll_cmd: 1.0 | course_cmd: 0.12523715621352607
+roll_cmd: 1.0 | course_cmd: 0.1252070296429593
+roll_cmd: 1.0 | course_cmd: 0.1251768257381961
+roll_cmd: 1.0 | course_cmd: 0.12514654435837966
+roll_cmd: 1.0 | course_cmd: 0.12511618535706215
+roll_cmd: 1.0 | course_cmd: 0.12508574858242716
+roll_cmd: 1.0 | course_cmd: 0.12505523387751022
+roll_cmd: 1.0 | course_cmd: 0.12502464108041775
+roll_cmd: 1.0 | course_cmd: 0.12499397002454368
+roll_cmd: 1.0 | course_cmd: 0.12496322053878318
+roll_cmd: 1.0 | course_cmd: 0.12493239244774558
+roll_cmd: 1.0 | course_cmd: 0.12490148557196332
+roll_cmd: 1.0 | course_cmd: 0.1248704997280998
+roll_cmd: 1.0 | course_cmd: 0.12483943472915436
+roll_cmd: 1.0 | course_cmd: 0.12480829038466465
+roll_cmd: 1.0 | course_cmd: 0.12477706650090656
+roll_cmd: 1.0 | course_cmd: 0.1247457628810917
+roll_cmd: 1.0 | course_cmd: 0.1247143793255625
+roll_cmd: 1.0 | course_cmd: 0.12468291563198355
+roll_cmd: 1.0 | course_cmd: 0.12465137159553191
+roll_cmd: 1.0 | course_cmd: 0.12461974700908357
+roll_cmd: 1.0 | course_cmd: 0.12458804166339726
+roll_cmd: 1.0 | course_cmd: 0.124556255347296
+roll_cmd: 1.0 | course_cmd: 0.12452438784784524
+roll_cmd: 1.0 | course_cmd: 0.12449243895052821
+roll_cmd: 1.0 | course_cmd: 0.1244604084394194
+roll_cmd: 1.0 | course_cmd: 0.12442829609735333
+roll_cmd: 1.0 | course_cmd: 0.12439610170609237
+roll_cmd: 1.0 | course_cmd: 0.1243638250464902
+roll_cmd: 1.0 | course_cmd: 0.12433146589865289
+roll_cmd: 1.0 | course_cmd: 0.12429902404209714
+roll_cmd: 1.0 | course_cmd: 0.12426649925590534
+roll_cmd: 1.0 | course_cmd: 0.12423389131887769
+roll_cmd: 1.0 | course_cmd: 0.12420120000968139
+roll_cmd: 1.0 | course_cmd: 0.12416842510699672
+roll_cmd: 1.0 | course_cmd: 0.12413556638966058
+roll_cmd: 1.0 | course_cmd: 0.1241026236368063
+roll_cmd: 1.0 | course_cmd: 0.12406959662800093
+roll_cmd: 1.0 | course_cmd: 0.12403648514337941
+roll_cmd: 1.0 | course_cmd: 0.12400328896377616
+roll_cmd: 1.0 | course_cmd: 0.12397000787085244
+roll_cmd: 1.0 | course_cmd: 0.12393664164722273
+roll_cmd: 1.0 | course_cmd: 0.12390319007657574
+roll_cmd: 1.0 | course_cmd: 0.12386965294379465
+roll_cmd: 1.0 | course_cmd: 0.12383603003507297
+roll_cmd: 1.0 | course_cmd: 0.12380232113802804
+roll_cmd: 1.0 | course_cmd: 0.1237685260418113
+roll_cmd: 1.0 | course_cmd: 0.12373464453721565
+roll_cmd: 1.0 | course_cmd: 0.12370067641678086
+roll_cmd: 1.0 | course_cmd: 0.12366662147489386
+roll_cmd: 1.0 | course_cmd: 0.12363247950788873
+roll_cmd: 1.0 | course_cmd: 0.12359825031414204
+roll_cmd: 1.0 | course_cmd: 0.12356393369416599
+roll_cmd: 1.0 | course_cmd: 0.12352952945069884
+roll_cmd: 1.0 | course_cmd: 0.12349503738879204
+roll_cmd: 1.0 | course_cmd: 0.12346045731589511
+roll_cmd: 1.0 | course_cmd: 0.12342578904193749
+roll_cmd: 1.0 | course_cmd: 0.12339103237940771
+roll_cmd: 1.0 | course_cmd: 0.12335618714342964
+roll_cmd: 1.0 | course_cmd: 0.12332125315183631
+roll_cmd: 1.0 | course_cmd: 0.12328623022524117
+roll_cmd: 1.0 | course_cmd: 0.12325111818710625
+roll_cmd: 1.0 | course_cmd: 0.12321591686380813
+roll_cmd: 1.0 | course_cmd: 0.12318062608470096
+roll_cmd: 1.0 | course_cmd: 0.12314524568217713
+roll_cmd: 1.0 | course_cmd: 0.12310977549172585
+roll_cmd: 1.0 | course_cmd: 0.12307421535198819
+roll_cmd: 1.0 | course_cmd: 0.12303856510481044
+roll_cmd: 1.0 | course_cmd: 0.12300282461338782
+roll_cmd: 1.0 | course_cmd: 0.12296699382932168
+roll_cmd: 1.0 | course_cmd: 0.12293107256680931
+roll_cmd: 1.0 | course_cmd: 0.12289506068000283
+roll_cmd: 1.0 | course_cmd: 0.12285895802646192
+roll_cmd: 1.0 | course_cmd: 0.12282276446712576
+roll_cmd: 1.0 | course_cmd: 0.12278647986635174
+roll_cmd: 1.0 | course_cmd: 0.12275010409195122
+roll_cmd: 1.0 | course_cmd: 0.1227136370152241
+roll_cmd: 1.0 | course_cmd: 0.12267707851099047
+roll_cmd: 1.0 | course_cmd: 0.12264042845762015
+roll_cmd: 1.0 | course_cmd: 0.12260368673706065
+roll_cmd: 1.0 | course_cmd: 0.12256685323486287
+roll_cmd: 1.0 | course_cmd: 0.12252992784020414
+roll_cmd: 1.0 | course_cmd: 0.12249291044591033
+roll_cmd: 1.0 | course_cmd: 0.12245580094847552
+roll_cmd: 1.0 | course_cmd: 0.12241859924807959
+roll_cmd: 1.0 | course_cmd: 0.12238130524860386
+roll_cmd: 1.0 | course_cmd: 0.12234391885764578
+roll_cmd: 1.0 | course_cmd: 0.12230643998653064
+roll_cmd: 1.0 | course_cmd: 0.12226886855032214
+roll_cmd: 1.0 | course_cmd: 0.12223120446783113
+roll_cmd: 1.0 | course_cmd: 0.12219344766162253
+roll_cmd: 1.0 | course_cmd: 0.12215559805802068
+roll_cmd: 1.0 | course_cmd: 0.12211765558711318
+roll_cmd: 1.0 | course_cmd: 0.12207962018275254
+roll_cmd: 1.0 | course_cmd: 0.12204149178255724
+roll_cmd: 1.0 | course_cmd: 0.12200327032791017
+roll_cmd: 1.0 | course_cmd: 0.1219649557639565
+roll_cmd: 1.0 | course_cmd: 0.12192654803959938
+roll_cmd: 1.0 | course_cmd: 0.12188804710749454
+roll_cmd: 1.0 | course_cmd: 0.12184945292404357
+roll_cmd: 1.0 | course_cmd: 0.12181076544938549
+roll_cmd: 1.0 | course_cmd: 0.12177198464738752
+roll_cmd: 1.0 | course_cmd: 0.12173311048563369
+roll_cmd: 1.0 | course_cmd: 0.12169414293541324
+roll_cmd: 1.0 | course_cmd: 0.12165508197170702
+roll_cmd: 1.0 | course_cmd: 0.1216159275731729
+roll_cmd: 1.0 | course_cmd: 0.12157667972212992
+roll_cmd: 1.0 | course_cmd: 0.12153733840454187
+roll_cmd: 1.0 | course_cmd: 0.1214979036099986
+roll_cmd: 1.0 | course_cmd: 0.12145837533169744
+roll_cmd: 1.0 | course_cmd: 0.12141875356642316
+roll_cmd: 1.0 | course_cmd: 0.12137903831452641
+roll_cmd: 1.0 | course_cmd: 0.121339229579902
+roll_cmd: 1.0 | course_cmd: 0.12129932736996568
+roll_cmd: 1.0 | course_cmd: 0.12125933169563025
+roll_cmd: 1.0 | course_cmd: 0.1212192425712806
+roll_cmd: 1.0 | course_cmd: 0.12117906001474803
+roll_cmd: 1.0 | course_cmd: 0.12113878404728394
+roll_cmd: 1.0 | course_cmd: 0.12109841469353186
+roll_cmd: 1.0 | course_cmd: 0.1210579519815001
+roll_cmd: 1.0 | course_cmd: 0.12101739594253239
+roll_cmd: 1.0 | course_cmd: 0.12097674661127827
+roll_cmd: 1.0 | course_cmd: 0.12093600402566325
+roll_cmd: 1.0 | course_cmd: 0.12089516822685749
+roll_cmd: 1.0 | course_cmd: 0.12085423925924454
+roll_cmd: 1.0 | course_cmd: 0.12081321717038901
+roll_cmd: 1.0 | course_cmd: 0.12077210201100366
+roll_cmd: 1.0 | course_cmd: 0.12073089383491677
+roll_cmd: 1.0 | course_cmd: 0.12068959269903763
+roll_cmd: 1.0 | course_cmd: 0.12064819866332283
+roll_cmd: 1.0 | course_cmd: 0.12060671179074114
+roll_cmd: 1.0 | course_cmd: 0.12056513214723828
+roll_cmd: 1.0 | course_cmd: 0.12052345980170152
+roll_cmd: 1.0 | course_cmd: 0.12048169482592368
+roll_cmd: 1.0 | course_cmd: 0.12043983729456618
+roll_cmd: 1.0 | course_cmd: 0.12039788728512335
+roll_cmd: 1.0 | course_cmd: 0.12035584487788434
+roll_cmd: 1.0 | course_cmd: 0.12031371015589613
+roll_cmd: 1.0 | course_cmd: 0.12027148320492609
+roll_cmd: 1.0 | course_cmd: 0.12022916411342391
+roll_cmd: 1.0 | course_cmd: 0.12018675297248303
+roll_cmd: 1.0 | course_cmd: 0.12014424987580338
+roll_cmd: 1.0 | course_cmd: 0.12010165491965134
+roll_cmd: 1.0 | course_cmd: 0.12005896820282255
+roll_cmd: 1.0 | course_cmd: 0.1200161898266019
+roll_cmd: 1.0 | course_cmd: 0.11997331989472511
+roll_cmd: 1.0 | course_cmd: 0.11993035851333925
+roll_cmd: 1.0 | course_cmd: 0.119887305790964
+roll_cmd: 1.0 | course_cmd: 0.11984416183845215
+roll_cmd: 1.0 | course_cmd: 0.11980092676894995
+roll_cmd: 1.0 | course_cmd: 0.11975760069785822
+roll_cmd: 1.0 | course_cmd: 0.11971418374279272
+roll_cmd: 1.0 | course_cmd: 0.11967067602354492
+roll_cmd: 1.0 | course_cmd: 0.11962707766204263
+roll_cmd: 1.0 | course_cmd: 0.11958338870055321
+roll_cmd: 1.0 | course_cmd: 0.11953960928814021
+roll_cmd: 1.0 | course_cmd: 0.11949573955695213
+roll_cmd: 1.0 | course_cmd: 0.11945177963887554
+roll_cmd: 1.0 | course_cmd: 0.11940772966779235
+roll_cmd: 1.0 | course_cmd: 0.11936358977954331
+roll_cmd: 1.0 | course_cmd: 0.11931936011188644
+roll_cmd: 1.0 | course_cmd: 0.1192750408044561
+roll_cmd: 1.0 | course_cmd: 0.11923063199872248
+roll_cmd: 1.0 | course_cmd: 0.11918613383795094
+roll_cmd: 1.0 | course_cmd: 0.11914154646716142
+roll_cmd: 1.0 | course_cmd: 0.11909687003308864
+roll_cmd: 1.0 | course_cmd: 0.11905210468414221
+roll_cmd: 1.0 | course_cmd: 0.11900725057036642
+roll_cmd: 1.0 | course_cmd: 0.11896230784340187
+roll_cmd: 1.0 | course_cmd: 0.11891727665644534
+roll_cmd: 1.0 | course_cmd: 0.1188721571642118
+roll_cmd: 1.0 | course_cmd: 0.11882694952289534
+roll_cmd: 1.0 | course_cmd: 0.11878165389013136
+roll_cmd: 1.0 | course_cmd: 0.11873627042495832
+roll_cmd: 1.0 | course_cmd: 0.1186907992877803
+roll_cmd: 1.0 | course_cmd: 0.11864524064032982
+roll_cmd: 1.0 | course_cmd: 0.11859959464563088
+roll_cmd: 1.0 | course_cmd: 0.11855386146796282
+roll_cmd: 1.0 | course_cmd: 0.11850804127282356
+roll_cmd: 1.0 | course_cmd: 0.11846213422689411
+roll_cmd: 1.0 | course_cmd: 0.11841614049800334
+roll_cmd: 1.0 | course_cmd: 0.11837006025509267
+roll_cmd: 1.0 | course_cmd: 0.11832389366818152
+roll_cmd: 1.0 | course_cmd: 0.1182776409083332
+roll_cmd: 1.0 | course_cmd: 0.1182313021476214
+roll_cmd: 1.0 | course_cmd: 0.11818487755909615
+roll_cmd: 1.0 | course_cmd: 0.1181383673167516
+roll_cmd: 1.0 | course_cmd: 0.11809177159549267
+roll_cmd: 1.0 | course_cmd: 0.11804509057110399
+roll_cmd: 1.0 | course_cmd: 0.11799832442021756
+roll_cmd: 1.0 | course_cmd: 0.11795147332028169
+roll_cmd: 1.0 | course_cmd: 0.11790453744953042
+roll_cmd: 1.0 | course_cmd: 0.11785751698695321
+roll_cmd: 1.0 | course_cmd: 0.11781041211226506
+roll_cmd: 1.0 | course_cmd: 0.11776322300587735
+roll_cmd: 1.0 | course_cmd: 0.11771594984886909
+roll_cmd: 1.0 | course_cmd: 0.11766859282295791
+roll_cmd: 1.0 | course_cmd: 0.11762115211047304
+roll_cmd: 1.0 | course_cmd: 0.11757362789432714
+roll_cmd: 1.0 | course_cmd: 0.11752602035798997
+roll_cmd: 1.0 | course_cmd: 0.11747832968546136
+roll_cmd: 1.0 | course_cmd: 0.11743055606124594
+roll_cmd: 1.0 | course_cmd: 0.11738269967032726
+roll_cmd: 1.0 | course_cmd: 0.11733476069814279
+roll_cmd: 1.0 | course_cmd: 0.11728673933055966
+roll_cmd: 1.0 | course_cmd: 0.11723863575385085
+roll_cmd: 1.0 | course_cmd: 0.11719045015467135
+roll_cmd: 1.0 | course_cmd: 0.11714218272003553
+roll_cmd: 1.0 | course_cmd: 0.11709383363729473
+roll_cmd: 1.0 | course_cmd: 0.11704540309411485
+roll_cmd: 1.0 | course_cmd: 0.11699689127845567
+roll_cmd: 1.0 | course_cmd: 0.11694829837854949
+roll_cmd: 1.0 | course_cmd: 0.1168996245828807
+roll_cmd: 1.0 | course_cmd: 0.11685087008016594
+roll_cmd: 1.0 | course_cmd: 0.11680203505933485
+roll_cmd: 1.0 | course_cmd: 0.11675311970951123
+roll_cmd: 1.0 | course_cmd: 0.1167041242199944
+roll_cmd: 1.0 | course_cmd: 0.11665504878024144
+roll_cmd: 1.0 | course_cmd: 0.11660589357984999
+roll_cmd: 1.0 | course_cmd: 0.11655665880854124
+roll_cmd: 1.0 | course_cmd: 0.1165073446561437
+roll_cmd: 1.0 | course_cmd: 0.11645795131257733
+roll_cmd: 1.0 | course_cmd: 0.11640847896783801
+roll_cmd: 1.0 | course_cmd: 0.11635892781198315
+roll_cmd: 1.0 | course_cmd: 0.11630929803511689
+roll_cmd: 1.0 | course_cmd: 0.11625958982737658
+roll_cmd: 1.0 | course_cmd: 0.1162098033789193
+roll_cmd: 1.0 | course_cmd: 0.11615993887990902
+roll_cmd: 1.0 | course_cmd: 0.11610999652050467
+roll_cmd: 1.0 | course_cmd: 0.11605997649084734
+roll_cmd: 1.0 | course_cmd: 0.1160098789810498
+roll_cmd: 1.0 | course_cmd: 0.11595970418118542
+roll_cmd: 1.0 | course_cmd: 0.11590945228097584
+roll_cmd: 1.0 | course_cmd: 0.1158591234706156
+roll_cmd: 1.0 | course_cmd: 0.11580871793938212
+roll_cmd: 1.0 | course_cmd: 0.11575823587647903
+roll_cmd: 1.0 | course_cmd: 0.11570767747094513
+roll_cmd: 1.0 | course_cmd: 0.11565704290285454
+roll_cmd: 1.0 | course_cmd: 0.11560633200808805
+roll_cmd: 1.0 | course_cmd: 0.11555554510840885
+roll_cmd: 1.0 | course_cmd: 0.11550468240300009
+roll_cmd: 1.0 | course_cmd: 0.11545374409102392
+roll_cmd: 1.0 | course_cmd: 0.1154027303720281
+roll_cmd: 1.0 | course_cmd: 0.11535164144592036
+roll_cmd: 1.0 | course_cmd: 0.11530047751295218
+roll_cmd: 1.0 | course_cmd: 0.11524923877370313
+roll_cmd: 1.0 | course_cmd: 0.11519792542906536
+roll_cmd: 1.0 | course_cmd: 0.11514653768022956
+roll_cmd: 1.0 | course_cmd: 0.11509507572866993
+roll_cmd: 1.0 | course_cmd: 0.11504353977613091
+roll_cmd: 1.0 | course_cmd: 0.11499193002461353
+roll_cmd: 1.0 | course_cmd: 0.11494024667636284
+roll_cmd: 1.0 | course_cmd: 0.11488848993385545
+roll_cmd: 1.0 | course_cmd: 0.11483665999978798
+roll_cmd: 1.0 | course_cmd: 0.11478475707706495
+roll_cmd: 1.0 | course_cmd: 0.11473278136878882
+roll_cmd: 1.0 | course_cmd: 0.11468073307824848
+roll_cmd: 1.0 | course_cmd: 0.11462861240891034
+roll_cmd: 1.0 | course_cmd: 0.1145764195644082
+roll_cmd: 1.0 | course_cmd: 0.11452415474853435
+roll_cmd: 1.0 | course_cmd: 0.11447181816523101
+roll_cmd: 1.0 | course_cmd: 0.1144194100185824
+roll_cmd: 1.0 | course_cmd: 0.11436693051280668
+roll_cmd: 1.0 | course_cmd: 0.11431437985224922
+roll_cmd: 1.0 | course_cmd: 0.11426175824137548
+roll_cmd: 1.0 | course_cmd: 0.11420906588476509
+roll_cmd: 1.0 | course_cmd: 0.11415630298710563
+roll_cmd: 1.0 | course_cmd: 0.11410346975318779
+roll_cmd: 1.0 | course_cmd: 0.11405056638789966
+roll_cmd: 1.0 | course_cmd: 0.11399759309622291
+roll_cmd: 1.0 | course_cmd: 0.1139445500832283
+roll_cmd: 1.0 | course_cmd: 0.11389143755407245
+roll_cmd: 1.0 | course_cmd: 0.11383825571399409
+roll_cmd: 1.0 | course_cmd: 0.11378500476831159
+roll_cmd: 1.0 | course_cmd: 0.11373168492242086
+roll_cmd: 1.0 | course_cmd: 0.11367829638179247
+roll_cmd: 1.0 | course_cmd: 0.11362483935197124
+roll_cmd: 1.0 | course_cmd: 0.1135713140385743
+roll_cmd: 1.0 | course_cmd: 0.11351772064729095
+roll_cmd: 1.0 | course_cmd: 0.11346405938388171
+roll_cmd: 1.0 | course_cmd: 0.113410330454179
+roll_cmd: 1.0 | course_cmd: 0.11335653406408712
+roll_cmd: 1.0 | course_cmd: 0.11330267041958347
+roll_cmd: 1.0 | course_cmd: 0.11324873972671937
+roll_cmd: 1.0 | course_cmd: 0.11319474219162204
+roll_cmd: 1.0 | course_cmd: 0.11314067802049649
+roll_cmd: 1.0 | course_cmd: 0.11308654741962781
+roll_cmd: 1.0 | course_cmd: 0.1130323505953837
+roll_cmd: 1.0 | course_cmd: 0.11297808775421798
+roll_cmd: 1.0 | course_cmd: 0.11292375910267372
+roll_cmd: 1.0 | course_cmd: 0.1128693648473868
+roll_cmd: 1.0 | course_cmd: 0.11281490519509069
+roll_cmd: 1.0 | course_cmd: 0.11276038035262025
+roll_cmd: 1.0 | course_cmd: 0.11270579052691682
+roll_cmd: 1.0 | course_cmd: 0.11265113592503324
+roll_cmd: 1.0 | course_cmd: 0.11259641675413966
+roll_cmd: 1.0 | course_cmd: 0.11254163322152855
+roll_cmd: 1.0 | course_cmd: 0.11248678553462152
+roll_cmd: 1.0 | course_cmd: 0.11243187390097534
+roll_cmd: 1.0 | course_cmd: 0.11237689852828868
+roll_cmd: 1.0 | course_cmd: 0.11232185962440912
+roll_cmd: 1.0 | course_cmd: 0.1122667573973404
+roll_cmd: 1.0 | course_cmd: 0.11221159205524997
+roll_cmd: 1.0 | course_cmd: 0.11215636380647702
+roll_cmd: 1.0 | course_cmd: 0.11210107285954021
+roll_cmd: 1.0 | course_cmd: 0.11204571942314659
+roll_cmd: 1.0 | course_cmd: 0.11199030370619976
+roll_cmd: 1.0 | course_cmd: 0.11193482591780914
+roll_cmd: 1.0 | course_cmd: 0.11187928626729907
+roll_cmd: 1.0 | course_cmd: 0.11182368496421799
+roll_cmd: 1.0 | course_cmd: 0.11176802221834846
+roll_cmd: 1.0 | course_cmd: 0.11171229823971691
+roll_cmd: 1.0 | course_cmd: 0.11165651323860373
+roll_cmd: 1.0 | course_cmd: 0.11160066742555377
+roll_cmd: 1.0 | course_cmd: 0.11154476101219905
+roll_cmd: 1.0 | course_cmd: 0.11148879434104242
+roll_cmd: 1.0 | course_cmd: 0.1114327675555295
+roll_cmd: 1.0 | course_cmd: 0.11137668085017453
+roll_cmd: 1.0 | course_cmd: 0.11132053441949492
+roll_cmd: 1.0 | course_cmd: 0.11126432845749633
+roll_cmd: 1.0 | course_cmd: 0.11120806315772815
+roll_cmd: 1.0 | course_cmd: 0.11115173871332112
+roll_cmd: 1.0 | course_cmd: 0.11109535531702538
+roll_cmd: 1.0 | course_cmd: 0.11103891316124849
+roll_cmd: 1.0 | course_cmd: 0.11098241243809326
+roll_cmd: 1.0 | course_cmd: 0.11092585333939563
+roll_cmd: 1.0 | course_cmd: 0.1108692360567626
+roll_cmd: 1.0 | course_cmd: 0.11081256078160939
+roll_cmd: 1.0 | course_cmd: 0.11075582770519747
+roll_cmd: 1.0 | course_cmd: 0.11069903701867137
+roll_cmd: 1.0 | course_cmd: 0.11064218891309673
+roll_cmd: 1.0 | course_cmd: 0.11058528357949651
+roll_cmd: 1.0 | course_cmd: 0.11052832120888868
+roll_cmd: 1.0 | course_cmd: 0.11047130199232244
+roll_cmd: 1.0 | course_cmd: 0.11041422612091556
+roll_cmd: 1.0 | course_cmd: 0.11035709378589002
+roll_cmd: 1.0 | course_cmd: 0.11029990517860876
+roll_cmd: 1.0 | course_cmd: 0.11024266049061164
+roll_cmd: 1.0 | course_cmd: 0.11018535991365154
+roll_cmd: 1.0 | course_cmd: 0.11012800363972933
+roll_cmd: 1.0 | course_cmd: 0.11007059186113026
+roll_cmd: 1.0 | course_cmd: 0.1100131247704585
+roll_cmd: 1.0 | course_cmd: 0.10995560256067238
+roll_cmd: 1.0 | course_cmd: 0.10989802542511896
+roll_cmd: 1.0 | course_cmd: 0.10984039355756899
+roll_cmd: 1.0 | course_cmd: 0.10978270715225055
+roll_cmd: 1.0 | course_cmd: 0.10972496640388368
+roll_cmd: 1.0 | course_cmd: 0.10966717150771377
+roll_cmd: 1.0 | course_cmd: 0.10960932265954508
+roll_cmd: 1.0 | course_cmd: 0.10955142005577369
+roll_cmd: 1.0 | course_cmd: 0.10949346389342138
+roll_cmd: 1.0 | course_cmd: 0.10943545437016729
+roll_cmd: 1.0 | course_cmd: 0.10937739168438067
+roll_cmd: 1.0 | course_cmd: 0.10931927603515303
+roll_cmd: 1.0 | course_cmd: 0.10926110762232963
+roll_cmd: 1.0 | course_cmd: 0.10920288664654153
+roll_cmd: 1.0 | course_cmd: 0.10914461330923617
+roll_cmd: 1.0 | course_cmd: 0.1090862878127087
+roll_cmd: 1.0 | course_cmd: 0.1090279103601322
+roll_cmd: 1.0 | course_cmd: 0.10896948115558816
+roll_cmd: 1.0 | course_cmd: 0.10891100040409644
+roll_cmd: 1.0 | course_cmd: 0.10885246831164451
+roll_cmd: 1.0 | course_cmd: 0.10879388508521748
+roll_cmd: 1.0 | course_cmd: 0.10873525093282635
+roll_cmd: 1.0 | course_cmd: 0.10867656606353691
+roll_cmd: 1.0 | course_cmd: 0.10861783068749835
+roll_cmd: 1.0 | course_cmd: 0.10855904501597054
+roll_cmd: 1.0 | course_cmd: 0.10850020926135247
+roll_cmd: 1.0 | course_cmd: 0.1084413236372089
+roll_cmd: 1.0 | course_cmd: 0.10838238835829779
+roll_cmd: 1.0 | course_cmd: 0.10832340364059674
+roll_cmd: 1.0 | course_cmd: 0.10826436970132908
+roll_cmd: 1.0 | course_cmd: 0.10820528675899023
+roll_cmd: 1.0 | course_cmd: 0.10814615503337266
+roll_cmd: 1.0 | course_cmd: 0.10808697474559209
+roll_cmd: 1.0 | course_cmd: 0.10802774611811129
+roll_cmd: 1.0 | course_cmd: 0.10796846937476552
+roll_cmd: 1.0 | course_cmd: 0.10790914474078639
+roll_cmd: 1.0 | course_cmd: 0.10784977244282534
+roll_cmd: 1.0 | course_cmd: 0.10779035274879882
+roll_cmd: 1.0 | course_cmd: 0.1077308859092526
+roll_cmd: 1.0 | course_cmd: 0.10767137215268917
+roll_cmd: 1.0 | course_cmd: 0.10761181171792508
+roll_cmd: 1.0 | course_cmd: 0.10755220484561565
+roll_cmd: 1.0 | course_cmd: 0.10749255177833347
+roll_cmd: 1.0 | course_cmd: 0.10743285276057857
+roll_cmd: 1.0 | course_cmd: 0.10737310803879231
+roll_cmd: 1.0 | course_cmd: 0.1073133178613693
+roll_cmd: 1.0 | course_cmd: 0.10725348247867036
+roll_cmd: 1.0 | course_cmd: 0.10719360214303451
+roll_cmd: 1.0 | course_cmd: 0.10713367710879095
+roll_cmd: 1.0 | course_cmd: 0.10707370763226995
+roll_cmd: 1.0 | course_cmd: 0.10701369397181448
+roll_cmd: 1.0 | course_cmd: 0.10695363638779067
+roll_cmd: 1.0 | course_cmd: 0.10689353514259836
+roll_cmd: 1.0 | course_cmd: 0.10683339050068125
+roll_cmd: 1.0 | course_cmd: 0.10677320272853692
+roll_cmd: 1.0 | course_cmd: 0.10671297209472573
+roll_cmd: 1.0 | course_cmd: 0.10665269886988081
+roll_cmd: 1.0 | course_cmd: 0.10659238332671633
+roll_cmd: 1.0 | course_cmd: 0.1065320257400363
+roll_cmd: 1.0 | course_cmd: 0.10647162638674315
+roll_cmd: 1.0 | course_cmd: 0.10641118554584518
+roll_cmd: 1.0 | course_cmd: 0.10635070349846455
+roll_cmd: 1.0 | course_cmd: 0.10629018052784513
+roll_cmd: 1.0 | course_cmd: 0.10622961691935869
+roll_cmd: 1.0 | course_cmd: 0.10616901296051255
+roll_cmd: 1.0 | course_cmd: 0.10610836894095597
+roll_cmd: 1.0 | course_cmd: 0.10604768515248622
+roll_cmd: 1.0 | course_cmd: 0.10598696188905489
+roll_cmd: 1.0 | course_cmd: 0.10592619944677341
+roll_cmd: 1.0 | course_cmd: 0.10586539812391892
+roll_cmd: 1.0 | course_cmd: 0.10580455822093897
+roll_cmd: 1.0 | course_cmd: 0.10574368004045712
+roll_cmd: 1.0 | course_cmd: 0.10568276388727729
+roll_cmd: 1.0 | course_cmd: 0.10562181006838847
+roll_cmd: 1.0 | course_cmd: 0.10556081889296869
+roll_cmd: 1.0 | course_cmd: 0.10549979067238933
+roll_cmd: 1.0 | course_cmd: 0.1054387257202187
+roll_cmd: 1.0 | course_cmd: 0.10537762435222563
+roll_cmd: 1.0 | course_cmd: 0.10531648688638266
+roll_cmd: 1.0 | course_cmd: 0.10525531364286932
+roll_cmd: 1.0 | course_cmd: 0.10519410494407481
+roll_cmd: 1.0 | course_cmd: 0.10513286111460071
+roll_cmd: 1.0 | course_cmd: 0.10507158248126326
+roll_cmd: 1.0 | course_cmd: 0.10501026937309575
+roll_cmd: 1.0 | course_cmd: 0.10494892212135035
+roll_cmd: 1.0 | course_cmd: 0.10488754105949981
+roll_cmd: 1.0 | course_cmd: 0.10482612652323942
+roll_cmd: 1.0 | course_cmd: 0.10476467885048783
+roll_cmd: 1.0 | course_cmd: 0.10470319836574342
+roll_cmd: 1.0 | course_cmd: 0.10464168539059635
+roll_cmd: 1.0 | course_cmd: 0.10458014027595236
+roll_cmd: 1.0 | course_cmd: 0.10451856336698458
+roll_cmd: 1.0 | course_cmd: 0.10445695501100981
+roll_cmd: 1.0 | course_cmd: 0.10439531555746907
+roll_cmd: 1.0 | course_cmd: 0.10433364535793105
+roll_cmd: 1.0 | course_cmd: 0.10427194476609469
+roll_cmd: 1.0 | course_cmd: 0.10421021413779126
+roll_cmd: 1.0 | course_cmd: 0.10414845383098621
+roll_cmd: 1.0 | course_cmd: 0.10408666420578126
+roll_cmd: 1.0 | course_cmd: 0.10402484562441629
+roll_cmd: 1.0 | course_cmd: 0.10396299845127012
+roll_cmd: 1.0 | course_cmd: 0.10390112305286268
+roll_cmd: 1.0 | course_cmd: 0.10383921979785572
+roll_cmd: 1.0 | course_cmd: 0.1037772890570539
+roll_cmd: 1.0 | course_cmd: 0.1037153312034057
+roll_cmd: 1.0 | course_cmd: 0.10365334661200412
+roll_cmd: 1.0 | course_cmd: 0.10359133566008735
+roll_cmd: 1.0 | course_cmd: 0.10352929872703905
+roll_cmd: 1.0 | course_cmd: 0.10346723619438855
+roll_cmd: 1.0 | course_cmd: 0.10340514844581107
+roll_cmd: 1.0 | course_cmd: 0.10334303586712795
+roll_cmd: 1.0 | course_cmd: 0.10328089884630576
+roll_cmd: 1.0 | course_cmd: 0.10321873777345672
+roll_cmd: 1.0 | course_cmd: 0.103156553040838
+roll_cmd: 1.0 | course_cmd: 0.10309434504285067
+roll_cmd: 1.0 | course_cmd: 0.10303211417603998
+roll_cmd: 1.0 | course_cmd: 0.10296986083909342
+roll_cmd: 1.0 | course_cmd: 0.10290758543284081
+roll_cmd: 1.0 | course_cmd: 0.10284528836025184
+roll_cmd: 1.0 | course_cmd: 0.10278297002643648
+roll_cmd: 1.0 | course_cmd: 0.10272063083864204
+roll_cmd: 1.0 | course_cmd: 0.10265827120625305
+roll_cmd: 1.0 | course_cmd: 0.1025958915407885
+roll_cmd: 1.0 | course_cmd: 0.10253349225590119
+roll_cmd: 1.0 | course_cmd: 0.10247107376737492
+roll_cmd: 1.0 | course_cmd: 0.10240863649312333
+roll_cmd: 1.0 | course_cmd: 0.10234618085318749
+roll_cmd: 1.0 | course_cmd: 0.10228370726973374
+roll_cmd: 1.0 | course_cmd: 0.10222121616705154
+roll_cmd: 1.0 | course_cmd: 0.10215870797155104
+roll_cmd: 1.0 | course_cmd: 0.10209618316478618
+roll_cmd: 1.0 | course_cmd: 0.10203364216555431
+roll_cmd: 1.0 | course_cmd: 0.10197108540674503
+roll_cmd: 1.0 | course_cmd: 0.10190851332469443
+roll_cmd: 1.0 | course_cmd: 0.10184592635794809
+roll_cmd: 1.0 | course_cmd: 0.10178332494725402
+roll_cmd: 1.0 | course_cmd: 0.10172070953555629
+roll_cmd: 1.0 | course_cmd: 0.10165808056798821
+roll_cmd: 1.0 | course_cmd: 0.1015954384918653
+roll_cmd: 1.0 | course_cmd: 0.10153278375667862
+roll_cmd: 1.0 | course_cmd: 0.10147011681408778
+roll_cmd: 1.0 | course_cmd: 0.10140743811791372
+roll_cmd: 1.0 | course_cmd: 0.10134474812413227
+roll_cmd: 1.0 | course_cmd: 0.10128204729086679
+roll_cmd: 1.0 | course_cmd: 0.10121933607838136
+roll_cmd: 1.0 | course_cmd: 0.10115661494907348
+roll_cmd: 1.0 | course_cmd: 0.10109388436746733
+roll_cmd: 1.0 | course_cmd: 0.10103114480020631
+roll_cmd: 1.0 | course_cmd: 0.10096839671604639
+roll_cmd: 1.0 | course_cmd: 0.10090564058584872
+roll_cmd: 1.0 | course_cmd: 0.10084287688257251
+roll_cmd: 1.0 | course_cmd: 0.1007801060812682
+roll_cmd: 1.0 | course_cmd: 0.10071732865907
+roll_cmd: 1.0 | course_cmd: 0.10065454509518877
+roll_cmd: 1.0 | course_cmd: 0.1005917558709055
+roll_cmd: 1.0 | course_cmd: 0.10052896146956321
+roll_cmd: 1.0 | course_cmd: 0.10046616237656068
+roll_cmd: 1.0 | course_cmd: 0.10040335907934494
+roll_cmd: 1.0 | course_cmd: 0.10034055206740432
+roll_cmd: 1.0 | course_cmd: 0.10027774183226124
+roll_cmd: 1.0 | course_cmd: 0.10021492886746515
+roll_cmd: 1.0 | course_cmd: 0.10015211366858573
+roll_cmd: 1.0 | course_cmd: 0.10008929673320537
+roll_cmd: 1.0 | course_cmd: 0.10002647856091276
+roll_cmd: 1.0 | course_cmd: 0.09996365965329537
+roll_cmd: 1.0 | course_cmd: 0.09990084046121098
+roll_cmd: 1.0 | course_cmd: 0.09983802149210601
+roll_cmd: 1.0 | course_cmd: 0.09977520325655524
+roll_cmd: 1.0 | course_cmd: 0.099712386262512
+roll_cmd: 1.0 | course_cmd: 0.09964957101977992
+roll_cmd: 1.0 | course_cmd: 0.09958675804000479
+roll_cmd: 1.0 | course_cmd: 0.09952394783667147
+roll_cmd: 1.0 | course_cmd: 0.09946114092509986
+roll_cmd: 1.0 | course_cmd: 0.09939833782244166
+roll_cmd: 1.0 | course_cmd: 0.09933553904767702
+roll_cmd: 1.0 | course_cmd: 0.09927274512161055
+roll_cmd: 1.0 | course_cmd: 0.09920995656686836
+roll_cmd: 1.0 | course_cmd: 0.09914717390789403
+roll_cmd: 1.0 | course_cmd: 0.09908439767094587
+roll_cmd: 1.0 | course_cmd: 0.09902162838409298
+roll_cmd: 1.0 | course_cmd: 0.09895886657721246
+roll_cmd: 1.0 | course_cmd: 0.0988961127819861
+roll_cmd: 1.0 | course_cmd: 0.09883336753189692
+roll_cmd: 1.0 | course_cmd: 0.09877063136222594
+roll_cmd: 1.0 | course_cmd: 0.09870790481004946
+roll_cmd: 1.0 | course_cmd: 0.09864518841423568
+roll_cmd: 1.0 | course_cmd: 0.0985824827154418
+roll_cmd: 1.0 | course_cmd: 0.09851978825611095
+roll_cmd: 1.0 | course_cmd: 0.09845710558046933
+roll_cmd: 1.0 | course_cmd: 0.09839443523452311
+roll_cmd: 1.0 | course_cmd: 0.09833177776605616
+roll_cmd: 1.0 | course_cmd: 0.09826913372462683
+roll_cmd: 1.0 | course_cmd: 0.09820650366156482
+roll_cmd: 1.0 | course_cmd: 0.09814388812996938
+roll_cmd: 1.0 | course_cmd: 0.09808128768470624
+roll_cmd: 1.0 | course_cmd: 0.09801870288240487
+roll_cmd: 1.0 | course_cmd: 0.09795613407405704
+roll_cmd: 1.0 | course_cmd: 0.09789358187884904
+roll_cmd: 1.0 | course_cmd: 0.0978310468566618
+roll_cmd: 1.0 | course_cmd: 0.09776852956724957
+roll_cmd: 1.0 | course_cmd: 0.09770603057176969
+roll_cmd: 1.0 | course_cmd: 0.09764355043279732
+roll_cmd: 1.0 | course_cmd: 0.09758108971433507
+roll_cmd: 1.0 | course_cmd: 0.09751864898182282
+roll_cmd: 1.0 | course_cmd: 0.09745622880214726
+roll_cmd: 1.0 | course_cmd: 0.09739382974365157
+roll_cmd: 1.0 | course_cmd: 0.09733145237614485
+roll_cmd: 1.0 | course_cmd: 0.09726909727091143
+roll_cmd: 1.0 | course_cmd: 0.09720676500072092
+roll_cmd: 1.0 | course_cmd: 0.09714445613983651
+roll_cmd: 1.0 | course_cmd: 0.09708217126402538
+roll_cmd: 1.0 | course_cmd: 0.09701991095056714
+roll_cmd: 1.0 | course_cmd: 0.09695767577826354
+roll_cmd: 1.0 | course_cmd: 0.09689546632744708
+roll_cmd: 1.0 | course_cmd: 0.09683328317999061
+roll_cmd: 1.0 | course_cmd: 0.09677112691931589
+roll_cmd: 1.0 | course_cmd: 0.09670899813040279
+roll_cmd: 1.0 | course_cmd: 0.09664689739979805
+roll_cmd: 1.0 | course_cmd: 0.09658482531562418
+roll_cmd: 1.0 | course_cmd: 0.0965227824675879
+roll_cmd: 1.0 | course_cmd: 0.09646076944698928
+roll_cmd: 1.0 | course_cmd: 0.09639878684673024
+roll_cmd: 1.0 | course_cmd: 0.09633683526132274
+roll_cmd: 1.0 | course_cmd: 0.09627491522476407
+roll_cmd: 1.0 | course_cmd: 0.0962130272025294
+roll_cmd: 1.0 | course_cmd: 0.0961511718403621
+roll_cmd: 1.0 | course_cmd: 0.09608934973605465
+roll_cmd: 1.0 | course_cmd: 0.09602756148873358
+roll_cmd: 1.0 | course_cmd: 0.09596580769883817
+roll_cmd: 1.0 | course_cmd: 0.09590408896814602
+roll_cmd: 1.0 | course_cmd: 0.09584240589979391
+roll_cmd: 1.0 | course_cmd: 0.09578075909829761
+roll_cmd: 1.0 | course_cmd: 0.09571914916957265
+roll_cmd: 1.0 | course_cmd: 0.09565757672095443
+roll_cmd: 1.0 | course_cmd: 0.09559604236121778
+roll_cmd: 1.0 | course_cmd: 0.09553454670059669
+roll_cmd: 1.0 | course_cmd: 0.095473090350804
+roll_cmd: 1.0 | course_cmd: 0.09541167392505057
+roll_cmd: 1.0 | course_cmd: 0.0953502980380643
+roll_cmd: 1.0 | course_cmd: 0.09528896330610934
+roll_cmd: 1.0 | course_cmd: 0.09522767034700477
+roll_cmd: 1.0 | course_cmd: 0.09516641978014287
+roll_cmd: 1.0 | course_cmd: 0.09510521222650772
+roll_cmd: 1.0 | course_cmd: 0.09504404830869358
+roll_cmd: 1.0 | course_cmd: 0.09498292865092225
+roll_cmd: 1.0 | course_cmd: 0.0949218538790617
+roll_cmd: 1.0 | course_cmd: 0.0948608246206425
+roll_cmd: 1.0 | course_cmd: 0.09479984150487673
+roll_cmd: 1.0 | course_cmd: 0.09473890516220884
+roll_cmd: 1.0 | course_cmd: 0.09467801615689637
+roll_cmd: 1.0 | course_cmd: 0.09461717514479238
+roll_cmd: 1.0 | course_cmd: 0.0945563827610859
+roll_cmd: 1.0 | course_cmd: 0.0944956396426264
+roll_cmd: 1.0 | course_cmd: 0.09443494642792802
+roll_cmd: 1.0 | course_cmd: 0.09437430375719236
+roll_cmd: 1.0 | course_cmd: 0.09431371227232883
+roll_cmd: 1.0 | course_cmd: 0.0942531726169749
+roll_cmd: 1.0 | course_cmd: 0.09419268543651561
+roll_cmd: 1.0 | course_cmd: 0.09413225137810408
+roll_cmd: 1.0 | course_cmd: 0.09407187109067992
+roll_cmd: 1.0 | course_cmd: 0.09401154522498967
+roll_cmd: 1.0 | course_cmd: 0.09395127443360524
+roll_cmd: 1.0 | course_cmd: 0.09389105937094264
+roll_cmd: 1.0 | course_cmd: 0.09383090069328125
+roll_cmd: 1.0 | course_cmd: 0.09377079905878194
+roll_cmd: 1.0 | course_cmd: 0.09371075512750544
+roll_cmd: 1.0 | course_cmd: 0.09365076956143017
+roll_cmd: 1.0 | course_cmd: 0.09359084302447095
+roll_cmd: 1.0 | course_cmd: 0.09353097618249574
+roll_cmd: 1.0 | course_cmd: 0.09347116970334371
+roll_cmd: 1.0 | course_cmd: 0.09341142425684278
+roll_cmd: 1.0 | course_cmd: 0.09335174051482646
+roll_cmd: 1.0 | course_cmd: 0.09329211910939565
+roll_cmd: 1.0 | course_cmd: 0.09323256070606226
+roll_cmd: 1.0 | course_cmd: 0.09317306598969881
+roll_cmd: 1.0 | course_cmd: 0.09311363563946594
+roll_cmd: 1.0 | course_cmd: 0.09305427033650134
+roll_cmd: 1.0 | course_cmd: 0.09299497076393747
+roll_cmd: 1.0 | course_cmd: 0.09293573760692277
+roll_cmd: 1.0 | course_cmd: 0.09287657155264215
+roll_cmd: 1.0 | course_cmd: 0.0928174732903369
+roll_cmd: 1.0 | course_cmd: 0.0927584435113252
+roll_cmd: 1.0 | course_cmd: 0.0926994829090216
+roll_cmd: 1.0 | course_cmd: 0.09264059217895684
+roll_cmd: 1.0 | course_cmd: 0.09258177201879783
+roll_cmd: 1.0 | course_cmd: 0.09252302312836622
+roll_cmd: 1.0 | course_cmd: 0.09246434620965804
+roll_cmd: 1.0 | course_cmd: 0.09240574196686281
+roll_cmd: 1.0 | course_cmd: 0.09234721110638215
+roll_cmd: 1.0 | course_cmd: 0.09228875433684891
+roll_cmd: 1.0 | course_cmd: 0.09223037236914537
+roll_cmd: 1.0 | course_cmd: 0.09217206591642212
+roll_cmd: 1.0 | course_cmd: 0.092113835694116
+roll_cmd: 1.0 | course_cmd: 0.09205568241996853
+roll_cmd: 1.0 | course_cmd: 0.09199760676071068
+roll_cmd: 1.0 | course_cmd: 0.09193960944817495
+roll_cmd: 1.0 | course_cmd: 0.09188169120879738
+roll_cmd: 1.0 | course_cmd: 0.09182385276887828
+roll_cmd: 1.0 | course_cmd: 0.09176609485700057
+roll_cmd: 1.0 | course_cmd: 0.09170841820405298
+roll_cmd: 1.0 | course_cmd: 0.09165082354325199
+roll_cmd: 1.0 | course_cmd: 0.09159331161016407
+roll_cmd: 1.0 | course_cmd: 0.09153588314272708
+roll_cmd: 1.0 | course_cmd: 0.09147853888127229
+roll_cmd: 1.0 | course_cmd: 0.09142127956854604
+roll_cmd: 1.0 | course_cmd: 0.09136410594973082
+roll_cmd: 1.0 | course_cmd: 0.09130701877246693
+roll_cmd: 1.0 | course_cmd: 0.09125001878687365
+roll_cmd: 1.0 | course_cmd: 0.09119310674557009
+roll_cmd: 1.0 | course_cmd: 0.09113628340369664
+roll_cmd: 1.0 | course_cmd: 0.09107954951893597
+roll_cmd: 1.0 | course_cmd: 0.09102290585153339
+roll_cmd: 1.0 | course_cmd: 0.09096635316431821
+roll_cmd: 1.0 | course_cmd: 0.09090989222272447
+roll_cmd: 1.0 | course_cmd: 0.09085352379481096
+roll_cmd: 1.0 | course_cmd: 0.09079724865131804
+roll_cmd: 1.0 | course_cmd: 0.09074106756567606
+roll_cmd: 1.0 | course_cmd: 0.09068498131399015
+roll_cmd: 1.0 | course_cmd: 0.09062899067507271
+roll_cmd: 1.0 | course_cmd: 0.09057309643046361
+roll_cmd: 1.0 | course_cmd: 0.0905172993644513
+roll_cmd: 1.0 | course_cmd: 0.09046160026409247
+roll_cmd: 1.0 | course_cmd: 0.09040599991923315
+roll_cmd: 1.0 | course_cmd: 0.09035049912252906
+roll_cmd: 1.0 | course_cmd: 0.09029509866946579
+roll_cmd: 1.0 | course_cmd: 0.09023979935837965
+roll_cmd: 1.0 | course_cmd: 0.09018460199047787
+roll_cmd: 1.0 | course_cmd: 0.09012950736985967
+roll_cmd: 1.0 | course_cmd: 0.09007451630353602
+roll_cmd: 1.0 | course_cmd: 0.09001962960145102
+roll_cmd: 1.0 | course_cmd: 0.08996484807650221
+roll_cmd: 1.0 | course_cmd: 0.08991017254456087
+roll_cmd: 1.0 | course_cmd: 0.08985560382449373
+roll_cmd: 1.0 | course_cmd: 0.08980114272191671
+roll_cmd: 1.0 | course_cmd: 0.08974679003227486
+roll_cmd: 1.0 | course_cmd: 0.089692546594184
+roll_cmd: 1.0 | course_cmd: 0.0896384132379976
+roll_cmd: 1.0 | course_cmd: 0.08958439079706541
+roll_cmd: 1.0 | course_cmd: 0.08953048010775713
+roll_cmd: 1.0 | course_cmd: 0.08947668200948906
+roll_cmd: 1.0 | course_cmd: 0.0894229973447505
+roll_cmd: 1.0 | course_cmd: 0.08936942695912976
+roll_cmd: 1.0 | course_cmd: 0.08931597170134054
+roll_cmd: 1.0 | course_cmd: 0.08926263242324811
+roll_cmd: 1.0 | course_cmd: 0.08920940997989561
+roll_cmd: 1.0 | course_cmd: 0.0891563052295305
+roll_cmd: 1.0 | course_cmd: 0.08910331903363133
+roll_cmd: 1.0 | course_cmd: 0.08905045225693409
+roll_cmd: 1.0 | course_cmd: 0.08899770576745908
+roll_cmd: 1.0 | course_cmd: 0.08894508043653788
+roll_cmd: 1.0 | course_cmd: 0.08889257713884013
+roll_cmd: 1.0 | course_cmd: 0.08884019675240078
+roll_cmd: 1.0 | course_cmd: 0.08878794015863507
+roll_cmd: 1.0 | course_cmd: 0.08873580824234051
+roll_cmd: 1.0 | course_cmd: 0.08868380189177608
+roll_cmd: 1.0 | course_cmd: 0.08863192199867596
+roll_cmd: 1.0 | course_cmd: 0.08858016945827714
+roll_cmd: 1.0 | course_cmd: 0.0885285451693478
+roll_cmd: 1.0 | course_cmd: 0.08847705003421485
+roll_cmd: 1.0 | course_cmd: 0.08842568495879259
+roll_cmd: 1.0 | course_cmd: 0.08837445085261107
+roll_cmd: 1.0 | course_cmd: 0.08832334862884478
+roll_cmd: 1.0 | course_cmd: 0.08827237920434136
+roll_cmd: 1.0 | course_cmd: 0.08822154349965074
+roll_cmd: 1.0 | course_cmd: 0.08817084243905454
+roll_cmd: 1.0 | course_cmd: 0.08812027695059539
+roll_cmd: 1.0 | course_cmd: 0.08806984796610673
+roll_cmd: 1.0 | course_cmd: 0.08801955642124276
+roll_cmd: 1.0 | course_cmd: 0.08796940325550824
+roll_cmd: 1.0 | course_cmd: 0.08791938941228984
+roll_cmd: 1.0 | course_cmd: 0.08786951583888565
+roll_cmd: 1.0 | course_cmd: 0.08781978348653705
+roll_cmd: 1.0 | course_cmd: 0.08777019331045949
+roll_cmd: 1.0 | course_cmd: 0.08772074626987397
+roll_cmd: 1.0 | course_cmd: 0.08767144332803897
+roll_cmd: 1.0 | course_cmd: 0.08762228545228212
+roll_cmd: 1.0 | course_cmd: 0.08757327361403311
+roll_cmd: 1.0 | course_cmd: 0.08752440878885542
+roll_cmd: 1.0 | course_cmd: 0.0874756919564802
+roll_cmd: 1.0 | course_cmd: 0.08742712410083858
+roll_cmd: 1.0 | course_cmd: 0.08737870621009611
+roll_cmd: 1.0 | course_cmd: 0.08733043927668599
+roll_cmd: 1.0 | course_cmd: 0.08728232429734332
+roll_cmd: 1.0 | course_cmd: 0.0872343622731398
+roll_cmd: 1.0 | course_cmd: 0.08718655420951861
+roll_cmd: 1.0 | course_cmd: 0.08713890111632935
+roll_cmd: 1.0 | course_cmd: 0.08709140400786355
+roll_cmd: 1.0 | course_cmd: 0.08704406390289124
+roll_cmd: 1.0 | course_cmd: 0.08699688182469634
+roll_cmd: 1.0 | course_cmd: 0.08694985880111358
+roll_cmd: 1.0 | course_cmd: 0.08690299586456601
+roll_cmd: 1.0 | course_cmd: 0.08685629405210177
+roll_cmd: 1.0 | course_cmd: 0.08680975440543194
+roll_cmd: 1.0 | course_cmd: 0.08676337797096882
+roll_cmd: 1.0 | course_cmd: 0.08671716579986473
+roll_cmd: 1.0 | course_cmd: 0.08667111894805042
+roll_cmd: 1.0 | course_cmd: 0.08662523847627487
+roll_cmd: 1.0 | course_cmd: 0.08657952545014506
+roll_cmd: 1.0 | course_cmd: 0.08653398094016573
+roll_cmd: 1.0 | course_cmd: 0.08648860602178039
+roll_cmd: 1.0 | course_cmd: 0.08644340177541246
+roll_cmd: 1.0 | course_cmd: 0.08639836928650617
+roll_cmd: 1.0 | course_cmd: 0.08635350964556916
+roll_cmd: 1.0 | course_cmd: 0.0863088239482143
+roll_cmd: 1.0 | course_cmd: 0.08626431329520284
+roll_cmd: 1.0 | course_cmd: 0.08621997879248745
+roll_cmd: 1.0 | course_cmd: 0.08617582155125617
+roll_cmd: 1.0 | course_cmd: 0.08613184268797616
+roll_cmd: 1.0 | course_cmd: 0.08608804332443892
+roll_cmd: 1.0 | course_cmd: 0.08604442458780494
+roll_cmd: 1.0 | course_cmd: 0.08600098761064921
+roll_cmd: 1.0 | course_cmd: 0.08595773353100802
+roll_cmd: 1.0 | course_cmd: 0.0859146634924247
+roll_cmd: 1.0 | course_cmd: 0.08587177864399705
+roll_cmd: 1.0 | course_cmd: 0.08582908014042483
+roll_cmd: 1.0 | course_cmd: 0.08578656914205773
+roll_cmd: 1.0 | course_cmd: 0.08574424681494414
+roll_cmd: 1.0 | course_cmd: 0.08570211433087979
+roll_cmd: 1.0 | course_cmd: 0.08566017286745758
+roll_cmd: 1.0 | course_cmd: 0.08561842360811787
+roll_cmd: 1.0 | course_cmd: 0.08557686774219854
+roll_cmd: 1.0 | course_cmd: 0.08553550646498628
+roll_cmd: 1.0 | course_cmd: 0.08549434097776844
+roll_cmd: 1.0 | course_cmd: 0.08545337248788513
+roll_cmd: 1.0 | course_cmd: 0.08541260220878179
+roll_cmd: 1.0 | course_cmd: 0.08537203136006231
+roll_cmd: 1.0 | course_cmd: 0.08533166116754333
+roll_cmd: 1.0 | course_cmd: 0.08529149286330805
+roll_cmd: 1.0 | course_cmd: 0.08525152768576075
+roll_cmd: 1.0 | course_cmd: 0.08521176687968347
+roll_cmd: 1.0 | course_cmd: 0.0851722116962906
+roll_cmd: 1.0 | course_cmd: 0.0851328633932864
+roll_cmd: 1.0 | course_cmd: 0.0850937232349213
+roll_cmd: 1.0 | course_cmd: 0.08505479249205018
+roll_cmd: 1.0 | course_cmd: 0.08501607244219024
+roll_cmd: 1.0 | course_cmd: 0.08497756436957982
+roll_cmd: 1.0 | course_cmd: 0.08493926956523758
+roll_cmd: 1.0 | course_cmd: 0.08490118932702267
+roll_cmd: 1.0 | course_cmd: 0.08486332495969526
+roll_cmd: 1.0 | course_cmd: 0.08482567777497718
+roll_cmd: 1.0 | course_cmd: 0.08478824909161423
+roll_cmd: 1.0 | course_cmd: 0.08475104023543778
+roll_cmd: 1.0 | course_cmd: 0.08471405253942768
+roll_cmd: 1.0 | course_cmd: 0.0846772873437761
+roll_cmd: 1.0 | course_cmd: 0.08464074599595092
+roll_cmd: 1.0 | course_cmd: 0.08460442985076061
+roll_cmd: 1.0 | course_cmd: 0.08456834027041947
+roll_cmd: 1.0 | course_cmd: 0.08453247862461327
+roll_cmd: 1.0 | course_cmd: 0.08449684629056543
+roll_cmd: 1.0 | course_cmd: 0.08446144465310412
+roll_cmd: 1.0 | course_cmd: 0.08442627510472986
+roll_cmd: 1.0 | course_cmd: 0.08439133904568354
+roll_cmd: 1.0 | course_cmd: 0.08435663788401536
+roll_cmd: 1.0 | course_cmd: 0.08432217303565381
+roll_cmd: 1.0 | course_cmd: 0.08428794592447575
+roll_cmd: 1.0 | course_cmd: 0.08425395798237728
+roll_cmd: 1.0 | course_cmd: 0.08422021064934426
+roll_cmd: 1.0 | course_cmd: 0.08418670537352471
+roll_cmd: 1.0 | course_cmd: 0.08415344361130059
+roll_cmd: 1.0 | course_cmd: 0.08412042682736114
+roll_cmd: 1.0 | course_cmd: 0.0840876564947763
+roll_cmd: 1.0 | course_cmd: 0.08405513409507077
+roll_cmd: 1.0 | course_cmd: 0.08402286111829904
+roll_cmd: 1.0 | course_cmd: 0.08399083906312069
+roll_cmd: 1.0 | course_cmd: 0.08395906943687607
+roll_cmd: 1.0 | course_cmd: 0.0839275537556633
+roll_cmd: 1.0 | course_cmd: 0.08389629354441511
+roll_cmd: 1.0 | course_cmd: 0.08386529033697689
+roll_cmd: 1.0 | course_cmd: 0.0838345456761851
+roll_cmd: 1.0 | course_cmd: 0.083804061113946
+roll_cmd: 1.0 | course_cmd: 0.0837738382113156
+roll_cmd: 1.0 | course_cmd: 0.08374387853857947
+roll_cmd: 1.0 | course_cmd: 0.08371418367533398
+roll_cmd: 1.0 | course_cmd: 0.08368475521056726
+roll_cmd: 1.0 | course_cmd: 0.08365559474274166
+roll_cmd: 1.0 | course_cmd: 0.08362670387987596
+roll_cmd: 1.0 | course_cmd: 0.08359808423962868
+roll_cmd: 1.0 | course_cmd: 0.0835697374493821
+roll_cmd: 1.0 | course_cmd: 0.08354166514632613
+roll_cmd: 1.0 | course_cmd: 0.0835138689775437
+roll_cmd: 1.0 | course_cmd: 0.08348635060009627
+roll_cmd: 1.0 | course_cmd: 0.0834591116811097
+roll_cmd: 1.0 | course_cmd: 0.08343215389786113
+roll_cmd: 1.0 | course_cmd: 0.08340547893786619
+roll_cmd: 1.0 | course_cmd: 0.08337908849896727
+roll_cmd: 1.0 | course_cmd: 0.08335298428942105
+roll_cmd: 1.0 | course_cmd: 0.08332716802798837
+roll_cmd: 1.0 | course_cmd: 0.08330164144402356
+roll_cmd: 1.0 | course_cmd: 0.08327640627756436
+roll_cmd: 1.0 | course_cmd: 0.08325146427942258
+roll_cmd: 1.0 | course_cmd: 0.08322681721127562
+roll_cmd: 1.0 | course_cmd: 0.08320246684575831
+roll_cmd: 1.0 | course_cmd: 0.08317841496655468
+roll_cmd: 1.0 | course_cmd: 0.08315466336849149
+roll_cmd: 1.0 | course_cmd: 0.0831312138576313
+roll_cmd: 1.0 | course_cmd: 0.08310806825136632
+roll_cmd: 1.0 | course_cmd: 0.08308522837851309
+roll_cmd: 1.0 | course_cmd: 0.08306269607940739
+roll_cmd: 1.0 | course_cmd: 0.08304047320599978
+roll_cmd: 1.0 | course_cmd: 0.08301856162195137
+roll_cmd: 1.0 | course_cmd: 0.08299696320273045
+roll_cmd: 1.0 | course_cmd: 0.08297567983570975
+roll_cmd: 1.0 | course_cmd: 0.08295471342026346
+roll_cmd: 1.0 | course_cmd: 0.08293406586786557
+roll_cmd: 1.0 | course_cmd: 0.08291373910218815
+roll_cmd: 1.0 | course_cmd: 0.08289373505920017
+roll_cmd: 1.0 | course_cmd: 0.082874055687267
+roll_cmd: 1.0 | course_cmd: 0.08285470294725013
+roll_cmd: 1.0 | course_cmd: 0.0828356788126076
+roll_cmd: 1.0 | course_cmd: 0.08281698526949434
+roll_cmd: 1.0 | course_cmd: 0.08279862431686358
+roll_cmd: 1.0 | course_cmd: 0.08278059796656806
+roll_cmd: 1.0 | course_cmd: 0.08276290824346277
+roll_cmd: 1.0 | course_cmd: 0.08274555718550602
+roll_cmd: 1.0 | course_cmd: 0.08272854684386298
+roll_cmd: 1.0 | course_cmd: 0.08271187928300876
+roll_cmd: 1.0 | course_cmd: 0.08269555658083144
+roll_cmd: 1.0 | course_cmd: 0.08267958082873601
+roll_cmd: 1.0 | course_cmd: 0.08266395413174896
+roll_cmd: 1.0 | course_cmd: 0.08264867860862196
+roll_cmd: 1.0 | course_cmd: 0.08263375639193724
+roll_cmd: 1.0 | course_cmd: 0.08261918962821238
+roll_cmd: 1.0 | course_cmd: 0.08260498047800571
+roll_cmd: 1.0 | course_cmd: 0.08259113111602204
+roll_cmd: 1.0 | course_cmd: 0.0825776437312186
+roll_cmd: 1.0 | course_cmd: 0.08256452052691098
+roll_cmd: 1.0 | course_cmd: 0.08255176372087943
+roll_cmd: 1.0 | course_cmd: 0.0825393755454762
+roll_cmd: 1.0 | course_cmd: 0.08252735824773136
+roll_cmd: 1.0 | course_cmd: 0.08251571408946021
+roll_cmd: 1.0 | course_cmd: 0.08250444534737043
+roll_cmd: 1.0 | course_cmd: 0.08249355431316954
+roll_cmd: 1.0 | course_cmd: 0.08248304329367204
+roll_cmd: 1.0 | course_cmd: 0.082472914610907
+roll_cmd: 1.0 | course_cmd: 0.08246317060222576
+roll_cmd: 1.0 | course_cmd: 0.08245381362040953
+roll_cmd: 1.0 | course_cmd: 0.08244484603377751
+roll_cmd: 1.0 | course_cmd: 0.08243627022629409
+roll_cmd: 1.0 | course_cmd: 0.08242808859767706
+roll_cmd: 1.0 | course_cmd: 0.08242030356350541
+roll_cmd: 1.0 | course_cmd: 0.08241291755532702
+roll_cmd: 1.0 | course_cmd: 0.08240593302076607
+roll_cmd: 1.0 | course_cmd: 0.08239935242363129
+roll_cmd: 1.0 | course_cmd: 0.08239317824402291
+roll_cmd: 1.0 | course_cmd: 0.08238741297844039
+roll_cmd: 1.0 | course_cmd: 0.0823820591398894
+roll_cmd: 1.0 | course_cmd: 0.08237711925798927
+roll_cmd: 1.0 | course_cmd: 0.08237259587907947
+roll_cmd: 1.0 | course_cmd: 0.08236849156632647
+roll_cmd: 1.0 | course_cmd: 0.08236480889982982
+roll_cmd: 1.0 | course_cmd: 0.08236155047672854
+roll_cmd: 1.0 | course_cmd: 0.08235871891130671
+roll_cmd: 1.0 | course_cmd: 0.08235631683509889
+roll_cmd: 1.0 | course_cmd: 0.08235434689699497
+roll_cmd: 1.0 | course_cmd: 0.08235281176334489
+roll_cmd: 1.0 | course_cmd: 0.08235171411806287
+roll_cmd: 1.0 | course_cmd: 0.08235105666273088
+roll_cmd: 1.0 | course_cmd: 0.08235084211670146
+roll_cmd: 1.0 | course_cmd: 0.08235107321720116
+roll_cmd: 1.0 | course_cmd: 0.08235175271943154
+roll_cmd: 1.0 | course_cmd: 0.08235288339667125
+roll_cmd: 1.0 | course_cmd: 0.08235446804037598
+roll_cmd: 1.0 | course_cmd: 0.08235650946027916
+roll_cmd: 1.0 | course_cmd: 0.08235901048449047
+roll_cmd: 1.0 | course_cmd: 0.08236197395959474
+roll_cmd: 1.0 | course_cmd: 0.08236540275074915
+roll_cmd: 1.0 | course_cmd: 0.08236929974178023
+roll_cmd: 1.0 | course_cmd: 0.08237366783527943
+roll_cmd: 1.0 | course_cmd: 0.08237850995269794
+roll_cmd: 1.0 | course_cmd: 0.08238382903444015
+roll_cmd: 1.0 | course_cmd: 0.0823896280399571
+roll_cmd: 1.0 | course_cmd: 0.08239590994783719
+roll_cmd: 1.0 | course_cmd: 0.08240267775589696
+roll_cmd: 1.0 | course_cmd: 0.08240993448127025
+roll_cmd: 1.0 | course_cmd: 0.0824176831604963
+roll_cmd: 1.0 | course_cmd: 0.08242592684960595
+roll_cmd: 1.0 | course_cmd: 0.08243466862420669
+roll_cmd: 1.0 | course_cmd: 0.08244391157956707
+roll_cmd: 1.0 | course_cmd: 0.08245365883069847
+roll_cmd: 1.0 | course_cmd: 0.08246391351243547
+roll_cmd: 1.0 | course_cmd: 0.08247467877951563
+roll_cmd: 1.0 | course_cmd: 0.08248595780665616
+roll_cmd: 1.0 | course_cmd: 0.08249775378862986
+roll_cmd: 1.0 | course_cmd: 0.08251006994033896
+roll_cmd: 1.0 | course_cmd: 0.08252290949688668
+roll_cmd: 1.0 | course_cmd: 0.08253627571364762
+roll_cmd: 1.0 | course_cmd: 0.0825501718663349
+roll_cmd: 1.0 | course_cmd: 0.08256460125106709
+roll_cmd: 1.0 | course_cmd: 0.08257956718443092
+roll_cmd: 1.0 | course_cmd: 0.0825950730035429
+roll_cmd: 1.0 | course_cmd: 0.08261112206610877
+roll_cmd: 1.0 | course_cmd: 0.08262771775047943
+roll_cmd: 1.0 | course_cmd: 0.08264486345570611
+roll_cmd: 1.0 | course_cmd: 0.08266256260159092
+roll_cmd: 1.0 | course_cmd: 0.08268081862873652
+roll_cmd: 1.0 | course_cmd: 0.08269963499859216
+roll_cmd: 1.0 | course_cmd: 0.08271901519349688
+roll_cmd: 1.0 | course_cmd: 0.08273896271672013
+roll_cmd: 1.0 | course_cmd: 0.08275948109249952
+roll_cmd: 1.0 | course_cmd: 0.08278057386607476
+roll_cmd: 1.0 | course_cmd: 0.0828022446037189
+roll_cmd: 1.0 | course_cmd: 0.08282449689276644
+roll_cmd: 1.0 | course_cmd: 0.08284733434163774
+roll_cmd: 1.0 | course_cmd: 0.08287076057985905
+roll_cmd: 1.0 | course_cmd: 0.08289477925808064
+roll_cmd: 1.0 | course_cmd: 0.08291939404809077
+roll_cmd: 1.0 | course_cmd: 0.08294460864282559
+roll_cmd: 1.0 | course_cmd: 0.08297042675637485
+roll_cmd: 1.0 | course_cmd: 0.08299685212398396
+roll_cmd: 1.0 | course_cmd: 0.08302388850205154
+roll_cmd: 1.0 | course_cmd: 0.08305153966812334
+roll_cmd: 1.0 | course_cmd: 0.08307980942088103
+roll_cmd: 1.0 | course_cmd: 0.08310870158012663
+roll_cmd: 1.0 | course_cmd: 0.08313821998676266
+roll_cmd: 1.0 | course_cmd: 0.08316836850276751
+roll_cmd: 1.0 | course_cmd: 0.08319915101116526
+roll_cmd: 1.0 | course_cmd: 0.08323057141599137
+roll_cmd: 1.0 | course_cmd: 0.0832626336422525
+roll_cmd: 1.0 | course_cmd: 0.08329534163588101
+roll_cmd: 1.0 | course_cmd: 0.08332869936368555
+roll_cmd: 1.0 | course_cmd: 0.08336271081329309
+roll_cmd: 1.0 | course_cmd: 0.08339737999308867
+roll_cmd: 1.0 | course_cmd: 0.08343271093214606
+roll_cmd: 1.0 | course_cmd: 0.08346870768015502
+roll_cmd: 1.0 | course_cmd: 0.0835053743073407
+roll_cmd: 1.0 | course_cmd: 0.08354271490437781
+roll_cmd: 1.0 | course_cmd: 0.08358073358229674
+roll_cmd: 1.0 | course_cmd: 0.08361943447238555
+roll_cmd: 1.0 | course_cmd: 0.08365882172608224
+roll_cmd: 1.0 | course_cmd: 0.08369889951486237
+roll_cmd: 1.0 | course_cmd: 0.0837396720301183
+roll_cmd: 1.0 | course_cmd: 0.08378114348303113
+roll_cmd: 1.0 | course_cmd: 0.08382331810443602
+roll_cmd: 1.0 | course_cmd: 0.08386620014467835
+roll_cmd: 1.0 | course_cmd: 0.08390979387346417
+roll_cmd: 1.0 | course_cmd: 0.08395410357969983
+roll_cmd: 1.0 | course_cmd: 0.08399913357132605
+roll_cmd: 1.0 | course_cmd: 0.08404488817514164
+roll_cmd: 1.0 | course_cmd: 0.08409137173661983
+roll_cmd: 1.0 | course_cmd: 0.08413858861971468
+roll_cmd: 1.0 | course_cmd: 0.08418654320666004
+roll_cmd: 1.0 | course_cmd: 0.08423523989775723
+roll_cmd: 1.0 | course_cmd: 0.08428468311115497
+roll_cmd: 1.0 | course_cmd: 0.08433487728261929
+roll_cmd: 1.0 | course_cmd: 0.08438582686529285
+roll_cmd: 1.0 | course_cmd: 0.08443753632944508
+roll_cmd: 1.0 | course_cmd: 0.08449001016221179
+roll_cmd: 1.0 | course_cmd: 0.08454325286732385
+roll_cmd: 1.0 | course_cmd: 0.08459726896482579
+roll_cmd: 1.0 | course_cmd: 0.08465206299078304
+roll_cmd: 1.0 | course_cmd: 0.08470763949697802
+roll_cmd: 1.0 | course_cmd: 0.08476400305059513
+roll_cmd: 1.0 | course_cmd: 0.08482115823389337
+roll_cmd: 1.0 | course_cmd: 0.08487910964386818
+roll_cmd: 1.0 | course_cmd: 0.0849378618919001
+roll_cmd: 1.0 | course_cmd: 0.08499741960339131
+roll_cmd: 1.0 | course_cmd: 0.0850577874173904
+roll_cmd: 1.0 | course_cmd: 0.08511896998620265
+roll_cmd: 1.0 | course_cmd: 0.08518097197498907
+roll_cmd: 1.0 | course_cmd: 0.08524379806134987
+roll_cmd: 1.0 | course_cmd: 0.08530745293489687
+roll_cmd: 1.0 | course_cmd: 0.08537194129680999
+roll_cmd: 1.0 | course_cmd: 0.08543726785937976
+roll_cmd: 1.0 | course_cmd: 0.08550343734553684
+roll_cmd: 1.0 | course_cmd: 0.08557045448836503
+roll_cmd: 1.0 | course_cmd: 0.0856383240306009
+roll_cmd: 1.0 | course_cmd: 0.08570705072411672
+roll_cmd: 1.0 | course_cmd: 0.08577663932938899
+roll_cmd: 1.0 | course_cmd: 0.08584709461495078
+roll_cmd: 1.0 | course_cmd: 0.08591842135682765
+roll_cmd: 1.0 | course_cmd: 0.08599062433795829
+roll_cmd: 1.0 | course_cmd: 0.08606370834759677
+roll_cmd: 1.0 | course_cmd: 0.08613767818069971
+roll_cmd: 1.0 | course_cmd: 0.0862125386372951
+roll_cmd: 1.0 | course_cmd: 0.08628829452183383
+roll_cmd: 1.0 | course_cmd: 0.08636495064252418
+roll_cmd: 1.0 | course_cmd: 0.0864425118106466
+roll_cmd: 1.0 | course_cmd: 0.08652098283985228
+roll_cmd: 1.0 | course_cmd: 0.08660036854544112
+roll_cmd: 1.0 | course_cmd: 0.08668067374362197
+roll_cmd: 1.0 | course_cmd: 0.08676190325075321
+roll_cmd: 1.0 | course_cmd: 0.08684406188256409
+roll_cmd: 1.0 | course_cmd: 0.08692715445335555
+roll_cmd: 1.0 | course_cmd: 0.08701118577518174
+roll_cmd: 1.0 | course_cmd: 0.08709616065701085
+roll_cmd: 1.0 | course_cmd: 0.08718208390386535
+roll_cmd: 1.0 | course_cmd: 0.08726896031594089
+roll_cmd: 1.0 | course_cmd: 0.08735679468770408
+roll_cmd: 1.0 | course_cmd: 0.0874455918069694
+roll_cmd: 1.0 | course_cmd: 0.087535356453953
+roll_cmd: 1.0 | course_cmd: 0.08762609340030578
+roll_cmd: 1.0 | course_cmd: 0.08771780740812321
+roll_cmd: 1.0 | course_cmd: 0.08781050322893215
+roll_cmd: 1.0 | course_cmd: 0.087904185602656
+roll_cmd: 1.0 | course_cmd: 0.08799885925655558
+roll_cmd: 1.0 | course_cmd: 0.08809452890414637
+roll_cmd: 1.0 | course_cmd: 0.08819119924409342
+roll_cmd: 1.0 | course_cmd: 0.08828887495908025
+roll_cmd: 1.0 | course_cmd: 0.08838756071465521
+roll_cmd: 1.0 | course_cmd: 0.08848726115805226
+roll_cmd: 1.0 | course_cmd: 0.08858798091698755
+roll_cmd: 1.0 | course_cmd: 0.08868972459843086
+roll_cmd: 1.0 | course_cmd: 0.08879249678735124
+roll_cmd: 1.0 | course_cmd: 0.08889630204543825
+roll_cmd: 1.0 | course_cmd: 0.08900114490979674
+roll_cmd: 1.0 | course_cmd: 0.08910702989161594
+roll_cmd: 1.0 | course_cmd: 0.08921396147481249
+roll_cmd: 1.0 | course_cmd: 0.08932194411464685
+roll_cmd: 1.0 | course_cmd: 0.08943098223631436
+roll_cmd: 1.0 | course_cmd: 0.08954108023350799
+roll_cmd: 1.0 | course_cmd: 0.08965224246695504
+roll_cmd: 1.0 | course_cmd: 0.08976447326292798
+roll_cmd: 1.0 | course_cmd: 0.08987777691172533
+roll_cmd: 1.0 | course_cmd: 0.08999215766612872
+roll_cmd: 1.0 | course_cmd: 0.0901076197398301
+roll_cmd: 1.0 | course_cmd: 0.0902241673058318
+roll_cmd: 1.0 | course_cmd: 0.09034180449482053
+roll_cmd: 1.0 | course_cmd: 0.0904605353935117
+roll_cmd: 1.0 | course_cmd: 0.09058036404296696
+roll_cmd: 1.0 | course_cmd: 0.09070129443688447
+roll_cmd: 1.0 | course_cmd: 0.09082333051986047
+roll_cmd: 1.0 | course_cmd: 0.0909464761856226
+roll_cmd: 1.0 | course_cmd: 0.09107073527523717
+roll_cmd: 1.0 | course_cmd: 0.09119611157528679
+roll_cmd: 1.0 | course_cmd: 0.0913226088160208
+roll_cmd: 1.0 | course_cmd: 0.09145023066947824
+roll_cmd: 1.0 | course_cmd: 0.0915789807475828
+roll_cmd: 1.0 | course_cmd: 0.09170886260021041
+roll_cmd: 1.0 | course_cmd: 0.09183987971322843
+roll_cmd: 1.0 | course_cmd: 0.09197203550650904
+roll_cmd: 1.0 | course_cmd: 0.09210533333191412
+roll_cmd: 1.0 | course_cmd: 0.09223977647125398
+roll_cmd: 1.0 | course_cmd: 0.09237536813421804
+roll_cmd: 1.0 | course_cmd: 0.09251211145628062
+roll_cmd: 1.0 | course_cmd: 0.09265000949657859
+roll_cmd: 1.0 | course_cmd: 0.09278906523576419
+roll_cmd: 1.0 | course_cmd: 0.09292928157383151
+roll_cmd: 1.0 | course_cmd: 0.09307066132791768
+roll_cmd: 1.0 | course_cmd: 0.0932132072300785
+roll_cmd: 1.0 | course_cmd: 0.09335692192504036
+roll_cmd: 1.0 | course_cmd: 0.09350180796792583
+roll_cmd: 1.0 | course_cmd: 0.09364786782195794
+roll_cmd: 1.0 | course_cmd: 0.09379510385613876
+roll_cmd: 1.0 | course_cmd: 0.09394351834290614
+roll_cmd: 1.0 | course_cmd: 0.09409311345576735
+roll_cmd: 1.0 | course_cmd: 0.09424389126691148
+roll_cmd: 1.0 | course_cmd: 0.09439585374479971
+roll_cmd: 1.0 | course_cmd: 0.09454900275173542
+roll_cmd: 1.0 | course_cmd: 0.0947033400414132
+roll_cmd: 1.0 | course_cmd: 0.09485886725644942
+roll_cmd: 1.0 | course_cmd: 0.09501558592589297
+roll_cmd: 1.0 | course_cmd: 0.0951734974627184
+roll_cmd: 1.0 | course_cmd: 0.09533260316130074
+roll_cmd: 1.0 | course_cmd: 0.0954929041948744
+roll_cmd: 1.0 | course_cmd: 0.09565440161297561
+roll_cmd: 1.0 | course_cmd: 0.0958170963388685
+roll_cmd: 1.0 | course_cmd: 0.09598098916695819
+roll_cmd: 1.0 | course_cmd: 0.09614608076018868
+roll_cmd: 1.0 | course_cmd: 0.09631237164742781
+roll_cmd: 1.0 | course_cmd: 0.09647986222083932
+roll_cmd: 1.0 | course_cmd: 0.09664855273324324
+roll_cmd: 1.0 | course_cmd: 0.09681844329546493
+roll_cmd: 1.0 | course_cmd: 0.09698953387367279
+roll_cmd: 1.0 | course_cmd: 0.09716182428670521
+roll_cmd: 1.0 | course_cmd: 0.09733531420338754
+roll_cmd: 1.0 | course_cmd: 0.09751000313983822
+roll_cmd: 1.0 | course_cmd: 0.09768589045676478
+roll_cmd: 1.0 | course_cmd: 0.0978629753567471
+roll_cmd: 1.0 | course_cmd: 0.09804125688151091
+roll_cmd: 1.0 | course_cmd: 0.09822073390918382
+roll_cmd: 1.0 | course_cmd: 0.09840140515153903
+roll_cmd: 1.0 | course_cmd: 0.09858326915121421
+roll_cmd: 1.0 | course_cmd: 0.09876632427891002
+roll_cmd: 1.0 | course_cmd: 0.0989505687305538
+roll_cmd: 1.0 | course_cmd: 0.09913600052442259
+roll_cmd: 1.0 | course_cmd: 0.09932261749821145
+roll_cmd: 1.0 | course_cmd: 0.09951041730602739
+roll_cmd: 1.0 | course_cmd: 0.09969939741528154
+roll_cmd: 1.0 | course_cmd: 0.09988955510344145
+roll_cmd: 1.0 | course_cmd: 0.10008088745458361
+roll_cmd: 1.0 | course_cmd: 0.10027339135565916
+roll_cmd: 1.0 | course_cmd: 0.10046706349233349
+roll_cmd: 1.0 | course_cmd: 0.10066190034417619
+roll_cmd: 1.0 | course_cmd: 0.10085789817881975
+roll_cmd: 1.0 | course_cmd: 0.10105505304440088
+roll_cmd: 1.0 | course_cmd: 0.10125336075895461
+roll_cmd: 1.0 | course_cmd: 0.10145281689394109
+roll_cmd: 1.0 | course_cmd: 0.10165341674508468
+roll_cmd: 1.0 | course_cmd: 0.10185515527076185
+roll_cmd: 1.0 | course_cmd: 0.1020580269211656
+roll_cmd: 1.0 | course_cmd: 0.10226202482456195
+roll_cmd: 1.0 | course_cmd: 0.10246714732290381
+roll_cmd: 1.0 | course_cmd: 0.10267339002304916
+roll_cmd: 1.0 | course_cmd: 0.10288074657196672
+roll_cmd: 1.0 | course_cmd: 0.10308921109572074
+roll_cmd: 1.0 | course_cmd: 0.10329877749103493
+roll_cmd: 1.0 | course_cmd: 0.10350943943191329
+roll_cmd: 1.0 | course_cmd: 0.10372119036766037
+roll_cmd: 1.0 | course_cmd: 0.10393402352112582
+roll_cmd: 1.0 | course_cmd: 0.10414793188703127
+roll_cmd: 1.0 | course_cmd: 0.10436290823038534
+roll_cmd: 1.0 | course_cmd: 0.10457894508498658
+roll_cmd: 1.0 | course_cmd: 0.10479603475201762
+roll_cmd: 1.0 | course_cmd: 0.1050141692987346
+roll_cmd: 1.0 | course_cmd: 0.10523334055725064
+roll_cmd: 1.0 | course_cmd: 0.10545354012341875
+roll_cmd: 1.0 | course_cmd: 0.10567475935581307
+roll_cmd: 1.0 | course_cmd: 0.10589698937481404
+roll_cmd: 1.0 | course_cmd: 0.10612022106179676
+roll_cmd: 1.0 | course_cmd: 0.10634444505842602
+roll_cmd: 1.0 | course_cmd: 0.1065696517660588
+roll_cmd: 1.0 | course_cmd: 0.10679583134525845
+roll_cmd: 1.0 | course_cmd: 0.10702297371541912
+roll_cmd: 1.0 | course_cmd: 0.10725106855450436
+roll_cmd: 1.0 | course_cmd: 0.1074801052989025
+roll_cmd: 1.0 | course_cmd: 0.10771007314339835
+roll_cmd: 1.0 | course_cmd: 0.10794096104126337
+roll_cmd: 1.0 | course_cmd: 0.10817275770446713
+roll_cmd: 1.0 | course_cmd: 0.10840545160401037
+roll_cmd: 1.0 | course_cmd: 0.10863903097038152
+roll_cmd: 1.0 | course_cmd: 0.1088734837941373
+roll_cmd: 1.0 | course_cmd: 0.10910879782661062
+roll_cmd: 1.0 | course_cmd: 0.10934496058074374
+roll_cmd: 1.0 | course_cmd: 0.10958195933205148
+roll_cmd: 1.0 | course_cmd: 0.10981978111971172
+roll_cmd: 1.0 | course_cmd: 0.11005841274778724
+roll_cmd: 1.0 | course_cmd: 0.11029784078657735
+roll_cmd: 1.0 | course_cmd: 0.11053805157410213
+roll_cmd: 1.0 | course_cmd: 0.11077903121771737
+roll_cmd: 1.0 | course_cmd: 0.11102076559586256
+roll_cmd: 1.0 | course_cmd: 0.11126324035994149
+roll_cmd: 1.0 | course_cmd: 0.11150644093633687
+roll_cmd: 1.0 | course_cmd: 0.11175035252855534
+roll_cmd: 1.0 | course_cmd: 0.11199496011950888
+roll_cmd: 1.0 | course_cmd: 0.11224024847392658
+roll_cmd: 1.0 | course_cmd: 0.11248620214090044
+roll_cmd: 1.0 | course_cmd: 0.11273280545656275
+roll_cmd: 1.0 | course_cmd: 0.11298004254689557
+roll_cmd: 1.0 | course_cmd: 0.11322789733067053
+roll_cmd: 1.0 | course_cmd: 0.11347635352252057
+roll_cmd: 1.0 | course_cmd: 0.11372539463613858
+roll_cmd: 1.0 | course_cmd: 0.1139750039876064
+roll_cmd: 1.0 | course_cmd: 0.11422516469884991
+roll_cmd: 1.0 | course_cmd: 0.11447585970122001
+roll_cmd: 1.0 | course_cmd: 0.11472707173919773
+roll_cmd: 1.0 | course_cmd: 0.11497878337422257
+roll_cmd: 1.0 | course_cmd: 0.11523097698864104
+roll_cmd: 1.0 | course_cmd: 0.11548363478977519
+roll_cmd: 1.0 | course_cmd: 0.1157367388141066
+roll_cmd: 1.0 | course_cmd: 0.11599027093157703
+roll_cmd: 1.0 | course_cmd: 0.11624421285000104
+roll_cmd: 1.0 | course_cmd: 0.11649854611958815
+roll_cmd: 1.0 | course_cmd: 0.11675325213757337
+roll_cmd: 1.0 | course_cmd: 0.11700831215295321
+roll_cmd: 1.0 | course_cmd: 0.11726370727132246
+roll_cmd: 1.0 | course_cmd: 0.11751941845981163
+roll_cmd: 1.0 | course_cmd: 0.1177754265521202
+roll_cmd: 1.0 | course_cmd: 0.1180317122536425
+roll_cmd: 1.0 | course_cmd: 0.11828825614668449
+roll_cmd: 1.0 | course_cmd: 0.11854503869576533
+roll_cmd: 1.0 | course_cmd: 0.11880204025300431
+roll_cmd: 1.0 | course_cmd: 0.11905924106358469
+roll_cmd: 1.0 | course_cmd: 0.11931662127129504
+roll_cmd: 1.0 | course_cmd: 0.1195741609241416
+roll_cmd: 1.0 | course_cmd: 0.11983183998002823
+roll_cmd: 1.0 | course_cmd: 0.12008963831250222
+roll_cmd: 1.0 | course_cmd: 0.12034753571655829
+roll_cmd: 1.0 | course_cmd: 0.12060551191449893
+roll_cmd: 1.0 | course_cmd: 0.12086354656184663
+roll_cmd: 1.0 | course_cmd: 0.12112161925330407
+roll_cmd: 1.0 | course_cmd: 0.12137970952875657
+roll_cmd: 1.0 | course_cmd: 0.12163779687931298
+roll_cmd: 1.0 | course_cmd: 0.12189586075338267
+roll_cmd: 1.0 | course_cmd: 0.12215388056278018
+roll_cmd: 1.0 | course_cmd: 0.1224118356888566
+roll_cmd: 1.0 | course_cmd: 0.12266970548865036
+roll_cmd: 1.0 | course_cmd: 0.12292746930105697
+roll_cmd: 1.0 | course_cmd: 0.12318510645300626
+roll_cmd: 1.0 | course_cmd: 0.12344259626565159
+roll_cmd: 1.0 | course_cmd: 0.12369991806055619
+roll_cmd: 1.0 | course_cmd: 0.1239570511658819
+roll_cmd: 1.0 | course_cmd: 0.12421397492256872
+roll_cmd: 1.0 | course_cmd: 0.12447066869050288
+roll_cmd: 1.0 | course_cmd: 0.12472711185467056
+roll_cmd: 1.0 | course_cmd: 0.12498328383128919
+roll_cmd: 1.0 | course_cmd: 0.12523916407391542
+roll_cmd: 1.0 | course_cmd: 0.12549473207952333
+roll_cmd: 1.0 | course_cmd: 0.12574996739454705
+roll_cmd: 1.0 | course_cmd: 0.12600484962088732
+roll_cmd: 1.0 | course_cmd: 0.1262593584218743
+roll_cmd: 1.0 | course_cmd: 0.1265134735281842
+roll_cmd: 1.0 | course_cmd: 0.126767174743703
+roll_cmd: 1.0 | course_cmd: 0.12702044195133758
+roll_cmd: 1.0 | course_cmd: 0.12727325511876542
+roll_cmd: 1.0 | course_cmd: 0.1275255943041221
+roll_cmd: 1.0 | course_cmd: 0.12777743966162128
+roll_cmd: 1.0 | course_cmd: 0.1280287714471041
+roll_cmd: 1.0 | course_cmd: 0.12827957002351334
+roll_cmd: 1.0 | course_cmd: 0.12852981586628964
+roll_cmd: 1.0 | course_cmd: 0.12877948956868585
+roll_cmd: 1.0 | course_cmd: 0.12902857184699643
+roll_cmd: 1.0 | course_cmd: 0.12927704354569852
+roll_cmd: 1.0 | course_cmd: 0.1295248856425006
+roll_cmd: 1.0 | course_cmd: 0.129772079253298
+roll_cmd: 1.0 | course_cmd: 0.13001860563702858
+roll_cmd: 1.0 | course_cmd: 0.13026444620043115
+roll_cmd: 1.0 | course_cmd: 0.13050958250269792
+roll_cmd: 1.0 | course_cmd: 0.1307539962600224
+roll_cmd: 1.0 | course_cmd: 0.13099766935004095
+roll_cmd: 1.0 | course_cmd: 0.1312405838161605
+roll_cmd: 1.0 | course_cmd: 0.1314827218717782
+roll_cmd: 1.0 | course_cmd: 0.13172406590438296
+roll_cmd: 1.0 | course_cmd: 0.13196459847954256
+roll_cmd: 1.0 | course_cmd: 0.13220430234477284
+roll_cmd: 1.0 | course_cmd: 0.1324431604332861
+roll_cmd: 1.0 | course_cmd: 0.1326811558676193
+roll_cmd: 1.0 | course_cmd: 0.1329182719631411
+roll_cmd: 1.0 | course_cmd: 0.13315449223143147
+roll_cmd: 1.0 | course_cmd: 0.1333898003835415
+roll_cmd: 1.0 | course_cmd: 0.13362418033312465
+roll_cmd: 1.0 | course_cmd: 0.1338576161994417
+roll_cmd: 1.0 | course_cmd: 0.13409009231024108
+roll_cmd: 1.0 | course_cmd: 0.13432159320450934
+roll_cmd: 1.0 | course_cmd: 0.1345521036350952
+roll_cmd: 1.0 | course_cmd: 0.13478160857120522
+roll_cmd: 1.0 | course_cmd: 0.13501009320077173
+roll_cmd: 1.0 | course_cmd: 0.13523754293269194
+roll_cmd: 1.0 | course_cmd: 0.13546394339893975
+roll_cmd: 1.0 | course_cmd: 0.13568928045654988
+roll_cmd: 1.0 | course_cmd: 0.13591354018947446
+roll_cmd: 1.0 | course_cmd: 0.1361367089103131
+roll_cmd: 1.0 | course_cmd: 0.13635877316191644
+roll_cmd: 1.0 | course_cmd: 0.136579719718865
+roll_cmd: 1.0 | course_cmd: 0.13679953558882263
+roll_cmd: 1.0 | course_cmd: 0.1370182080137667
+roll_cmd: 1.0 | course_cmd: 0.13723572447109633
+roll_cmd: 1.0 | course_cmd: 0.1374520726746178
+roll_cmd: 1.0 | course_cmd: 0.13766724057541152
+roll_cmd: 1.0 | course_cmd: 0.13788121636257844
+roll_cmd: 1.0 | course_cmd: 0.13809398846386955
+roll_cmd: 1.0 | course_cmd: 0.13830554554620092
+roll_cmd: 1.0 | course_cmd: 0.1385158765160519
+roll_cmd: 1.0 | course_cmd: 0.13872497051975263
+roll_cmd: 1.0 | course_cmd: 0.13893281694365944
+roll_cmd: 1.0 | course_cmd: 0.13913940541422123
+roll_cmd: 1.0 | course_cmd: 0.13934472579793997
+roll_cmd: 1.0 | course_cmd: 0.13954876820122303
+roll_cmd: 1.0 | course_cmd: 0.13975152297013466
+roll_cmd: 1.0 | course_cmd: 0.1399529806900457
+roll_cmd: 1.0 | course_cmd: 0.1401531321851825
+roll_cmd: 1.0 | course_cmd: 0.14035196851808032
+roll_cmd: 1.0 | course_cmd: 0.14054948098894127
+roll_cmd: 1.0 | course_cmd: 0.1407456611348992
+roll_cmd: 1.0 | course_cmd: 0.14094050072919498
+roll_cmd: 1.0 | course_cmd: 0.14113399178026229
+roll_cmd: 1.0 | course_cmd: 0.1413261265307288
+roll_cmd: 1.0 | course_cmd: 0.14151689745633278
+roll_cmd: 1.0 | course_cmd: 0.14170629726475947
+roll_cmd: 1.0 | course_cmd: 0.14189431889439766
+roll_cmd: 1.0 | course_cmd: 0.14208095551302075
+roll_cmd: 1.0 | course_cmd: 0.1422662005163929
+roll_cmd: 1.0 | course_cmd: 0.14245004752680415
+roll_cmd: 1.0 | course_cmd: 0.1426324903915365
+roll_cmd: 1.0 | course_cmd: 0.142813523181262
+roll_cmd: 1.0 | course_cmd: 0.14299314018837803
+roll_cmd: 1.0 | course_cmd: 0.14317133592527936
+roll_cmd: 1.0 | course_cmd: 0.14334810512257123
+roll_cmd: 1.0 | course_cmd: 0.1435234427272256
+roll_cmd: 1.0 | course_cmd: 0.1436973439006812
+roll_cmd: 1.0 | course_cmd: 0.14386980401689262
+roll_cmd: 1.0 | course_cmd: 0.14404081866032842
+roll_cmd: 1.0 | course_cmd: 0.14421038362392247
+roll_cmd: 1.0 | course_cmd: 0.14437849490697788
+roll_cmd: 1.0 | course_cmd: 0.14454514871303048
+roll_cmd: 1.0 | course_cmd: 0.14471034144766912
+roll_cmd: 1.0 | course_cmd: 0.1448740697163183
+roll_cmd: 1.0 | course_cmd: 0.14503633032198462
+roll_cmd: 1.0 | course_cmd: 0.14519712026296863
+roll_cmd: 1.0 | course_cmd: 0.14535643673054413
+roll_cmd: 1.0 | course_cmd: 0.14551427710660816
+roll_cmd: 1.0 | course_cmd: 0.14567063896130342
+roll_cmd: 1.0 | course_cmd: 0.1458255200506137
+roll_cmd: 1.0 | course_cmd: 0.14597891831393633
+roll_cmd: 1.0 | course_cmd: 0.14613083187163273
+roll_cmd: 1.0 | course_cmd: 0.146281259022559
+roll_cmd: 1.0 | course_cmd: 0.14643019824157766
+roll_cmd: 1.0 | course_cmd: 0.14657764817705546
+roll_cmd: 1.0 | course_cmd: 0.1467236076483443
+roll_cmd: 1.0 | course_cmd: 0.14686807564325075
+roll_cmd: 1.0 | course_cmd: 0.14701105131549544
+roll_cmd: 1.0 | course_cmd: 0.14715253398216285
+roll_cmd: 1.0 | course_cmd: 0.14729252312114263
+roll_cmd: 1.0 | course_cmd: 0.14743101836856645
+roll_cmd: 1.0 | course_cmd: 0.1475680195162404
+roll_cmd: 1.0 | course_cmd: 0.1477035265090742
+roll_cmd: 1.0 | course_cmd: 0.14783753944250916
+roll_cmd: 1.0 | course_cmd: 0.1479700585599471
+roll_cmd: 1.0 | course_cmd: 0.14810108425017954
+roll_cmd: 1.0 | course_cmd: 0.14823061704482135
+roll_cmd: 1.0 | course_cmd: 0.14835865761574757
+roll_cmd: 1.0 | course_cmd: 0.14848520677253627
+roll_cmd: 1.0 | course_cmd: 0.1486102654599179
+roll_cmd: 1.0 | course_cmd: 0.14873383475523247
+roll_cmd: 1.0 | course_cmd: 0.14885591586589655
+roll_cmd: 1.0 | course_cmd: 0.14897651012687987
+roll_cmd: 1.0 | course_cmd: 0.14909561899819265
+roll_cmd: 1.0 | course_cmd: 0.14921324406238656
+roll_cmd: 1.0 | course_cmd: 0.1493293870220673
+roll_cmd: 1.0 | course_cmd: 0.14944404969742306
+roll_cmd: 1.0 | course_cmd: 0.14955723402376647
+roll_cmd: 1.0 | course_cmd: 0.14966894204909315
+roll_cmd: 1.0 | course_cmd: 0.14977917593165746
+roll_cmd: 1.0 | course_cmd: 0.14988793793756483
+roll_cmd: 1.0 | course_cmd: 0.14999523043838367
+roll_cmd: 1.0 | course_cmd: 0.15010105590877415
+roll_cmd: 1.0 | course_cmd: 0.1502054169241391
+roll_cmd: 1.0 | course_cmd: 0.1503083161582937
+roll_cmd: 1.0 | course_cmd: 0.15040975638115586
+roll_cmd: 1.0 | course_cmd: 0.1505097404564593
+roll_cmd: 1.0 | course_cmd: 0.15060827133948743
+roll_cmd: 1.0 | course_cmd: 0.1507053520748304
+roll_cmd: 1.0 | course_cmd: 0.15080098579416518
+roll_cmd: 1.0 | course_cmd: 0.15089517571405808
+roll_cmd: 1.0 | course_cmd: 0.15098792513379247
+roll_cmd: 1.0 | course_cmd: 0.15107923743322005
+roll_cmd: 1.0 | course_cmd: 0.15116911607063638
+roll_cmd: 1.0 | course_cmd: 0.15125756458068138
+roll_cmd: 1.0 | course_cmd: 0.1513445865722657
+roll_cmd: 1.0 | course_cmd: 0.151430185726522
+roll_cmd: 1.0 | course_cmd: 0.15151436579478153
+roll_cmd: 1.0 | course_cmd: 0.15159713059657776
+roll_cmd: 1.0 | course_cmd: 0.1516784840176747
+roll_cmd: 1.0 | course_cmd: 0.15175843000812247
+roll_cmd: 1.0 | course_cmd: 0.15183697258033965
+roll_cmd: 1.0 | course_cmd: 0.1519141158072207
+roll_cmd: 1.0 | course_cmd: 0.15198986382027163
+roll_cmd: 1.0 | course_cmd: 0.1520642208077714
+roll_cmd: 1.0 | course_cmd: 0.1521371910129606
+roll_cmd: 1.0 | course_cmd: 0.152208778732257
+roll_cmd: 1.0 | course_cmd: 0.1522789883134979
+roll_cmd: 1.0 | course_cmd: 0.15234782415420905
+roll_cmd: 1.0 | course_cmd: 0.15241529069990098
+roll_cmd: 1.0 | course_cmd: 0.15248139244239264
+roll_cmd: 1.0 | course_cmd: 0.15254613391816
+roll_cmd: 1.0 | course_cmd: 0.15260951970671396
+roll_cmd: 1.0 | course_cmd: 0.15267155442900332
+roll_cmd: 1.0 | course_cmd: 0.1527322427458443
+roll_cmd: 1.0 | course_cmd: 0.15279158935637782
+roll_cmd: 1.0 | course_cmd: 0.1528495989965525
+roll_cmd: 1.0 | course_cmd: 0.1529062764376333
+roll_cmd: 1.0 | course_cmd: 0.15296162648473777
+roll_cmd: 1.0 | course_cmd: 0.15301565397539726
+roll_cmd: 1.0 | course_cmd: 0.1530683637781444
+roll_cmd: 1.0 | course_cmd: 0.15311976079112669
+roll_cmd: 1.0 | course_cmd: 0.15316984994074426
+roll_cmd: 1.0 | course_cmd: 0.1532186361803149
+roll_cmd: 1.0 | course_cmd: 0.1532661244887633
+roll_cmd: 1.0 | course_cmd: 0.1533123198693349
+roll_cmd: 1.0 | course_cmd: 0.15335722734833482
+roll_cmd: 1.0 | course_cmd: 0.15340085197389242
+roll_cmd: 1.0 | course_cmd: 0.15344319881474813
+roll_cmd: 1.0 | course_cmd: 0.15348427295906633
+roll_cmd: 1.0 | course_cmd: 0.15352407951327124
+roll_cmd: 1.0 | course_cmd: 0.15356262360090608
+roll_cmd: 1.0 | course_cmd: 0.15359991036151668
+roll_cmd: 1.0 | course_cmd: 0.1536359449495576
+roll_cmd: 1.0 | course_cmd: 0.15367073253332109
+roll_cmd: 1.0 | course_cmd: 0.1537042782938892
+roll_cmd: 1.0 | course_cmd: 0.15373658742410756
+roll_cmd: 1.0 | course_cmd: 0.15376766512758233
+roll_cmd: 1.0 | course_cmd: 0.15379751661769775
+roll_cmd: 1.0 | course_cmd: 0.1538261471166567
+roll_cmd: 1.0 | course_cmd: 0.15385356185454166
+roll_cmd: 1.0 | course_cmd: 0.15387976606839668
+roll_cmd: 1.0 | course_cmd: 0.1539047650013306
+roll_cmd: 1.0 | course_cmd: 0.15392856390164114
+roll_cmd: 1.0 | course_cmd: 0.15395116802195813
+roll_cmd: 1.0 | course_cmd: 0.15397258261840788
+roll_cmd: 1.0 | course_cmd: 0.1539928129497958
+roll_cmd: 1.0 | course_cmd: 0.15401186427681052
+roll_cmd: 1.0 | course_cmd: 0.15402974186124507
+roll_cmd: 1.0 | course_cmd: 0.15404645096523853
+roll_cmd: 1.0 | course_cmd: 0.15406199685053487
+roll_cmd: 1.0 | course_cmd: 0.15407638477776103
+roll_cmd: 1.0 | course_cmd: 0.154089620005723
+roll_cmd: 1.0 | course_cmd: 0.15410170779071922
+roll_cmd: 1.0 | course_cmd: 0.15411265338587163
+roll_cmd: 1.0 | course_cmd: 0.1541224620404739
+roll_cmd: 1.0 | course_cmd: 0.15413113899935674
+roll_cmd: 1.0 | course_cmd: 0.15413868950226975
+roll_cmd: 1.0 | course_cmd: 0.15414511878327963
+roll_cmd: 1.0 | course_cmd: 0.15415043207018428
+roll_cmd: 1.0 | course_cmd: 0.1541546345839429
+roll_cmd: 1.0 | course_cmd: 0.15415773153812232
+roll_cmd: 1.0 | course_cmd: 0.15415972813835727
+roll_cmd: 1.0 | course_cmd: 0.15416062958182697
+roll_cmd: 1.0 | course_cmd: 0.15416044105674526
+roll_cmd: 1.0 | course_cmd: 0.15415916774186722
+roll_cmd: 1.0 | course_cmd: 0.15415681480600718
+roll_cmd: 1.0 | course_cmd: 0.15415338740757364
+roll_cmd: 1.0 | course_cmd: 0.15414889069411564
+roll_cmd: 1.0 | course_cmd: 0.1541433298018846
+roll_cmd: 1.0 | course_cmd: 0.15413670985540767
+roll_cmd: 1.0 | course_cmd: 0.15412903596707472
+roll_cmd: 1.0 | course_cmd: 0.15412031323673933
+roll_cmd: 1.0 | course_cmd: 0.15411054675132974
+roll_cmd: 1.0 | course_cmd: 0.15409974158447448
+roll_cmd: 1.0 | course_cmd: 0.15408790279613901
+roll_cmd: 1.0 | course_cmd: 0.15407503543227374
+roll_cmd: 1.0 | course_cmd: 0.15406114452447472
+roll_cmd: 1.0 | course_cmd: 0.15404623508965473
+roll_cmd: 1.0 | course_cmd: 0.1540303121297263
+roll_cmd: 1.0 | course_cmd: 0.15401338063129486
+roll_cmd: 1.0 | course_cmd: 0.1539954455653633
+roll_cmd: 1.0 | course_cmd: 0.15397651188704617
+roll_cmd: 1.0 | course_cmd: 0.15395658453529548
+roll_cmd: 1.0 | course_cmd: 0.1539356684326349
+roll_cmd: 1.0 | course_cmd: 0.15391376848490507
+roll_cmd: 1.0 | course_cmd: 0.153890889581018
+roll_cmd: 1.0 | course_cmd: 0.15386703659272108
+roll_cmd: 1.0 | course_cmd: 0.15384221437437046
+roll_cmd: 1.0 | course_cmd: 0.1538164277627129
+roll_cmd: 1.0 | course_cmd: 0.15378968157667747
+roll_cmd: 1.0 | course_cmd: 0.1537619806171747
+roll_cmd: 1.0 | course_cmd: 0.1537333296669053
+roll_cmd: 1.0 | course_cmd: 0.15370373349017663
+roll_cmd: 1.0 | course_cmd: 0.15367319683272734
+roll_cmd: 1.0 | course_cmd: 0.15364172442156
+roll_cmd: 1.0 | course_cmd: 0.15360932096478155
+roll_cmd: 1.0 | course_cmd: 0.15357599115145143
+roll_cmd: 1.0 | course_cmd: 0.15354173965143644
+roll_cmd: 1.0 | course_cmd: 0.15350657111527402
+roll_cmd: 1.0 | course_cmd: 0.15347049017404207
+roll_cmd: 1.0 | course_cmd: 0.15343350143923476
+roll_cmd: 1.0 | course_cmd: 0.1533956095026469
+roll_cmd: 1.0 | course_cmd: 0.15335681893626377
+roll_cmd: 1.0 | course_cmd: 0.15331713429215757
+roll_cmd: 1.0 | course_cmd: 0.1532765601023903
+roll_cmd: 1.0 | course_cmd: 0.15323510087892264
+roll_cmd: 1.0 | course_cmd: 0.15319276111352947
+roll_cmd: 1.0 | course_cmd: 0.15314954527772018
+roll_cmd: 1.0 | course_cmd: 0.15310545782266588
+roll_cmd: 1.0 | course_cmd: 0.15306050317913147
+roll_cmd: 1.0 | course_cmd: 0.15301468575741337
+roll_cmd: 1.0 | course_cmd: 0.15296800994728227
+roll_cmd: 1.0 | course_cmd: 0.15292048011793213
+roll_cmd: 1.0 | course_cmd: 0.15287210061793305
+roll_cmd: 1.0 | course_cmd: 0.15282287577518958
+roll_cmd: 1.0 | course_cmd: 0.15277280989690425
+roll_cmd: 1.0 | course_cmd: 0.15272190726954502
+roll_cmd: 1.0 | course_cmd: 0.1526701721588177
+roll_cmd: 1.0 | course_cmd: 0.15261760880964337
+roll_cmd: 1.0 | course_cmd: 0.15256422144613938
+roll_cmd: 1.0 | course_cmd: 0.15251001427160463
+roll_cmd: 1.0 | course_cmd: 0.15245499146850977
+roll_cmd: 1.0 | course_cmd: 0.15239915719849068
+roll_cmd: 1.0 | course_cmd: 0.15234251560234627
+roll_cmd: 1.0 | course_cmd: 0.15228507080003978
+roll_cmd: 1.0 | course_cmd: 0.1522268268907042
+roll_cmd: 1.0 | course_cmd: 0.15216778795265096
+roll_cmd: 1.0 | course_cmd: 0.1521079580433827
+roll_cmd: 1.0 | course_cmd: 0.1520473411996087
+roll_cmd: 1.0 | course_cmd: 0.15198594143726432
+roll_cmd: 1.0 | course_cmd: 0.1519237627515333
+roll_cmd: 1.0 | course_cmd: 0.1518608091168734
+roll_cmd: 1.0 | course_cmd: 0.15179708448704543
+roll_cmd: 1.0 | course_cmd: 0.15173259279514464
+roll_cmd: 1.0 | course_cmd: 0.1516673379536353
+roll_cmd: 1.0 | course_cmd: 0.15160132385438838
+roll_cmd: 1.0 | course_cmd: 0.15153455436872162
+roll_cmd: 1.0 | course_cmd: 0.15146703334744244
+roll_cmd: 1.0 | course_cmd: 0.15139876462089358
+roll_cmd: 1.0 | course_cmd: 0.1513297519990008
+roll_cmd: 1.0 | course_cmd: 0.15125999927132378
+roll_cmd: 1.0 | course_cmd: 0.15118951020710833
+roll_cmd: 1.0 | course_cmd: 0.15111828855534223
+roll_cmd: 1.0 | course_cmd: 0.15104633804481232
+roll_cmd: 1.0 | course_cmd: 0.15097366238416401
+roll_cmd: 1.0 | course_cmd: 0.15090026526196304
+roll_cmd: 1.0 | course_cmd: 0.15082615034675925
+roll_cmd: 1.0 | course_cmd: 0.15075132128715224
+roll_cmd: 1.0 | course_cmd: 0.15067578171185902
+roll_cmd: 1.0 | course_cmd: 0.1505995352297835
+roll_cmd: 1.0 | course_cmd: 0.1505225854300878
+roll_cmd: 1.0 | course_cmd: 0.15044493588226512
+roll_cmd: 1.0 | course_cmd: 0.15036659013621492
+roll_cmd: 1.0 | course_cmd: 0.15028755172231895
+roll_cmd: 1.0 | course_cmd: 0.15020782415151904
+roll_cmd: 1.0 | course_cmd: 0.15012741091539697
+roll_cmd: 1.0 | course_cmd: 0.15004631548625544
+roll_cmd: 1.0 | course_cmd: 0.14996454131719977
+roll_cmd: 1.0 | course_cmd: 0.14988209184222281
+roll_cmd: 1.0 | course_cmd: 0.14979897047628896
+roll_cmd: 1.0 | course_cmd: 0.14971518061542116
+roll_cmd: 1.0 | course_cmd: 0.14963072563678823
+roll_cmd: 1.0 | course_cmd: 0.14954560889879404
+roll_cmd: 1.0 | course_cmd: 0.14945983374116706
+roll_cmd: 1.0 | course_cmd: 0.14937340348505174
+roll_cmd: 1.0 | course_cmd: 0.14928632143310053
+roll_cmd: 1.0 | course_cmd: 0.14919859086956702
+roll_cmd: 1.0 | course_cmd: 0.14911021506040034
+roll_cmd: 1.0 | course_cmd: 0.1490211972533401
+roll_cmd: 1.0 | course_cmd: 0.14893154067801212
+roll_cmd: 1.0 | course_cmd: 0.1488412485460259
+roll_cmd: 1.0 | course_cmd: 0.14875032405107197
+roll_cmd: 1.0 | course_cmd: 0.1486587703690207
+roll_cmd: 1.0 | course_cmd: 0.14856659065802147
+roll_cmd: 1.0 | course_cmd: 0.14847378805860242
+roll_cmd: 1.0 | course_cmd: 0.1483803656937717
+roll_cmd: 1.0 | course_cmd: 0.14828632666911856
+roll_cmd: 1.0 | course_cmd: 0.14819167407291586
+roll_cmd: 1.0 | course_cmd: 0.14809641097622195
+roll_cmd: 1.0 | course_cmd: 0.14800054043298458
+roll_cmd: 1.0 | course_cmd: 0.14790406548014454
+roll_cmd: 1.0 | course_cmd: 0.1478069891377398
+roll_cmd: 1.0 | course_cmd: 0.14770931440901078
+roll_cmd: 1.0 | course_cmd: 0.14761104428050487
+roll_cmd: 1.0 | course_cmd: 0.14751218172218286
+roll_cmd: 1.0 | course_cmd: 0.14741272968752464
+roll_cmd: 1.0 | course_cmd: 0.14731269111363615
+roll_cmd: 1.0 | course_cmd: 0.1472120689213558
+roll_cmd: 1.0 | course_cmd: 0.1471108660153619
+roll_cmd: 1.0 | course_cmd: 0.14700908528428036
+roll_cmd: 1.0 | course_cmd: 0.14690672960079246
+roll_cmd: 1.0 | course_cmd: 0.1468038018217427
+roll_cmd: 1.0 | course_cmd: 0.1467003047882477
+roll_cmd: 1.0 | course_cmd: 0.14659624132580396
+roll_cmd: 1.0 | course_cmd: 0.14649161424439783
+roll_cmd: 1.0 | course_cmd: 0.14638642633861346
+roll_cmd: 1.0 | course_cmd: 0.14628068038774275
+roll_cmd: 1.0 | course_cmd: 0.1461743791558937
+roll_cmd: 1.0 | course_cmd: 0.14606752539210122
+roll_cmd: 1.0 | course_cmd: 0.14596012183043527
+roll_cmd: 1.0 | course_cmd: 0.14585217119011165
+roll_cmd: 1.0 | course_cmd: 0.1457436761756009
+roll_cmd: 1.0 | course_cmd: 0.14563463947673871
+roll_cmd: 1.0 | course_cmd: 0.1455250637688355
+roll_cmd: 1.0 | course_cmd: 0.1454149517127861
+roll_cmd: 1.0 | course_cmd: 0.14530430595517999
+roll_cmd: 1.0 | course_cmd: 0.14519312912841104
+roll_cmd: 1.0 | course_cmd: 0.14508142385078712
+roll_cmd: 1.0 | course_cmd: 0.14496919272664022
+roll_cmd: 1.0 | course_cmd: 0.14485643834643613
+roll_cmd: 1.0 | course_cmd: 0.1447431632868842
+roll_cmd: 1.0 | course_cmd: 0.14462937011104693
+roll_cmd: 1.0 | course_cmd: 0.1445150613684494
+roll_cmd: 1.0 | course_cmd: 0.1444002395951889
+roll_cmd: 1.0 | course_cmd: 0.14428490731404425
+roll_cmd: 1.0 | course_cmd: 0.1441690670345847
+roll_cmd: 1.0 | course_cmd: 0.14405272125327953
+roll_cmd: 1.0 | course_cmd: 0.14393587245360645
+roll_cmd: 1.0 | course_cmd: 0.14381852310616056
+roll_cmd: 1.0 | course_cmd: 0.14370067566876318
+roll_cmd: 1.0 | course_cmd: 0.14358233258656977
+roll_cmd: 1.0 | course_cmd: 0.14346349629217833
+roll_cmd: 1.0 | course_cmd: 0.14334416920573748
+roll_cmd: 1.0 | course_cmd: 0.14322435373505435
+roll_cmd: 1.0 | course_cmd: 0.14310405227570167
+roll_cmd: 1.0 | course_cmd: 0.14298326721112545
+roll_cmd: 1.0 | course_cmd: 0.1428620009127521
+roll_cmd: 1.0 | course_cmd: 0.142740255740095
+roll_cmd: 1.0 | course_cmd: 0.1426180340408612
+roll_cmd: 1.0 | course_cmd: 0.1424953381510578
+roll_cmd: 1.0 | course_cmd: 0.1423721703950976
+roll_cmd: 1.0 | course_cmd: 0.1422485330859053
+roll_cmd: 1.0 | course_cmd: 0.14212442852502236
+roll_cmd: 1.0 | course_cmd: 0.14199985900271278
+roll_cmd: 1.0 | course_cmd: 0.14187482679806743
+roll_cmd: 1.0 | course_cmd: 0.14174933417910865
+roll_cmd: 1.0 | course_cmd: 0.14162338340289443
+roll_cmd: 1.0 | course_cmd: 0.1414969767156223
+roll_cmd: 1.0 | course_cmd: 0.1413701163527326
+roll_cmd: 1.0 | course_cmd: 0.1412428045390122
+roll_cmd: 1.0 | course_cmd: 0.14111504348869625
+roll_cmd: 1.0 | course_cmd: 0.14098683540557153
+roll_cmd: 1.0 | course_cmd: 0.14085818248307835
+roll_cmd: 1.0 | course_cmd: 0.14072908690441197
+roll_cmd: 1.0 | course_cmd: 0.14059955084262402
+roll_cmd: 1.0 | course_cmd: 0.14046957646072333
+roll_cmd: 1.0 | course_cmd: 0.14033916591177686
+roll_cmd: 1.0 | course_cmd: 0.14020832133900946
+roll_cmd: 1.0 | course_cmd: 0.1400770448759037
+roll_cmd: 1.0 | course_cmd: 0.1399453386462993
+roll_cmd: 1.0 | course_cmd: 0.13981320476449202
+roll_cmd: 1.0 | course_cmd: 0.1396806453353322
+roll_cmd: 1.0 | course_cmd: 0.13954766245432285
+roll_cmd: 1.0 | course_cmd: 0.13941425820771716
+roll_cmd: 1.0 | course_cmd: 0.13928043467261617
+roll_cmd: 1.0 | course_cmd: 0.13914619391706512
+roll_cmd: 1.0 | course_cmd: 0.13901153800015006
+roll_cmd: 1.0 | course_cmd: 0.1388764689720938
+roll_cmd: 1.0 | course_cmd: 0.1387409888743516
+roll_cmd: 1.0 | course_cmd: 0.13860509973970558
+roll_cmd: 1.0 | course_cmd: 0.13846880359236016
+roll_cmd: 1.0 | course_cmd: 0.1383321024480355
+roll_cmd: 1.0 | course_cmd: 0.1381949983140617
+roll_cmd: 1.0 | course_cmd: 0.13805749318947147
+roll_cmd: 1.0 | course_cmd: 0.13791958906509358
+roll_cmd: 1.0 | course_cmd: 0.13778128792364466
+roll_cmd: 1.0 | course_cmd: 0.13764259173982107
+roll_cmd: 1.0 | course_cmd: 0.13750350248039045
+roll_cmd: 1.0 | course_cmd: 0.13736402210428258
+roll_cmd: 1.0 | course_cmd: 0.1372241525626795
+roll_cmd: 1.0 | course_cmd: 0.13708389579910568
+roll_cmd: 1.0 | course_cmd: 0.13694325374951755
+roll_cmd: 1.0 | course_cmd: 0.13680222834239208
+roll_cmd: 1.0 | course_cmd: 0.13666082149881548
+roll_cmd: 1.0 | course_cmd: 0.13651903513257124
+roll_cmd: 1.0 | course_cmd: 0.13637687115022742
+roll_cmd: 1.0 | course_cmd: 0.1362343314512237
+roll_cmd: 1.0 | course_cmd: 0.13609141792795798
+roll_cmd: 1.0 | course_cmd: 0.13594813246587217
+roll_cmd: 1.0 | course_cmd: 0.13580447694353787
+roll_cmd: 1.0 | course_cmd: 0.1356604532327414
+roll_cmd: 1.0 | course_cmd: 0.13551606319856793
+roll_cmd: 1.0 | course_cmd: 0.13537130869948605
+roll_cmd: 1.0 | course_cmd: 0.13522619158743057
+roll_cmd: 1.0 | course_cmd: 0.13508071370788607
+roll_cmd: 1.0 | course_cmd: 0.13493487689996925
+roll_cmd: 1.0 | course_cmd: 0.13478868299651053
+roll_cmd: 1.0 | course_cmd: 0.13464213382413606
+roll_cmd: 1.0 | course_cmd: 0.13449523120334836
+roll_cmd: 1.0 | course_cmd: 0.13434797694860642
+roll_cmd: 1.0 | course_cmd: 0.13420037286840666
+roll_cmd: 1.0 | course_cmd: 0.1340524207653611
+roll_cmd: 1.0 | course_cmd: 0.13390412243627728
+roll_cmd: 1.0 | course_cmd: 0.13375547967223594
+roll_cmd: 1.0 | course_cmd: 0.13360649425866944
+roll_cmd: 1.0 | course_cmd: 0.13345716797543872
+roll_cmd: 1.0 | course_cmd: 0.13330750259691052
+roll_cmd: 1.0 | course_cmd: 0.13315749989203332
+roll_cmd: 1.0 | course_cmd: 0.13300716162441362
+roll_cmd: 1.0 | course_cmd: 0.13285648955239093
+roll_cmd: 1.0 | course_cmd: 0.1327054854291126
+roll_cmd: 1.0 | course_cmd: 0.13255415100260845
+roll_cmd: 1.0 | course_cmd: 0.13240248801586402
+roll_cmd: 1.0 | course_cmd: 0.13225049820689438
+roll_cmd: 1.0 | course_cmd: 0.13209818330881662
+roll_cmd: 1.0 | course_cmd: 0.13194554504992212
+roll_cmd: 1.0 | course_cmd: 0.13179258515374842
+roll_cmd: 1.0 | course_cmd: 0.1316393053391501
+roll_cmd: 1.0 | course_cmd: 0.13148570732037002
+roll_cmd: 1.0 | course_cmd: 0.1313317928071093
+roll_cmd: 1.0 | course_cmd: 0.13117756350459675
+roll_cmd: 1.0 | course_cmd: 0.13102302111365896
+roll_cmd: 1.0 | course_cmd: 0.1308681673307878
+roll_cmd: 1.0 | course_cmd: 0.13071300384820972
+roll_cmd: 1.0 | course_cmd: 0.13055753235395265
+roll_cmd: 1.0 | course_cmd: 0.13040175453191363
+roll_cmd: 1.0 | course_cmd: 0.1302456720619257
+roll_cmd: 1.0 | course_cmd: 0.13008928661982344
+roll_cmd: 1.0 | course_cmd: 0.12993259987750932
+roll_cmd: 1.0 | course_cmd: 0.1297756135030187
+roll_cmd: 1.0 | course_cmd: 0.12961832916058452
+roll_cmd: 1.0 | course_cmd: 0.1294607485107015
+roll_cmd: 1.0 | course_cmd: 0.12930287321019013
+roll_cmd: 1.0 | course_cmd: 0.12914470491225954
+roll_cmd: 1.0 | course_cmd: 0.12898624526657063
+roll_cmd: 1.0 | course_cmd: 0.12882749591929826
+roll_cmd: 1.0 | course_cmd: 0.12866845851319317
+roll_cmd: 1.0 | course_cmd: 0.12850913468764286
+roll_cmd: 1.0 | course_cmd: 0.12834952607873293
+roll_cmd: 1.0 | course_cmd: 0.12818963431930755
+roll_cmd: 1.0 | course_cmd: 0.12802946103902899
+roll_cmd: 1.0 | course_cmd: 0.1278690078644371
+roll_cmd: 1.0 | course_cmd: 0.12770827641900864
+roll_cmd: 1.0 | course_cmd: 0.1275472683232154
+roll_cmd: 1.0 | course_cmd: 0.12738598519458275
+roll_cmd: 1.0 | course_cmd: 0.12722442864774655
+roll_cmd: 1.0 | course_cmd: 0.12706260029451102
+roll_cmd: 1.0 | course_cmd: 0.1269005017439048
+roll_cmd: 1.0 | course_cmd: 0.1267381346022379
+roll_cmd: 1.0 | course_cmd: 0.12657550047315674
+roll_cmd: 1.0 | course_cmd: 0.12641260095769993
+roll_cmd: 1.0 | course_cmd: 0.1262494376543533
+roll_cmd: 1.0 | course_cmd: 0.12608601215910392
+roll_cmd: 1.0 | course_cmd: 0.12592232606549483
+roll_cmd: 1.0 | course_cmd: 0.1257583809646778
+roll_cmd: 1.0 | course_cmd: 0.12559417844546744
+roll_cmd: 1.0 | course_cmd: 0.12542972009439304
+roll_cmd: 1.0 | course_cmd: 0.12526500749575198
+roll_cmd: 1.0 | course_cmd: 0.1251000422316606
+roll_cmd: 1.0 | course_cmd: 0.12493482588210643
+roll_cmd: 1.0 | course_cmd: 0.12476936002499914
+roll_cmd: 1.0 | course_cmd: 0.12460364623622108
+roll_cmd: 1.0 | course_cmd: 0.12443768608967787
+roll_cmd: 1.0 | course_cmd: 0.12427148115734823
+roll_cmd: 1.0 | course_cmd: 0.12410503300933325
+roll_cmd: 1.0 | course_cmd: 0.12393834321390608
+roll_cmd: 1.0 | course_cmd: 0.1237714133375603
+roll_cmd: 1.0 | course_cmd: 0.12360424494505824
+roll_cmd: 1.0 | course_cmd: 0.12343683959947936
+roll_cmd: 1.0 | course_cmd: 0.12326919886226759
+roll_cmd: 1.0 | course_cmd: 0.12310132429327877
+roll_cmd: 1.0 | course_cmd: 0.12293321745082755
+roll_cmd: 1.0 | course_cmd: 0.12276487989173382
+roll_cmd: 1.0 | course_cmd: 0.12259631317136936
+roll_cmd: 1.0 | course_cmd: 0.1224275188437032
+roll_cmd: 1.0 | course_cmd: 0.12225849846134731
+roll_cmd: 1.0 | course_cmd: 0.12208925357560217
+roll_cmd: 1.0 | course_cmd: 0.12191978573650104
+roll_cmd: 1.0 | course_cmd: 0.12175009649285512
+roll_cmd: 1.0 | course_cmd: 0.12158018739229752
+roll_cmd: 1.0 | course_cmd: 0.12141005998132695
+roll_cmd: 1.0 | course_cmd: 0.12123971580535177
+roll_cmd: 1.0 | course_cmd: 0.1210691564087331
+roll_cmd: 1.0 | course_cmd: 0.12089838333482793
+roll_cmd: 1.0 | course_cmd: 0.12072739812603155
+roll_cmd: 1.0 | course_cmd: 0.12055620232382047
+roll_cmd: 1.0 | course_cmd: 0.12038479746879432
+roll_cmd: 1.0 | course_cmd: 0.1202131851007179
+roll_cmd: 1.0 | course_cmd: 0.12004136675856258
+roll_cmd: 1.0 | course_cmd: 0.119869343980548
+roll_cmd: 1.0 | course_cmd: 0.11969711830418299
+roll_cmd: 1.0 | course_cmd: 0.11952469126630627
+roll_cmd: 1.0 | course_cmd: 0.11935206440312758
+roll_cmd: 1.0 | course_cmd: 0.11917923925026776
+roll_cmd: 1.0 | course_cmd: 0.11900621734279915
+roll_cmd: 1.0 | course_cmd: 0.11883300021528508
+roll_cmd: 1.0 | course_cmd: 0.11865958940182024
+roll_cmd: 1.0 | course_cmd: 0.11848598643606983
+roll_cmd: 1.0 | course_cmd: 0.11831219285130909
+roll_cmd: 1.0 | course_cmd: 0.1181382101804622
+roll_cmd: 1.0 | course_cmd: 0.11796403995614169
+roll_cmd: 1.0 | course_cmd: 0.11778968371068686
+roll_cmd: 1.0 | course_cmd: 0.11761514297620254
+roll_cmd: 1.0 | course_cmd: 0.11744041928459754
+roll_cmd: 1.0 | course_cmd: 0.11726551416762297
+roll_cmd: 1.0 | course_cmd: 0.11709042915691036
+roll_cmd: 1.0 | course_cmd: 0.11691516578400972
+roll_cmd: 1.0 | course_cmd: 0.11673972558042756
+roll_cmd: 1.0 | course_cmd: 0.11656411007766429
+roll_cmd: 1.0 | course_cmd: 0.11638832080725237
+roll_cmd: 1.0 | course_cmd: 0.11621235930079342
+roll_cmd: 1.0 | course_cmd: 0.116036227089996
+roll_cmd: 1.0 | course_cmd: 0.11585992570671265
+roll_cmd: 1.0 | course_cmd: 0.11568345668297747
+roll_cmd: 1.0 | course_cmd: 0.11550682155104314
+roll_cmd: 1.0 | course_cmd: 0.11533002184341817
+roll_cmd: 1.0 | course_cmd: 0.11515305909290384
+roll_cmd: 1.0 | course_cmd: 0.11497593483263138
+roll_cmd: 1.0 | course_cmd: 0.11479865059609885
+roll_cmd: 1.0 | course_cmd: 0.11462120791720823
+roll_cmd: 1.0 | course_cmd: 0.11444360833030216
+roll_cmd: 1.0 | course_cmd: 0.11426585337020131
+roll_cmd: 1.0 | course_cmd: 0.1140879445722408
+roll_cmd: 1.0 | course_cmd: 0.11390988347230743
+roll_cmd: 1.0 | course_cmd: 0.11373167160687668
+roll_cmd: 1.0 | course_cmd: 0.11355331051304948
+roll_cmd: 1.0 | course_cmd: 0.11337480172858962
+roll_cmd: 1.0 | course_cmd: 0.11319614679196038
+roll_cmd: 1.0 | course_cmd: 0.11301734724236204
+roll_cmd: 1.0 | course_cmd: 0.11283840461976882
+roll_cmd: 1.0 | course_cmd: 0.11265932046496627
+roll_cmd: 1.0 | course_cmd: 0.11248009631958869
+roll_cmd: 1.0 | course_cmd: 0.1123007337261565
+roll_cmd: 1.0 | course_cmd: 0.11212123422811412
+roll_cmd: 1.0 | course_cmd: 0.11194159936986707
+roll_cmd: 1.0 | course_cmd: 0.11176183069682047
+roll_cmd: 1.0 | course_cmd: 0.11158192975541649
+roll_cmd: 1.0 | course_cmd: 0.11140189809317287
+roll_cmd: 1.0 | course_cmd: 0.1112217372587209
+roll_cmd: 1.0 | course_cmd: 0.11104144880184416
+roll_cmd: 1.0 | course_cmd: 0.110861034273517
+roll_cmd: 1.0 | course_cmd: 0.11068049522594355
+roll_cmd: 1.0 | course_cmd: 0.11049983321259663
+roll_cmd: 1.0 | course_cmd: 0.11031904978825695
+roll_cmd: 1.0 | course_cmd: 0.11013814650905321
+roll_cmd: 1.0 | course_cmd: 0.10995712493250114
+roll_cmd: 1.0 | course_cmd: 0.10977598661754401
+roll_cmd: 1.0 | course_cmd: 0.10959473312459267
+roll_cmd: 1.0 | course_cmd: 0.10941336601556645
+roll_cmd: 1.0 | course_cmd: 0.10923188685393384
+roll_cmd: 1.0 | course_cmd: 0.10905029720475362
+roll_cmd: 1.0 | course_cmd: 0.1088685986347167
+roll_cmd: 1.0 | course_cmd: 0.10868679271218758
+roll_cmd: 1.0 | course_cmd: 0.1085048810072468
+roll_cmd: 1.0 | course_cmd: 0.10832286509173357
+roll_cmd: 1.0 | course_cmd: 0.10814074653928861
+roll_cmd: 1.0 | course_cmd: 0.10795852692539745
+roll_cmd: 1.0 | course_cmd: 0.10777620782743447
+roll_cmd: 1.0 | course_cmd: 0.10759379082470653
+roll_cmd: 1.0 | course_cmd: 0.10741127749849814
+roll_cmd: 1.0 | course_cmd: 0.1072286694321162
+roll_cmd: 1.0 | course_cmd: 0.10704596821093555
+roll_cmd: 1.0 | course_cmd: 0.10686317542244508
+roll_cmd: 1.0 | course_cmd: 0.10668029265629402
+roll_cmd: 1.0 | course_cmd: 0.10649732150433897
+roll_cmd: 1.0 | course_cmd: 0.10631426356069171
+roll_cmd: 1.0 | course_cmd: 0.10613112042176681
+roll_cmd: 1.0 | course_cmd: 0.10594789368633047
+roll_cmd: 1.0 | course_cmd: 0.1057645849555497
+roll_cmd: 1.0 | course_cmd: 0.10558119583304203
+roll_cmd: 1.0 | course_cmd: 0.10539772792492585
+roll_cmd: 1.0 | course_cmd: 0.10521418283987136
+roll_cmd: 1.0 | course_cmd: 0.10503056218915248
+roll_cmd: 1.0 | course_cmd: 0.10484686758669856
+roll_cmd: 1.0 | course_cmd: 0.10466310064914769
+roll_cmd: 1.0 | course_cmd: 0.1044792629959004
+roll_cmd: 1.0 | course_cmd: 0.10429535624917356
+roll_cmd: 1.0 | course_cmd: 0.10411138203405586
+roll_cmd: 1.0 | course_cmd: 0.10392734197856339
+roll_cmd: 1.0 | course_cmd: 0.1037432377136961
+roll_cmd: 1.0 | course_cmd: 0.10355907087349543
+roll_cmd: 1.0 | course_cmd: 0.10337484309510184
+roll_cmd: 1.0 | course_cmd: 0.10319055601881423
+roll_cmd: 1.0 | course_cmd: 0.10300621128814955
+roll_cmd: 1.0 | course_cmd: 0.10282181054990318
+roll_cmd: 1.0 | course_cmd: 0.10263735545421081
+roll_cmd: 1.0 | course_cmd: 0.10245284765461034
+roll_cmd: 1.0 | course_cmd: 0.10226828880810532
+roll_cmd: 1.0 | course_cmd: 0.10208368057522935
+roll_cmd: 1.0 | course_cmd: 0.10189902462011102
+roll_cmd: 1.0 | course_cmd: 0.10171432261053971
+roll_cmd: 1.0 | course_cmd: 0.10152957621803321
+roll_cmd: 1.0 | course_cmd: 0.10134478711790561
+roll_cmd: 1.0 | course_cmd: 0.10115995698933647
+roll_cmd: 1.0 | course_cmd: 0.10097508751544086
+roll_cmd: 1.0 | course_cmd: 0.1007901803833409
+roll_cmd: 1.0 | course_cmd: 0.10060523728423776
+roll_cmd: 1.0 | course_cmd: 0.10042025991348573
+roll_cmd: 1.0 | course_cmd: 0.10023524997066618
+roll_cmd: 1.0 | course_cmd: 0.10005020915966399
+roll_cmd: 1.0 | course_cmd: 0.0998651391887439
+roll_cmd: 1.0 | course_cmd: 0.09968004177062957
+roll_cmd: 1.0 | course_cmd: 0.09949491862258213
+roll_cmd: 1.0 | course_cmd: 0.09930977146648151
+roll_cmd: 1.0 | course_cmd: 0.09912460202890833
+roll_cmd: 1.0 | course_cmd: 0.09893941204122683
+roll_cmd: 1.0 | course_cmd: 0.09875420323967025
+roll_cmd: 1.0 | course_cmd: 0.0985689773654262
+roll_cmd: 1.0 | course_cmd: 0.09838373616472457
+roll_cmd: 1.0 | course_cmd: 0.09819848138892583
+roll_cmd: 1.0 | course_cmd: 0.09801321479461192
+roll_cmd: 1.0 | course_cmd: 0.0978279381436776
+roll_cmd: 1.0 | course_cmd: 0.09764265320342375
+roll_cmd: 1.0 | course_cmd: 0.09745736174665245
+roll_cmd: 1.0 | course_cmd: 0.09727206555176306
+roll_cmd: 1.0 | course_cmd: 0.09708676640285001
+roll_cmd: 1.0 | course_cmd: 0.09690146608980282
+roll_cmd: 1.0 | course_cmd: 0.096716166408407
+roll_cmd: 1.0 | course_cmd: 0.09653086916044676
+roll_cmd: 1.0 | course_cmd: 0.09634557615381002
+roll_cmd: 1.0 | course_cmd: 0.09616028920259444
+roll_cmd: 1.0 | course_cmd: 0.09597501012721564
+roll_cmd: 1.0 | course_cmd: 0.09578974075451695
+roll_cmd: 1.0 | course_cmd: 0.09560448291788137
+roll_cmd: 1.0 | course_cmd: 0.09541923845734501
+roll_cmd: 1.0 | course_cmd: 0.09523400921971259
+roll_cmd: 1.0 | course_cmd: 0.09504879705867512
+roll_cmd: 1.0 | course_cmd: 0.09486360383492887
+roll_cmd: 1.0 | course_cmd: 0.09467843141629728
+roll_cmd: 1.0 | course_cmd: 0.09449328167785433
+roll_cmd: 1.0 | course_cmd: 0.09430815650204966
+roll_cmd: 1.0 | course_cmd: 0.0941230577788369
+roll_cmd: 1.0 | course_cmd: 0.09393798740580285
+roll_cmd: 1.0 | course_cmd: 0.09375294728830018
+roll_cmd: 1.0 | course_cmd: 0.09356793933958127
+roll_cmd: 1.0 | course_cmd: 0.09338296548093457
+roll_cmd: 1.0 | course_cmd: 0.09319802764182379
+roll_cmd: 1.0 | course_cmd: 0.09301312776002928
+roll_cmd: 1.0 | course_cmd: 0.09282826778179104
+roll_cmd: 1.0 | course_cmd: 0.092643449661955
+roll_cmd: 1.0 | course_cmd: 0.09245867536412197
+roll_cmd: 1.0 | course_cmd: 0.09227394686079816
+roll_cmd: 1.0 | course_cmd: 0.09208926613354891
+roll_cmd: 1.0 | course_cmd: 0.09190463517315493
+roll_cmd: 1.0 | course_cmd: 0.09172005597977134
+roll_cmd: 1.0 | course_cmd: 0.0915355305630894
+roll_cmd: 1.0 | course_cmd: 0.09135106094250021
+roll_cmd: 1.0 | course_cmd: 0.09116664914726284
+roll_cmd: 1.0 | course_cmd: 0.0909822972166736
+roll_cmd: 1.0 | course_cmd: 0.0907980072002392
+roll_cmd: 1.0 | course_cmd: 0.09061378115785287
+roll_cmd: 1.0 | course_cmd: 0.09042962115997308
+roll_cmd: 1.0 | course_cmd: 0.09024552928780549
+roll_cmd: 1.0 | course_cmd: 0.09006150763348807
+roll_cmd: 1.0 | course_cmd: 0.08987755830027955
+roll_cmd: 1.0 | course_cmd: 0.08969368340275055
+roll_cmd: 1.0 | course_cmd: 0.08950988506697873
+roll_cmd: 1.0 | course_cmd: 0.0893261654307468
+roll_cmd: 1.0 | course_cmd: 0.08914252664374381
+roll_cmd: 1.0 | course_cmd: 0.08895897086777087
+roll_cmd: 1.0 | course_cmd: 0.08877550027694879
+roll_cmd: 1.0 | course_cmd: 0.08859211705793071
+roll_cmd: 1.0 | course_cmd: 0.08840882341011808
+roll_cmd: 1.0 | course_cmd: 0.08822562154587943
+roll_cmd: 1.0 | course_cmd: 0.08804251369077468
+roll_cmd: 1.0 | course_cmd: 0.0878595020837813
+roll_cmd: 1.0 | course_cmd: 0.08767658897752614
+roll_cmd: 1.0 | course_cmd: 0.08749377663852025
+roll_cmd: 1.0 | course_cmd: 0.08731106734739767
+roll_cmd: 1.0 | course_cmd: 0.08712846339915944
+roll_cmd: 1.0 | course_cmd: 0.08694596710342031
+roll_cmd: 1.0 | course_cmd: 0.08676358078466122
+roll_cmd: 1.0 | course_cmd: 0.0865813067824853
+roll_cmd: 1.0 | course_cmd: 0.08639914745187818
+roll_cmd: 1.0 | course_cmd: 0.08621710516347336
+roll_cmd: 1.0 | course_cmd: 0.08603518230382204
+roll_cmd: 1.0 | course_cmd: 0.0858533812756676
+roll_cmd: 1.0 | course_cmd: 0.08567170449822474
+roll_cmd: 1.0 | course_cmd: 0.08549015440746373
+roll_cmd: 1.0 | course_cmd: 0.08530873345639947
+roll_cmd: 1.0 | course_cmd: 0.08512744411538545
+roll_cmd: 1.0 | course_cmd: 0.08494628887241362
+roll_cmd: 1.0 | course_cmd: 0.08476527023341819
+roll_cmd: 1.0 | course_cmd: 0.08458439072258624
+roll_cmd: 1.0 | course_cmd: 0.08440365288267232
+roll_cmd: 1.0 | course_cmd: 0.08422305927532003
+roll_cmd: 1.0 | course_cmd: 0.08404261248138822
+roll_cmd: 1.0 | course_cmd: 0.08386231510128316
+roll_cmd: 1.0 | course_cmd: 0.08368216975529709
+roll_cmd: 1.0 | course_cmd: 0.08350217908395181
+roll_cmd: 1.0 | course_cmd: 0.08332234574834933
+roll_cmd: 1.0 | course_cmd: 0.083142672430528
+roll_cmd: 1.0 | course_cmd: 0.08296316183382534
+roll_cmd: 1.0 | course_cmd: 0.08278381668324723
+roll_cmd: 1.0 | course_cmd: 0.08260463972584366
+roll_cmd: 1.0 | course_cmd: 0.08242563373109077
+roll_cmd: 1.0 | course_cmd: 0.0822468014912809
+roll_cmd: 1.0 | course_cmd: 0.08206814582191797
+roll_cmd: 1.0 | course_cmd: 0.08188966956212101
+roll_cmd: 1.0 | course_cmd: 0.08171137557503483
+roll_cmd: 1.0 | course_cmd: 0.08153326674824754
+roll_cmd: 1.0 | course_cmd: 0.08135534599421619
+roll_cmd: 1.0 | course_cmd: 0.08117761625069941
+roll_cmd: 1.0 | course_cmd: 0.08100008048119875
+roll_cmd: 1.0 | course_cmd: 0.08082274167540698
+roll_cmd: 1.0 | course_cmd: 0.08064560284966488
+roll_cmd: 1.0 | course_cmd: 0.08046866704742674
+roll_cmd: 1.0 | course_cmd: 0.0802919373397337
+roll_cmd: 1.0 | course_cmd: 0.08011541682569584
+roll_cmd: 1.0 | course_cmd: 0.07993910863298324
+roll_cmd: 1.0 | course_cmd: 0.07976301591832596
+roll_cmd: 1.0 | course_cmd: 0.0795871418680225
+roll_cmd: 1.0 | course_cmd: 0.079411489698459
+roll_cmd: 1.0 | course_cmd: 0.07923606265663613
+roll_cmd: 1.0 | course_cmd: 0.07906086402070717
+roll_cmd: 1.0 | course_cmd: 0.07888589710052538
+roll_cmd: 1.0 | course_cmd: 0.07871116523820107
+roll_cmd: 1.0 | course_cmd: 0.07853667180866986
+roll_cmd: 1.0 | course_cmd: 0.07836242022027047
+roll_cmd: 1.0 | course_cmd: 0.07818841391533415
+roll_cmd: 1.0 | course_cmd: 0.0780146563707841
+roll_cmd: 1.0 | course_cmd: 0.07784115109874706
+roll_cmd: 1.0 | course_cmd: 0.07766790164717555
+roll_cmd: 1.0 | course_cmd: 0.07749491160048182
+roll_cmd: 1.0 | course_cmd: 0.07732218458018415
+roll_cmd: 1.0 | course_cmd: 0.07714972424556486
+roll_cmd: 1.0 | course_cmd: 0.07697753429434065
+roll_cmd: 1.0 | course_cmd: 0.07680561846334587
+roll_cmd: 1.0 | course_cmd: 0.07663398052922836
+roll_cmd: 1.0 | course_cmd: 0.07646262430915893
+roll_cmd: 1.0 | course_cmd: 0.07629155366155373
+roll_cmd: 1.0 | course_cmd: 0.076120772486811
+roll_cmd: 1.0 | course_cmd: 0.07595028472806079
+roll_cmd: 1.0 | course_cmd: 0.07578009437193056
+roll_cmd: 1.0 | course_cmd: 0.07561020544932388
+roll_cmd: 1.0 | course_cmd: 0.07544062203621522
+roll_cmd: 1.0 | course_cmd: 0.07527134825445947
+roll_cmd: 1.0 | course_cmd: 0.07510238827261695
+roll_cmd: 1.0 | course_cmd: 0.07493374630679489
+roll_cmd: 1.0 | course_cmd: 0.07476542662150455
+roll_cmd: 1.0 | course_cmd: 0.07459743353053572
+roll_cmd: 1.0 | course_cmd: 0.07442977139784776
+roll_cmd: 1.0 | course_cmd: 0.0742624446384777
+roll_cmd: 1.0 | course_cmd: 0.07409545771946721
+roll_cmd: 1.0 | course_cmd: 0.07392881516080646
+roll_cmd: 1.0 | course_cmd: 0.07376252153639763
+roll_cmd: 1.0 | course_cmd: 0.07359658147503638
+roll_cmd: 1.0 | course_cmd: 0.07343099966141368
+roll_cmd: 1.0 | course_cmd: 0.07326578083713704
+roll_cmd: 1.0 | course_cmd: 0.07310092980177157
+roll_cmd: 1.0 | course_cmd: 0.07293645141390283
+roll_cmd: 1.0 | course_cmd: 0.07277235059221968
+roll_cmd: 1.0 | course_cmd: 0.07260863231661993
+roll_cmd: 1.0 | course_cmd: 0.07244530162933745
+roll_cmd: 1.0 | course_cmd: 0.07228236363609196
+roll_cmd: 1.0 | course_cmd: 0.07211982350726283
+roll_cmd: 1.0 | course_cmd: 0.07195768647908506
