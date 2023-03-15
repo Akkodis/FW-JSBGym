@@ -52,8 +52,8 @@ class AeroModel(object):
         # Drag
         self.CDo: float = 0.0197
         self.CDalpha: float = 0.0791
-        self.CDde: float = 0.0633
         self.CDq: float = 0.0000
+        self.CDde: float = 0.0633
 
         # Sideforce: Y
         self.CYo: float = 0.0
@@ -61,11 +61,15 @@ class AeroModel(object):
         self.CYp: float = -0.1374
         self.CYr: float = 0.0839
         self.CYda: float = 0.0433
+        self.CYdr: float = 0.0 # no rudder -> equals 0.0
 
         # roll moment : l
+        self.Clo: float = 0.0
         self.Clp: float = -0.4042
-        self.Cnp: float = 0.0044
+        self.Clb: float = -0.0849
+        self.Clr: float = 0.0555
         self.Clda: float = 0.1202
+        self.Cldr: float = 0.0 # no rudder -> equals 0.0
 
         # pitch moment : m
         self.Cmq: float = -1.3012
@@ -74,11 +78,27 @@ class AeroModel(object):
         self.Cmo: float = 0.0227
 
         # yaw moment : n
+        self.Cno: float = 0.0
+        self.Cnp: float = 0.0044
+        self.Cnb: float = 0.0283
+        self.Cnr: float = -0.072
         self.Cnda: float = 0.1202
+        self.Cndr: float = 0.0
 
-        # intermediate values of aero coeffs weighted by inertia
+        # intermediate values of aero coeffs weighted by inertia components
         self.Cpp: float = self.gamma3 * self.Clp + self.gamma4 * self.Cnp
         self.Cpda: float = self.gamma3 * self.Clda + self.gamma4 * self.Cnda
+        self.Cpo: float = self.gamma3 * self.Clo + self.gamma4 * self.Cno # Clo and Cno are 0.0 because x8 UAV is symetric -> Cpo = 0.0
+        self.Cpbeta: float = self.gamma3 * self.Clb + self.gamma4 * self.Cnb
+        self.Cpr: float = self.gamma3 * self.Clr + self.gamma4 * self.Cnr
+        self.Cpdr: float = self.gamma3 * self.Cldr + self.gamma4 * self.Cndr # no rudder -> equals 0.0
+
+        self.Cro: float = self.gamma4 * self.Clo + self.gamma8 * self.Cno # Clo and Cno are 0.0 because x8 UAV is symetric -> Cro = 0.0
+        self.Crbeta: float = self.gamma4 * self.Clb + self.gamma8 * self.Cnb
+        self.Crp: float = self.gamma4 * self.Clp + self.gamma8 * self.Cnp
+        self.Crr: float = self.gamma4 * self.Clr + self.gamma8 * self.Cnr
+        self.Crda: float = self.gamma4 * self.Clda + self.gamma8 * self.Cnda
+        self.Crdr: float = self.gamma4 * self.Cldr + self.gamma8 * self.Cndr # no rudder -> equals 0.0
 
         # Roll TF coefficients
         self.a_roll1: float = -1 / 2 * self.rho * self.Va_trim ** 2 * self.S * self.b * self.Cpp * (
