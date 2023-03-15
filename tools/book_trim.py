@@ -5,12 +5,12 @@ compute_trim
         12/29/2018 - RWB
 """
 import sys
-sys.path.append('..')
+from os import path
+sys.path.append(f'{path.dirname(path.abspath(__file__))}/..')
 import numpy as np
+import jsbsim
 from scipy.optimize import minimize
 from scipy.spatial.transform.rotation import Rotation as R
-from message_types.msg_delta import MsgDelta
-import time
 from models.aerodynamics import AeroModel
 
 
@@ -267,3 +267,22 @@ def trim_objective_fun(x, mav, Va, gamma):
     # compute the objective function
     J = np.linalg.norm(state_dot_star - f_xu)
     return J
+
+def main():
+    Va: float
+    gamma: float
+
+    fdm: jsbsim.FGFDMExec = jsbsim.FGFDMExec(None)
+    fdm.load_model("x8")
+    ic_path = 'initial_conditions/x8_basic_ic.xml'
+    fdm.load_ic(ic_path, False)
+    fdm.run_ic()
+    mav: AeroModel = AeroModel(fdm)
+
+    for Va in range(8, 23): # trying Va for 8 to 23 m/s -> 28 to 83 km/h
+        for gamma in range(-10, 10):
+            gamma = np.deg2rad(gamma)
+            res = compute_trim(mav, Va, gamma)
+
+if __name__ == "__main__":
+    main()
