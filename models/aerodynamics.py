@@ -40,7 +40,7 @@ class AeroModel(object):
         # Direct Thruster Parameters:
         self.Khp2w: float = 745.7  # hp to watts constant
         self.Khp2ftlbsec: float = 550.0  # hp to ft-lb/sec constant
-        self.Pwatt = 8.0  # power in watts
+        self.Pwatt: float = 8.0  # power in watts
 
         # Aero coeffs of the x8
         # Lift

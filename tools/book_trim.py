@@ -26,7 +26,7 @@ def Euler2Quaternion(phi, theta, psi) -> np.ndarray:
     e2: float = np.cos(psi/2.0) * np.sin(theta/2.0) * np.cos(phi/2.0) + np.sin(psi/2.0) * np.cos(theta/2.0) * np.sin(phi/2.0)
     e3: float = np.sin(psi/2.0) * np.cos(theta/2.0) * np.cos(phi/2.0) - np.cos(psi/2.0) * np.sin(theta/2.0) * np.sin(phi/2.0)
 
-    return np.array([e0,e1,e2,e3])
+    return np.array([[e0],[e1],[e2],[e3]])
 
 
 def CL(alpha: float, mav: AeroModel) -> float:
@@ -61,7 +61,7 @@ def trimmed_state(mav: AeroModel, Va, alpha, beta) -> np.ndarray:
     q_star: float = 0.0
     r_star: float = 0.0
 
-    return np.array([u_star, v_star, w_star, theta_star, p_star, q_star, r_star])
+    return np.array([[u_star], [v_star], [w_star], [theta_star], [p_star], [q_star], [r_star]])
 
 def trimmed_input(mav: AeroModel, Va, alpha, beta, u, v, w, phi, theta, psi, p, q, r) -> np.ndarray:
     # elevator de
