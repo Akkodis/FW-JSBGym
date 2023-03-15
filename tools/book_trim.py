@@ -8,6 +8,7 @@ import sys
 sys.path.append('..')
 import numpy as np
 from scipy.optimize import minimize
+from scipy.spatial.transform.rotation import Rotation as R
 from message_types.msg_delta import MsgDelta
 import time
 from models.aerodynamics import AeroModel
@@ -51,13 +52,24 @@ def CZ_coeffs(alpha: float, mav: AeroModel) -> tuple[float, float, float]:
 
     return CZ_alpha, CZq_alpha, CZde_alpha
 
+def trimmed_state(mav: AeroModel, Va, alpha, beta) -> np.ndarray:
+    u_star: float = Va*np.cos(alpha) + Va*np.cos(beta)
+    v_star: float = Va*np.sin(beta)
+    w_star: float = Va*np.sin(alpha)+ Va*np.cos(beta)
+    theta_star = alpha + beta
+    p_star: float = 0.0 # since R=inf (straight flight), p=q=r=0
+    q_star: float = 0.0
+    r_star: float = 0.0
 
-def compute_trimmed_input(mav: AeroModel, Va, alpha, beta, u, v, w, phi, theta, psi, p, q, r) -> np.ndarray:
-    # elevator
-    de_0: float = ((mav.Ixz * (p**2 - r**2) + (mav.Ixx - mav.Izz) * p * r) / (1/2 * mav.rho * Va**2 * mav.c * mav.S))
-    de_star: float = (de_0 - mav.Cmo - mav.Cma * alpha - mav.Cmq * (mav.c * q / (2 * Va))) / mav.Cmde
+    return np.array([[u_star], [v_star], [w_star], [theta_star], [p_star], [q_star], [r_star]])
 
-    # throttle
+def trimmed_input(mav: AeroModel, Va, alpha, beta, u, v, w, phi, theta, psi, p, q, r) -> np.ndarray:
+    # elevator de
+    # intermidiate variable de_A
+    de_A: float = ((mav.Ixz * (p**2 - r**2) + (mav.Ixx - mav.Izz) * p * r) / (1/2 * mav.rho * Va**2 * mav.c * mav.S))
+    de_star: float = (de_A - mav.Cmo - mav.Cma * alpha - mav.Cmq * (mav.c * q / (2 * Va))) / mav.Cmde
+
+    # throttle dt
     CX_alpha: float
     CXq_alpha: float
     CXde_alpha: float
@@ -66,8 +78,10 @@ def compute_trimmed_input(mav: AeroModel, Va, alpha, beta, u, v, w, phi, theta, 
                     - ((mav.rho * Va**2 * mav.S)/(2 * mav.mass)) * \
                     (CX_alpha + CXq_alpha * ((mav.c * q) / (2*Va)) + CXde_alpha * de_star))
 
-    # TODO: aileron
-    da_star: float = 0
+    # aileron da. Since no rudder, pick da has 2 equal expressions. I chose the one with 1/Cpda
+    # intermidiate variable da_A
+    da_A: float = (mav.gamma1*p*q + mav.gamma2*p*q) / (1/2 * mav.rho * Va**2 * mav.S * mav.b)
+    da_star: float = 1/mav.Cpda * (-da_A - mav.Cpo - mav.Cpbeta * beta - mav.Cpp * ((mav.b*p)/(2*Va)) - mav.Cpr * ((mav.b*r)/(2*Va)))
 
     # rudder = 0 since no rudder on x8
     dr_star: float = 0
@@ -79,34 +93,38 @@ def compute_trim(mav, Va, gamma):
 
     ##### TODO #####
     # set the initial conditions of the optimization
-    # e0: np.ndarray = Euler2Quaternion(0., gamma, 0.)
     h: float = 400 # altitude m
-    alpha: float = 0
-    theta: float = alpha + gamma
-    beta: float = 0
-    phi: float = 0
-    psi: float = 0
-    e0: np.ndarray = Euler2Quaternion(0, theta, 0)
-    state0 = np.array([[0],  # pn
-                   [0],  # pe
-                   [h],  # pd, h
-                   [Va*np.cos(alpha) + Va*np.cos(beta)],  # u, alpha = gamma (no wind) and beta = 0
-                   [Va*np.sin(beta)], # v, beta = 0 for having force side velocity to be zero
-                   [Va*np.sin(alpha)+ Va*np.cos(beta)], # w
-                   [e0[0]],  # e0, previously set to 1
-                   [e0[1]],  # e1
-                   [e0[2]],  # e2
-                   [e0[3]],  # e3
-                   [0], # p
-                   [0], # q
-                   [0]  # r
+    alpha0: float = 0
+    beta0: float = 0
+    phi0: float = 0
+    psi0: float = 0
+    
+    trim_state0: np.ndarray = trimmed_state(mav, Va, alpha0, beta0)
+    theta0: float = trim_state0[3]
+    e0: np.ndarray = Euler2Quaternion(0, theta0, 0)
+    state0 = np.array([[0], # 0 pn
+                   [0],  # 1 pe
+                   [h],  # 2 pd, h
+                   [trim_state0[0]],  # 3 u, alpha = gamma (no wind) and beta = 0
+                   [trim_state0[1]], # 4 v, beta = 0 for having force side velocity to be zero
+                   [trim_state0[2]], # 5 w
+                   [e0[0]],  # 6 e0, previously set to 1
+                   [e0[1]],  # 7 e1
+                   [e0[2]],  # 8 e2
+                   [e0[3]],  # 9 e3
+                   [trim_state0[4]], # 10 p = 0. Since R=inf p=q=r=0
+                   [trim_state0[5]], # 11 q = 0
+                   [trim_state0[6]]  # 12 r = 0
                    ])
-    trim_input0 = compute_trimmed_input(mav, Va, alpha, beta, state0[3], state0[4], state0[5], phi, theta, psi, state0[10], state0[11], state0[12])
-    delta0 = np.array([[trim_input0[0]],  # elevator
-                       [trim_input0[1]],  # aileron
-                       [trim_input0[2]],  # rudder = 0
-                       [trim_input0[3]]]) # throttle
+
+    trim_input0 = trimmed_input(mav, Va, alpha0, beta0, state0[3], state0[4], state0[5], phi0, theta0, psi0, state0[10], state0[11], state0[12])
+    delta0 = np.array([[trim_input0[0]],  # 13 elevator
+                       [trim_input0[1]],  # 14 aileron
+                       [trim_input0[2]],  # 15 rudder = 0
+                       [trim_input0[3]]]) # 16 throttle
+
     x0 = np.concatenate((state0, delta0), axis=0)
+
     # define equality constraints
     cons = ({'type': 'eq',
              'fun': lambda x: np.array([
@@ -130,11 +148,12 @@ def compute_trim(mav, Va, gamma):
                                 [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0.],
                                 ])
              })
-    # solve the minimization problem to find the trim states and inputs
 
+    # solve the minimization problem to find the trim states and inputs
     res = minimize(trim_objective_fun, x0, method='SLSQP', args=(mav, Va, gamma),
                    constraints=cons, 
                    options={'ftol': 1e-10, 'disp': True})
+
     # extract trim state and input and return
     trim_state = np.array([res.x[0:13]]).T
     trim_input = MsgDelta(elevator=res.x.item(13),
@@ -145,15 +164,18 @@ def compute_trim(mav, Va, gamma):
     print('trim_state=', trim_state.T)
     return trim_state, trim_input
 
-def compute_f_trim(mav: AeroModel,Va, alpha, beta, u, v, w, phi, theta, psi, p, q, r, de, da, dr, dt):
+def compute_f_xu(mav: AeroModel, Va, alpha, beta, u, v, w, phi, theta, psi, p, q, r, de, da, dr, dt):
     # pn_dot
-    pn_dot: float = (np.cos(theta) * np.cos(psi)) * u \
-                    + (np.sin(phi) * np.sin(theta) * np.cos(psi) - np.cos(phi) * np.sin(psi)) * v \
-                    + (np.cos(phi) * np.sin(theta) * np.cos(psi) + np.sin(phi) * np.sin(psi)) * w
+    # pn_dot: float = (np.cos(theta) * np.cos(psi)) * u \
+    #                 + (np.sin(phi) * np.sin(theta) * np.cos(psi) - np.cos(phi) * np.sin(psi)) * v \
+    #                 + (np.cos(phi) * np.sin(theta) * np.cos(psi) + np.sin(phi) * np.sin(psi)) * w
+    pn_dot: float = 0.0
+
     # pe_dot
-    pe_dot: float = (np.cos(theta) * np.sin(psi)) * u \
-                    + (np.sin(phi) * np.sin(theta) * np.sin(psi) + np.cos(phi) * np.cos(psi)) * v \
-                    + (np.cos(phi) * np.sin(theta) * np.sin(psi) - np.sin(phi) * np.cos(psi)) * w
+    # pe_dot: float = (np.cos(theta) * np.sin(psi)) * u \
+    #                 + (np.sin(phi) * np.sin(theta) * np.sin(psi) + np.cos(phi) * np.cos(psi)) * v \
+    #                 + (np.cos(phi) * np.sin(theta) * np.sin(psi) - np.sin(phi) * np.cos(psi)) * w
+    pe_dot: float = 0.0
     
     # h_dot
     h_dot: float = u * np.sin(theta) - v * np.sin(phi) * np.cos(theta) - w * np.cos(phi) * np.cos(theta)
@@ -171,7 +193,7 @@ def compute_f_trim(mav: AeroModel,Va, alpha, beta, u, v, w, phi, theta, psi, p, 
     v_dot: float = p*w - r*u + mav.G*np.cos(theta)*np.sin(phi) \
                     + ((mav.rho * Va**2 * mav.S)/(2*mav.mass)) \
                     * (mav.CYo + mav.CYb*beta + mav.CYp * ((mav.b*p)/(2*Va)) \
-                    + mav.CYr * ((mav.b*r)/(2*Va)) + mav.CYda*da)
+                    + mav.CYr * ((mav.b*r)/(2*Va)) + mav.CYda*da + mav.CYdr*dr)
     # w_dot
     CZ_alpha: float
     CZq_alpha: float
@@ -190,7 +212,19 @@ def compute_f_trim(mav: AeroModel,Va, alpha, beta, u, v, w, phi, theta, psi, p, 
     # psi_dot
     psi_dot: float = q*np.sin(phi)/np.cos(theta) + r*np.cos(phi)/np.cos(theta)
 
-    pass
+    # p_dot
+    p_dot: float = mav.gamma1*p*q - mav.gamma2*q*r + (1/2*mav.rho*Va**2*mav.S*mav.b) \
+                    * (mav.Cpo + mav.Cpbeta*beta +mav.Cpp*((mav.b*p)/(2*Va)) + mav.Cpda*da + mav.Cpdr*dr)
+    
+    # q_dot
+    q_dot: float = mav.gamma5*p*r - mav.gamma6*(p**2 - r**2) + ((mav.rho * Va**2 * mav.S * mav.c)/(2*mav.Iy)) \
+                    * (mav.Cmo + mav.Cma*alpha + mav.Cmq*((mav.c*q)/(2*Va)) + mav.Cmde*de)
+    
+    # r_dot
+    r_dot: float = mav.gamma7*p*q - mav.gamma1*q*r + (1/2*mav.rho*Va**2*mav.S*mav.b) \
+                    * (mav.Cro + mav.Crbeta*beta + mav.Crp*((mav.b*r)/(2*Va)) + mav.Crr*((mav.b*r)/(2*Va)) + mav.Crda*da + mav.Crdr*dr)
+
+    return np.array([[pn_dot], [pe_dot], [h_dot], [u_dot], [v_dot], [w_dot], [phi_dot], [theta_dot], [psi_dot], [p_dot], [q_dot], [r_dot]]) # state_dot
 
 
 def trim_objective_fun(x, mav, Va, gamma):
@@ -200,7 +234,7 @@ def trim_objective_fun(x, mav, Va, gamma):
 
     # compute state_dot_star (Eq 5.21)
     e_dot_star = Euler2Quaternion(0, 0, 0) # psi = 0 because Va/R with R=inf is 0
-    state_dot_star = np.array([[0], #pn_dot_star
+    state_dot_star = np.array([[0], # pn_dot_star
                                 [0], # pe_dot_star
                                 [Va * np.sin(gamma)], # pd_dot_star or h_dot_star (=0 since gamma=0)
                                 [0], # u_dot_star
@@ -215,4 +249,21 @@ def trim_objective_fun(x, mav, Va, gamma):
                                 [0]  # r_dot_star
                             ])
 
+    # TODO: ASK : What value of alpha to use?
+    attitude: R = R.from_quat([x[6], x[7], x[8], x[9]])
+    attitude.as_euler('xyz')
+    alpha: float = attitude[1] - gamma # alpha = theta - gamma
+    beta: float = 0.0 # for having no sideforce -> v=0
+    
+    # compute trimmed states and input
+    state_star = trimmed_state(mav, Va, alpha, beta)
+    input_star = trimmed_input(mav, Va, alpha, beta, x[3], x[4], x[5], attitude[0], attitude[1], attitude[2], x[10], x[11], x[12])
+
+    # compute f(state_star, input_star)
+    f_xu: np.ndarray= compute_f_xu(mav, Va, alpha, beta, state_star[0], state_star[1], state_star[2], 0, state_star[3], 0, \
+                                    state_star[4], state_star[5], state_star[6], input_star[0], input_star[1], input_star[2],\
+                                    input_star[3])
+
+    # compute the objective function
+    J = np.linalg.norm(state_dot_star - f_xu)
     return J
