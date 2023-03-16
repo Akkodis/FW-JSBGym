@@ -26,7 +26,7 @@ def Euler2Quaternion(phi, theta, psi) -> np.ndarray:
     e2: float = np.cos(psi/2.0) * np.sin(theta/2.0) * np.cos(phi/2.0) + np.sin(psi/2.0) * np.cos(theta/2.0) * np.sin(phi/2.0)
     e3: float = np.sin(psi/2.0) * np.cos(theta/2.0) * np.cos(phi/2.0) - np.cos(psi/2.0) * np.sin(theta/2.0) * np.sin(phi/2.0)
 
-    return np.array([[e0],[e1],[e2],[e3]])
+    return np.array([e0,e1,e2,e3])
 
 
 def CL(alpha: float, mav: AeroModel) -> float:
@@ -52,16 +52,16 @@ def CZ_coeffs(alpha: float, mav: AeroModel) -> tuple[float, float, float]:
 
     return CZ_alpha, CZq_alpha, CZde_alpha
 
-def trimmed_state(mav: AeroModel, Va, alpha, beta) -> np.ndarray:
-    u_star: float = Va*np.cos(alpha) + Va*np.cos(beta)
-    v_star: float = Va*np.sin(beta)
-    w_star: float = Va*np.sin(alpha)+ Va*np.cos(beta)
-    theta_star = alpha + beta
+def trimmed_state(mav: AeroModel, Va, gamma, alpha, beta) -> np.ndarray:
+    u_star: float = Va * np.cos(alpha) * Va*np.cos(beta)
+    v_star: float = Va * np.sin(beta)
+    w_star: float = Va * np.sin(alpha) * Va*np.cos(beta)
+    theta_star = alpha + gamma
     p_star: float = 0.0 # since R=inf (straight flight), p=q=r=0
     q_star: float = 0.0
     r_star: float = 0.0
 
-    return np.array([[u_star], [v_star], [w_star], [theta_star], [p_star], [q_star], [r_star]])
+    return np.array([u_star, v_star, w_star, theta_star, p_star, q_star, r_star])
 
 def trimmed_input(mav: AeroModel, Va, alpha, beta, u, v, w, phi, theta, psi, p, q, r) -> np.ndarray:
     # elevator de
@@ -88,9 +88,8 @@ def trimmed_input(mav: AeroModel, Va, alpha, beta, u, v, w, phi, theta, psi, p, 
     return np.array([de_star, da_star, dr_star, dt_star])
 
 
-def compute_trim(mav, Va, gamma):
+def compute_trim(mav: AeroModel, Va: float, gamma: float):
     # define initial state and input
-
     ##### TODO #####
     # set the initial conditions of the optimization
     h: float = 600 # altitude m
@@ -99,10 +98,9 @@ def compute_trim(mav, Va, gamma):
     phi0: float = 0
     psi0: float = 0
     
-    trim_state0: np.ndarray = trimmed_state(mav, Va, alpha0, beta0)
-    print(trim_state0)
+    trim_state0: np.ndarray = trimmed_state(mav, Va, gamma, alpha0, beta0).squeeze()
     theta0: float = trim_state0[3]
-    e0: np.ndarray = Euler2Quaternion(0, theta0, 0)
+    e0: np.ndarray = Euler2Quaternion(0, theta0, 0).squeeze()
     state0: np.ndarray = np.array([
                    [0], # 0 pn
                    [0],  # 1 pe
@@ -117,18 +115,18 @@ def compute_trim(mav, Va, gamma):
                    [trim_state0[4]], # 10 p = 0. Since R=inf p=q=r=0
                    [trim_state0[5]], # 11 q = 0
                    [trim_state0[6]]  # 12 r = 0
-                   ])
-
-    trim_input0 = trimmed_input(mav, Va, alpha0, beta0, state0[3], state0[4], state0[5], phi0, theta0, psi0, state0[10], state0[11], state0[12])
+                   ]).squeeze()
+    trim_input0: np.ndarray = trimmed_input(mav, Va, alpha0, beta0, state0[3], state0[4], state0[5], \
+                                        phi0, theta0, psi0, state0[10], state0[11], state0[12]).squeeze()
     delta0 = np.array([[trim_input0[0]],  # 13 elevator
                        [trim_input0[1]],  # 14 aileron
                        [trim_input0[2]],  # 15 rudder = 0
-                       [trim_input0[3]]]) # 16 throttle
+                       [trim_input0[3]]]).squeeze() # 16 throttle
 
-    x0 = np.concatenate((state0, delta0), axis=0)
+    x0: np.ndarray = np.concatenate((state0, delta0), axis=0)
 
     # define equality constraints
-    cons = ({'type': 'eq',
+    cons: dict[str, any] = ({'type': 'eq',
              'fun': lambda x: np.array([
                                 x[3]**2 + x[4]**2 + x[5]**2 - Va**2,  # magnitude of velocity vector is Va
                                 x[4],  # v=0, force side velocity to be zero
@@ -217,14 +215,14 @@ def compute_f_xu(mav: AeroModel, Va, alpha, beta, u, v, w, phi, theta, psi, p, q
                     * (mav.Cpo + mav.Cpbeta*beta +mav.Cpp*((mav.b*p)/(2*Va)) + mav.Cpda*da + mav.Cpdr*dr)
     
     # q_dot
-    q_dot: float = mav.gamma5*p*r - mav.gamma6*(p**2 - r**2) + ((mav.rho * Va**2 * mav.S * mav.c)/(2*mav.Iy)) \
+    q_dot: float = mav.gamma5*p*r - mav.gamma6*(p**2 - r**2) + ((mav.rho * Va**2 * mav.S * mav.c)/(2*mav.Iyy)) \
                     * (mav.Cmo + mav.Cma*alpha + mav.Cmq*((mav.c*q)/(2*Va)) + mav.Cmde*de)
     
     # r_dot
     r_dot: float = mav.gamma7*p*q - mav.gamma1*q*r + (1/2*mav.rho*Va**2*mav.S*mav.b) \
                     * (mav.Cro + mav.Crbeta*beta + mav.Crp*((mav.b*r)/(2*Va)) + mav.Crr*((mav.b*r)/(2*Va)) + mav.Crda*da + mav.Crdr*dr)
 
-    return np.array([[pn_dot], [pe_dot], [h_dot], [u_dot], [v_dot], [w_dot], [phi_dot], [theta_dot], [psi_dot], [p_dot], [q_dot], [r_dot]]) # state_dot
+    return np.array([pn_dot, pe_dot, h_dot, u_dot, v_dot, w_dot, phi_dot, theta_dot, psi_dot, p_dot, q_dot, r_dot]) # state_dot
 
 
 def trim_objective_fun(x, mav, Va, gamma) -> float:
@@ -233,8 +231,9 @@ def trim_objective_fun(x, mav, Va, gamma) -> float:
     J: float = 0.0
 
     # compute state_dot_star (Eq 5.21)
-    e_dot_star = Euler2Quaternion(0, 0, 0) # psi = 0 because Va/R with R=inf is 0
-    state_dot_star = np.array([[0], # pn_dot_star
+    e_dot_star: np.ndarray = Euler2Quaternion(0, 0, 0).squeeze() # psi = 0 because Va/R with R=inf is 0
+    state_dot_star: np.ndarray = np.array([
+                                [0], # pn_dot_star
                                 [0], # pe_dot_star
                                 [Va * np.sin(gamma)], # pd_dot_star or h_dot_star (=0 since gamma=0)
                                 [0], # u_dot_star
@@ -250,13 +249,12 @@ def trim_objective_fun(x, mav, Va, gamma) -> float:
                             ])
 
     # TODO: ASK : What value of alpha to use?
-    attitude: R = R.from_quat([x[6], x[7], x[8], x[9]])
-    attitude.as_euler('xyz')
+    attitude: R = R.from_quat([x[6], x[7], x[8], x[9]]).as_euler('xyz')
     alpha: float = attitude[1] - gamma # alpha = theta - gamma
     beta: float = 0.0 # for having no sideforce -> v=0
     
     # compute trimmed states and input
-    state_star: np.ndarray = trimmed_state(mav, Va, alpha, beta)
+    state_star: np.ndarray = trimmed_state(mav, Va, gamma, alpha, beta)
     input_star: np.ndarray = trimmed_input(mav, Va, alpha, beta, x[3], x[4], x[5], attitude[0], attitude[1], attitude[2], x[10], x[11], x[12])
 
     # compute f(state_star, input_star)
@@ -265,7 +263,8 @@ def trim_objective_fun(x, mav, Va, gamma) -> float:
                                     input_star[3])
 
     # compute the objective function
-    J = np.linalg.norm(state_dot_star - f_xu)
+    print(f_xu)
+    J = np.linalg.norm(state_dot_star - f_xu)**2
     return J
 
 def main():
@@ -279,10 +278,12 @@ def main():
     fdm.run_ic()
     mav: AeroModel = AeroModel(fdm)
 
-    for Va in range(8, 23): # trying Va for 8 to 23 m/s -> 28 to 83 km/h
-        for gamma in range(-10, 10):
-            gamma = np.deg2rad(gamma)
-            res = compute_trim(mav, Va, gamma)
+    compute_trim(mav, 18, 0)
+
+    # for Va in range(8, 23): # trying Va for 8 to 23 m/s -> 28 to 83 km/h
+    #     for gamma in range(-10, 10):
+    #         gamma = np.deg2rad(gamma)
+    #         res = compute_trim(mav, Va, gamma)
 
 if __name__ == "__main__":
     main()
