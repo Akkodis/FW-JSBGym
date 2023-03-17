@@ -37,8 +37,8 @@ properties = sim.fdm.query_property_catalog("atmosphere")
 if not os.path.exists('data'):
     os.makedirs('data')
 
-# fieldnames: list[str] = ['latitude', 'longitude', 'altitude', 'roll', 'pitch', 'yaw', 'roll_rate', 'pitch_rate', 'yaw_rate', 'airspeed']
-fieldnames: list[str] = ['latitude', 'longitude', 'altitude', 'roll', 'course', 'roll_rate', 'pitch_rate', 'yaw_rate', 'airspeed']
+fieldnames: list[str] = ['latitude', 'longitude', 'altitude', 'roll', 'pitch', 'yaw', 'roll_rate', 'pitch_rate', 'yaw_rate', 'airspeed']
+# fieldnames: list[str] = ['latitude', 'longitude', 'altitude', 'roll', 'course', 'roll_rate', 'pitch_rate', 'yaw_rate', 'airspeed']
 
 # create flight_data csv file with header
 with open(args.flight_data, 'w') as csv_file:
@@ -92,18 +92,19 @@ course_pid: PID = PID(kp=lat_pid_gains["kp_course"], ki=lat_pid_gains["ki_course
 timestep: int = 0
 while sim.run_step() and timestep < 20000:
     # set the ref course angle to be a 90° right turn
-    course_pid.set_reference(PI/2)
-    course_angle: float = atan2(sim.fdm["velocities/v-east-fps"], sim.fdm["velocities/v-north-fps"])
-    course_cmd: float = course_pid.update(state=course_angle, normalize=False) # don't normalize it between -1 and 1
-    roll_pid.set_reference(course_cmd)
-    roll_cmd: float = roll_pid.update(state=sim.fdm["attitude/roll-rad"], state_dot=sim.fdm["velocities/p-rad_sec"], normalize=True)
+    # course_pid.set_reference(PI/2)
+    # course_angle: float = atan2(sim.fdm["velocities/v-east-fps"], sim.fdm["velocities/v-north-fps"])
+    # course_cmd: float = course_pid.update(state=course_angle, normalize=False) # don't normalize it between -1 and 1
+    # roll_pid.set_reference(course_cmd)
+    # roll_cmd: float = roll_pid.update(state=sim.fdm["attitude/roll-rad"], state_dot=sim.fdm["velocities/p-rad_sec"], normalize=True)
     # print(f"roll_cmd: {roll_cmd} | course_cmd: {course_cmd}")
 
-    sim.fdm["fcs/aileron-cmd-norm"] = roll_cmd
+    # sim.fdm["fcs/aileron-cmd-norm"] = roll_cmd
 
-    # sim.fdm["fcs/aileron-cmd-norm"] = -0.3
-    # sim.fdm["fcs/elevator-cmd-norm"] = -0.05
-    sim.fdm["fcs/throttle-cmd-norm"] = 0.2
+    sim.fdm["fcs/elevator-cmd-norm"] = 0.02866743
+    # sim.fdm["fcs/aileron-cmd-norm"] = -0.00022745
+    sim.fdm["fcs/throttle-cmd-norm"] = 0.19212421
+    # sim.fdm["fcs/throttle-cmd-norm"] = 0.5
 
     latitude: float = sim.fdm["position/lat-gc-deg"]
     longitude: float = sim.fdm["position/long-gc-deg"]
@@ -121,7 +122,7 @@ while sim.run_step() and timestep < 20000:
     pitch_rate: float = sim.fdm["velocities/q-rad_sec"]
     yaw_rate: float = sim.fdm["velocities/r-rad_sec"]
 
-    airspeed: float = sim.fdm["velocities/vc-kts"]
+    airspeed: float = sim.fdm["velocities/vc-kts"]/1.944 # to m/s
 
     # write flight data to csv
     with open(args.flight_data, 'a') as csv_file:
@@ -132,15 +133,15 @@ while sim.run_step() and timestep < 20000:
             fieldnames[2]: altitude,
             fieldnames[3]: roll,
             # "heading-true-rad": heading,
-            fieldnames[4]: course_angle,
-            # "pitch": pitch,
+            # fieldnames[4]: course_angle,
+            fieldnames[4]: pitch,
             # "psi-rad": psi,
-            # "yaw": yaw,
+            fieldnames[5]: heading,
             # "psi-gt-rad": psi_gt,
-            fieldnames[5]: roll_rate,
-            fieldnames[6]: pitch_rate,
-            fieldnames[7]: yaw_rate,
-            fieldnames[8]: airspeed
+            fieldnames[6]: roll_rate,
+            fieldnames[7]: pitch_rate,
+            fieldnames[8]: yaw_rate,
+            fieldnames[9]: airspeed
         }
         csv_writer.writerow(info)
 

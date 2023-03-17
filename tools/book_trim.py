@@ -53,10 +53,10 @@ def CZ_coeffs(alpha: float, mav: AeroModel) -> tuple[float, float, float]:
     return CZ_alpha, CZq_alpha, CZde_alpha
 
 def trimmed_state(mav: AeroModel, Va, gamma, alpha, beta) -> np.ndarray:
-    u_star: float = Va * np.cos(alpha) * Va*np.cos(beta)
+    u_star: float = Va * np.cos(alpha) * np.cos(beta)
     v_star: float = Va * np.sin(beta)
-    w_star: float = Va * np.sin(alpha) * Va*np.cos(beta)
-    theta_star = alpha + gamma
+    w_star: float = Va * np.sin(alpha) * np.cos(beta)
+    theta_star: float = alpha + gamma
     p_star: float = 0.0 # since R=inf (straight flight), p=q=r=0
     q_star: float = 0.0
     r_star: float = 0.0
@@ -74,7 +74,7 @@ def trimmed_input(mav: AeroModel, Va, alpha, beta, u, v, w, phi, theta, psi, p, 
     CXq_alpha: float
     CXde_alpha: float
     CX_alpha, CXq_alpha, CXde_alpha = CX_coeffs(alpha, mav)
-    dt_star: float = mav.Khp2w/(mav.Khp2ftlbsec * mav.Pwatt) * (-r*v + q*w + mav.G*np.sin(theta) \
+    dt_star: float = (mav.Khp2w/(mav.Khp2ftlbsec * mav.Pwatt)) * (-r*v + q*w + mav.G*np.sin(theta) \
                     - ((mav.rho * Va**2 * mav.S)/(2 * mav.mass)) * \
                     (CX_alpha + CXq_alpha * ((mav.c * q) / (2*Va)) + CXde_alpha * de_star))
 
@@ -99,8 +99,8 @@ def compute_trim(mav: AeroModel, Va: float, gamma: float):
     psi0: float = 0
     
     trim_state0: np.ndarray = trimmed_state(mav, Va, gamma, alpha0, beta0).squeeze()
-    theta0: float = trim_state0[3]
-    e0: np.ndarray = Euler2Quaternion(0, theta0, 0).squeeze()
+    trim_theta0: float = trim_state0[3]
+    q_trim_theta0: np.ndarray = Euler2Quaternion(0, trim_theta0, 0).squeeze()
     state0: np.ndarray = np.array([
                    [0], # 0 pn
                    [0],  # 1 pe
@@ -108,17 +108,17 @@ def compute_trim(mav: AeroModel, Va: float, gamma: float):
                    [trim_state0[0]],  # 3 u, alpha = gamma (no wind) and beta = 0
                    [trim_state0[1]], # 4 v, beta = 0 for having force side velocity to be zero
                    [trim_state0[2]], # 5 w
-                   [e0[0]],  # 6 e0, previously set to 1
-                   [e0[1]],  # 7 e1
-                   [e0[2]],  # 8 e2
-                   [e0[3]],  # 9 e3
+                   [q_trim_theta0[0]],  # 6 e0, previously set to 1
+                   [q_trim_theta0[1]],  # 7 e1
+                   [q_trim_theta0[2]],  # 8 e2
+                   [q_trim_theta0[3]],  # 9 e3
                    [trim_state0[4]], # 10 p = 0. Since R=inf p=q=r=0
                    [trim_state0[5]], # 11 q = 0
                    [trim_state0[6]]  # 12 r = 0
                    ]).squeeze()
     trim_input0: np.ndarray = trimmed_input(mav, Va, alpha0, beta0, state0[3], state0[4], state0[5], \
-                                        phi0, theta0, psi0, state0[10], state0[11], state0[12]).squeeze()
-    delta0 = np.array([[trim_input0[0]],  # 13 elevator
+                                        phi0, trim_theta0, psi0, state0[10], state0[11], state0[12]).squeeze()
+    delta0: np.ndarray = np.array([[trim_input0[0]],  # 13 elevator
                        [trim_input0[1]],  # 14 aileron
                        [trim_input0[2]],  # 15 rudder = 0
                        [trim_input0[3]]]).squeeze() # 16 throttle
@@ -160,7 +160,7 @@ def compute_trim(mav: AeroModel, Va: float, gamma: float):
 
     print('trim_state=', trim_state.T)
     print('trim_input=', trim_input.T)
-    return trim_state, trim_input
+    return trim_state.squeeze(), trim_input.squeeze(), res.fun
 
 def compute_f_xu(mav: AeroModel, Va, alpha, beta, u, v, w, phi, theta, psi, p, q, r, de, da, dr, dt):
     # pn_dot
@@ -184,14 +184,15 @@ def compute_f_xu(mav: AeroModel, Va, alpha, beta, u, v, w, phi, theta, psi, p, q
     CXde_alpha: float
     CX_alpha, CXq_alpha, CXde_alpha = CX_coeffs(alpha, mav)
     u_dot: float = r*v - q*w - mav.G*np.sin(theta) \
-                    + ((mav.rho * Va**2 * mav.S) / (2*mav.mass)) * (CX_alpha + CXq_alpha * ((mav.c*q) / (2*Va)) + CXde_alpha * de) \
-                    + (((mav.Pwatt * dt) / mav.Khp2w) * mav.Khp2ftlbsec)
+                + ((mav.rho * Va**2 * mav.S) / (2*mav.mass)) * (CX_alpha + CXq_alpha * ((mav.c*q) / (2*Va)) + CXde_alpha * de) \
+                + (((mav.Pwatt * dt) / mav.Khp2w) * mav.Khp2ftlbsec)
 
     # v_dot
     v_dot: float = p*w - r*u + mav.G*np.cos(theta)*np.sin(phi) \
                     + ((mav.rho * Va**2 * mav.S)/(2*mav.mass)) \
                     * (mav.CYo + mav.CYb*beta + mav.CYp * ((mav.b*p)/(2*Va)) \
                     + mav.CYr * ((mav.b*r)/(2*Va)) + mav.CYda*da + mav.CYdr*dr)
+
     # w_dot
     CZ_alpha: float
     CZq_alpha: float
@@ -249,27 +250,35 @@ def trim_objective_fun(x, mav, Va, gamma) -> float:
                             ])
 
     # TODO: ASK : What value of alpha to use?
-    attitude: R = R.from_quat([x[6], x[7], x[8], x[9]]).as_euler('xyz')
-    alpha: float = attitude[1] - gamma # alpha = theta - gamma
+    attitude: R = R.from_quat([x[7], x[8], x[9], x[6]]).as_euler('xyz')
+    alpha: float = np.arctan2(x[5], x[3])
+    # gam = attitude[1] - alpha
+    # print("gamma: ", gam)
+    # alpha: float = attitude[1] - gamma # alpha = theta - gamma
     beta: float = 0.0 # for having no sideforce -> v=0
     
     # compute trimmed states and input
     state_star: np.ndarray = trimmed_state(mav, Va, gamma, alpha, beta)
-    input_star: np.ndarray = trimmed_input(mav, Va, alpha, beta, x[3], x[4], x[5], attitude[0], attitude[1], attitude[2], x[10], x[11], x[12])
+    # input_star: np.ndarray = trimmed_input(mav, Va, alpha, beta, x[3], x[4], x[5], attitude[0], attitude[1], attitude[2], x[10], x[11], x[12])
+    input_star: np.ndarray = trimmed_input(mav, Va, alpha, beta, state_star[0], state_star[1], state_star[2], 0, state_star[3], 0,\
+                                            state_star[4], state_star[5], state_star[6])
 
     # compute f(state_star, input_star)
     f_xu: np.ndarray= compute_f_xu(mav, Va, alpha, beta, state_star[0], state_star[1], state_star[2], 0, state_star[3], 0, \
                                     state_star[4], state_star[5], state_star[6], input_star[0], input_star[1], input_star[2],\
                                     input_star[3])
+    # f_xu: np.ndarray= compute_f_xu(mav, Va, alpha, beta, x[3], x[4], x[5], attitude[0], attitude[1], attitude[2], \
+    #                                 x[10], x[11], x[12], x[13], x[14], x[15],\
+    #                                 x[16])
 
     # compute the objective function
-    print(f_xu)
+    # print(f_xu)
     J = np.linalg.norm(state_dot_star - f_xu)**2
     return J
 
 def main():
     Va: float
-    gamma: float
+    gamma: float = 0.0
 
     fdm: jsbsim.FGFDMExec = jsbsim.FGFDMExec(None)
     fdm.load_model("x8")
@@ -277,13 +286,19 @@ def main():
     fdm.load_ic(ic_path, False)
     fdm.run_ic()
     mav: AeroModel = AeroModel(fdm)
+    results = []
 
     compute_trim(mav, 18, 0)
 
     # for Va in range(8, 23): # trying Va for 8 to 23 m/s -> 28 to 83 km/h
-    #     for gamma in range(-10, 10):
-    #         gamma = np.deg2rad(gamma)
-    #         res = compute_trim(mav, Va, gamma)
+    #     trim_state, trim_input,objective = compute_trim(mav, Va, gamma)
+    #     results.append([trim_state, trim_input, objective])
+
+    # print(results[2][:])
+    pass
+
+    # results: np.ndarray = np.asarray(results)
+    # print(results)
 
 if __name__ == "__main__":
     main()
