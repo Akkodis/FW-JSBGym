@@ -5,15 +5,21 @@ import math
 class AeroModel(object):
     G: float = 9.82  # m/s2
 
-    def __init__(self, fdm: jsbsim.FGFDMExec):
-        self.Ixx: float = fdm['inertia/ixx-slugs_ft2'] * 1.355818  # slugs*ft2 to kg*m2
-        self.Iyy: float = fdm['inertia/iyy-slugs_ft2'] * 1.355818
-        self.Izz: float = fdm['inertia/izz-slugs_ft2'] * 1.355818
-        self.Ixz: float = fdm['inertia/ixz-slugs_ft2'] * 1.355818
-        self.Ixy: float = fdm['inertia/ixy-slugs_ft2'] * 1.355818
-        self.Iyz: float = fdm['inertia/iyz-slugs_ft2'] * 1.355818
-        self.rho: float = fdm['atmosphere/rho-slugs_ft3'] * 515.379  # slugs/ft3 to kg/m3
-        self.mass: float = fdm['inertia/mass-slugs'] * 14.594 # slugs to kg
+    def __init__(self):
+
+        # Inertia matrix coefficients
+        self.Ixx: float = 1.2290  # kg*m2
+        self.Iyy: float = 0.1702
+        self.Izz: float = 0.8808
+        self.Ixz: float = 0.9343
+        self.Ixy: float = 0.0
+        self.Iyz: float = 0.0
+
+        # Air density
+        self.rho: float = 1.155992485886005
+
+        # Mass of the aircraft
+        self.mass: float = 3.3640  # kg
 
         # gamma coefficients
         self.gamma: float = self.Ixx * self.Izz - self.Ixz ** 2

@@ -260,16 +260,16 @@ def trim_objective_fun(x, mav, Va, gamma) -> float:
     # compute trimmed states and input
     state_star: np.ndarray = trimmed_state(mav, Va, gamma, alpha, beta)
     # input_star: np.ndarray = trimmed_input(mav, Va, alpha, beta, x[3], x[4], x[5], attitude[0], attitude[1], attitude[2], x[10], x[11], x[12])
-    input_star: np.ndarray = trimmed_input(mav, Va, alpha, beta, state_star[0], state_star[1], state_star[2], 0, state_star[3], 0,\
-                                            state_star[4], state_star[5], state_star[6])
+    # input_star: np.ndarray = trimmed_input(mav, Va, alpha, beta, state_star[0], state_star[1], state_star[2], 0, state_star[3], 0,\
+    #                                         state_star[4], state_star[5], state_star[6])
 
     # compute f(state_star, input_star)
-    f_xu: np.ndarray= compute_f_xu(mav, Va, alpha, beta, state_star[0], state_star[1], state_star[2], 0, state_star[3], 0, \
-                                    state_star[4], state_star[5], state_star[6], input_star[0], input_star[1], input_star[2],\
-                                    input_star[3])
-    # f_xu: np.ndarray= compute_f_xu(mav, Va, alpha, beta, x[3], x[4], x[5], attitude[0], attitude[1], attitude[2], \
-    #                                 x[10], x[11], x[12], x[13], x[14], x[15],\
-    #                                 x[16])
+    # f_xu: np.ndarray= compute_f_xu(mav, Va, alpha, beta, state_star[0], state_star[1], state_star[2], 0, state_star[3], 0, \
+    #                                 state_star[4], state_star[5], state_star[6], input_star[0], input_star[1], input_star[2],\
+    #                                 input_star[3])
+    f_xu: np.ndarray= compute_f_xu(mav, Va, alpha, beta, x[3], x[4], x[5], attitude[0], attitude[1], attitude[2], \
+                                    x[10], x[11], x[12], x[13], x[14], x[15],\
+                                    x[16])
 
     # compute the objective function
     # print(f_xu)
@@ -280,12 +280,7 @@ def main():
     Va: float
     gamma: float = 0.0
 
-    fdm: jsbsim.FGFDMExec = jsbsim.FGFDMExec(None)
-    fdm.load_model("x8")
-    ic_path = 'initial_conditions/x8_basic_ic.xml'
-    fdm.load_ic(ic_path, False)
-    fdm.run_ic()
-    mav: AeroModel = AeroModel(fdm)
+    mav: AeroModel = AeroModel()
     results = []
 
     compute_trim(mav, 18, 0)

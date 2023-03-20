@@ -4,7 +4,7 @@ from simulation.jsb_simulation import Simulation
 import os
 import argparse
 import random
-import models.aerodynamics
+from models.aerodynamics import AeroModel
 from agents.pid import PID
 from math import pi as PI
 from math import atan2
@@ -72,7 +72,7 @@ if args.gust:
     sim.fdm["atmosphere/cosine-gust/Z-velocity-ft_sec"] = 0
 
 # create the aerodynamics model
-aero_model: models.aerodynamics.AeroModel = models.aerodynamics.AeroModel(sim.fdm)
+aero_model: AeroModel = AeroModel()
 
 # compute the lateral PID gains
 lat_pid_gains: dict[str, float]
@@ -101,10 +101,11 @@ while sim.run_step() and timestep < 20000:
 
     # sim.fdm["fcs/aileron-cmd-norm"] = roll_cmd
 
-    sim.fdm["fcs/elevator-cmd-norm"] = 0.02866743
+    # sim.fdm["fcs/elevator-cmd-norm"] = 0.02866743
+    sim.fdm["fcs/elevator-cmd-norm"] = 0.0
     # sim.fdm["fcs/aileron-cmd-norm"] = -0.00022745
-    sim.fdm["fcs/throttle-cmd-norm"] = 0.19212421
-    # sim.fdm["fcs/throttle-cmd-norm"] = 0.5
+    # sim.fdm["fcs/throttle-cmd-norm"] = 0.19212421
+    sim.fdm["fcs/throttle-cmd-norm"] = 0.13
 
     latitude: float = sim.fdm["position/lat-gc-deg"]
     longitude: float = sim.fdm["position/long-gc-deg"]
