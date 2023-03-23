@@ -37,7 +37,7 @@ def animate(i, axis) -> None:
     axis[0, 0].plot(tsteps, roll, label='roll')
     axis[0, 0].plot(tsteps, pitch, label='pitch')
     axis[0, 0].plot(tsteps, yaw, label='yaw')
-    axis[0, 0].set_title("attitude angles")
+    axis[0, 0].set_title("attitude angles (rad)")
     axis[0, 0].legend()
 
     # axis[0, 0].plot(tsteps, roll, label='roll')
@@ -49,11 +49,11 @@ def animate(i, axis) -> None:
     axis[0, 1].plot(tsteps, roll_rate, label='roll_rate')
     axis[0, 1].plot(tsteps, pitch_rate, label='pitch_rate')
     axis[0, 1].plot(tsteps, yaw_rate, label='yaw_rate')
-    axis[0, 1].set_title("angular velocities")
+    axis[0, 1].set_title("angular velocities (rad/s)")
     axis[0, 1].legend()
 
     axis[1, 0].plot(tsteps, airspeed, label='airspeed')
-    axis[1, 0].set_title("airspeed")
+    axis[1, 0].set_title("airspeed (km/h)")
     axis[1, 0].legend()
 
     axis[1, 1].plot(lon, lat, alt, label='Aircraft Trajectory')
