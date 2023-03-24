@@ -87,11 +87,7 @@ with open('../data/flight_data.csv', 'w') as csv_file:
 # run the simulation
 timestep: int = 0
 while fdm.run() and timestep < 200000:
-    
-    # fdm["fcs/throttle-cmd-norm"] = 0.129
-    fdm["fcs/pitch-trim-cmd-norm"] = 0.0
-    fdm["fcs/elevator-cmd-norm"] = 0.04
-    # fdm["fcs/aileron-cmd-norm"] = 0.0
+
     # reading values for plotting
     latitude: float = fdm["position/lat-gc-deg"]
     longitude: float = fdm["position/long-gc-deg"]
