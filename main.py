@@ -99,13 +99,9 @@ while sim.run_step() and timestep < 20000:
     # roll_cmd: float = roll_pid.update(state=sim.fdm["attitude/roll-rad"], state_dot=sim.fdm["velocities/p-rad_sec"], normalize=True)
     # print(f"roll_cmd: {roll_cmd} | course_cmd: {course_cmd}")
 
-    # sim.fdm["fcs/aileron-cmd-norm"] = roll_cmd
-
-    # sim.fdm["fcs/elevator-cmd-norm"] = 0.02866743
-    sim.fdm["fcs/elevator-cmd-norm"] = 0.0
-    # sim.fdm["fcs/aileron-cmd-norm"] = -0.00022745
-    # sim.fdm["fcs/throttle-cmd-norm"] = 0.19212421
     sim.fdm["fcs/throttle-cmd-norm"] = 0.13
+    sim.fdm["fcs/aileron-cmd-norm"] = 0.0
+    sim.fdm["fcs/elevator-cmd-norm"] = 0.04
 
     latitude: float = sim.fdm["position/lat-gc-deg"]
     longitude: float = sim.fdm["position/long-gc-deg"]
@@ -123,7 +119,7 @@ while sim.run_step() and timestep < 20000:
     pitch_rate: float = sim.fdm["velocities/q-rad_sec"]
     yaw_rate: float = sim.fdm["velocities/r-rad_sec"]
 
-    airspeed: float = sim.fdm["velocities/vc-kts"]/1.944 # to m/s
+    airspeed: float = sim.fdm["velocities/vc-kts"]*1.852 # to m/s
 
     # write flight data to csv
     with open(args.flight_data, 'a') as csv_file:
