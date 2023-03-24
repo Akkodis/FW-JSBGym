@@ -6,8 +6,8 @@
   <ubody unit="M/SEC">    18  </ubody>
   <vbody unit="M/SEC">    0.0  </vbody>
   <wbody unit="M/SEC">    0.616926968  </wbody>
-  <longitude unit="DEG">   2.3273  </longitude> <!-- UoBath campus -->
-  <latitude unit="DEG">   51.3781  </latitude>
+  <longitude unit="DEG">   0.0  </longitude> <!-- UoBath campus -->
+  <latitude unit="DEG">   0.0  </latitude>
   <phi unit="DEG">          0.0  </phi>  <!-- roll -->
   <theta unit="DEG">    2.20897575377  </theta>  <!-- pitch -->
   <psi unit="DEG">          0.0  </psi>  <!-- yaw -->
