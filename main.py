@@ -4,6 +4,7 @@ from simulation.jsb_simulation import Simulation
 import os
 import argparse
 import random
+from trim.trim_point import TrimPoint
 from models.aerodynamics import AeroModel
 from agents.pid import PID
 from math import pi as PI
@@ -20,14 +21,19 @@ parser.add_argument('--flight_data', type=str, default='data/flight_data.csv', h
 parser.add_argument('--turb', action='store_true', help='Enable turbulence.')
 parser.add_argument('--wind', action='store_true', help='Enable wind.')
 parser.add_argument('--gust', action='store_true', help='Enable gust.')
+parser.add_argument('--trim', action='store_true', help='Enable trim flight at start.')
 args: argparse.Namespace = parser.parse_args()
 
+# if trim is enabled, construct TrimPoint object
+if args.trim:
+    trim_point: TrimPoint = TrimPoint(aircraft_id=args.aircraft_id)
 
 # create a simulation object
 sim: Simulation = Simulation(fdm_frequency=args.fdm_frequency, # going up to 240Hz solves some spin instability issues -> NaNs
                  aircraft_id=args.aircraft_id,
                  viz_time_factor=args.viz_time_factor,
-                 enable_fgear_viz=args.fgear_viz)
+                 enable_fgear_viz=args.fgear_viz,
+                 trim=args.trim)
 
 properties = sim.fdm.query_property_catalog("atmosphere")
 # sim.fdm.print_property_catalog()
@@ -70,6 +76,11 @@ if args.gust:
     sim.fdm["atmosphere/cosine-gust/X-velocity-ft_sec"] = 1
     sim.fdm["atmosphere/cosine-gust/Y-velocity-ft_sec"] = 0
     sim.fdm["atmosphere/cosine-gust/Z-velocity-ft_sec"] = 0
+
+if args.trim:
+    sim.fdm["fcs/throttle-cmd-norm"] = 0.5
+    sim.fdm["fcs/aileron-cmd-norm"] = 0.0
+    sim.fdm["fcs/elevator-cmd-norm"] = 0.04
 
 # create the aerodynamics model
 aero_model: AeroModel = AeroModel()
