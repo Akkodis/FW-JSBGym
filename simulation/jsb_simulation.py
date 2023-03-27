@@ -19,7 +19,7 @@ class Simulation(object):
                  ) -> None:
 
         # initialization of some attributes
-        self.fdm = jsbsim.FGFDMExec(None)
+        self.fdm = jsbsim.FGFDMExec('fdm_descriptions') # provide the path of the fdm_descriptions folder containing the aircraft, engine, etc. .xml files
         self.fdm.set_debug_level(1)
         self.aircraft_id: str = aircraft_id
         self.fdm_dt: float = 1 / fdm_frequency
@@ -99,7 +99,7 @@ class FlightGearVisualizer(object):
         # --disable-ai-traffic --disable-real-weather-fetch'
 
         # cmd for running flightgear(.AppImage version 2020.3.17) from terminal
-        cmd = f'exec $HOME/Apps/FlightGear-2020.3.17/FlightGear-2020.3.17-x86_64.AppImage --fdm=null \
+        cmd: str = f'exec $HOME/Apps/FlightGear-2020.3.17/FlightGear-2020.3.17-x86_64.AppImage --fdm=null \
         --native-fdm=socket,in,60,,5550,udp --aircraft=c172p --timeofday=noon --disable-ai-traffic --disable-real-weather-fetch'
 
         flightgear_process = subprocess.Popen(cmd,

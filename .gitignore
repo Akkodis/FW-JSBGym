@@ -4,3 +4,13 @@ __pycache__/
 data/
 JSBoutX8.csv
 a.py
+
+# ignore those folders
+fdm_descriptions/aircraft/*
+fdm_descriptions/engine/*
+
+# but except those folders and those files
+!fdm_descriptions/aircraft/x8/
+!fdm_descriptions/aircraft/c172p/
+!fdm_descriptions/engine/electric800W.xml
+!fdm_descriptions/engine/eng_io320.xml
