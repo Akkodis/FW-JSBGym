@@ -1,0 +1,14 @@
+# x8 trim points
+
+## 1.
+# Initial conditions
+Va: 33 # kts airspeed
+AoA: 2.207210047194222 # deg angle of attack, alpha
+gamma: 0.0 # deg flight path angle
+h: 1960 # ft sea-level altitude
+
+# required command inputs to maintain initial states
+throttle: 0.1295140984102726
+elevator: 0.04056854175434672
+aileron: -4.288236432614667e-15
+rudder: 0.0

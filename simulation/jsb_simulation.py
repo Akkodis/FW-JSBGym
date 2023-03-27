@@ -3,6 +3,7 @@ import jsbsim
 import os
 import subprocess
 import time
+from trim.trim_point import TrimPoint
 
 
 class Simulation(object):
@@ -12,13 +13,25 @@ class Simulation(object):
                  fdm_frequency: float = 120.0, # 120.0 Hz is the default frequency of the JSBSim FDM
                  aircraft_id: str = 'x8',
                  viz_time_factor: float = 1.0,
-                 enable_fgear_viz: bool = False) -> None:
+                 enable_fgear_viz: bool = False,
+                 enable_trim: bool = False,
+                 trim_point: TrimPoint = None
+                 ) -> None:
 
+        # initialization of some attributes
         self.fdm = jsbsim.FGFDMExec(None)
         self.fdm.set_debug_level(1)
-        self.aircraft_id = aircraft_id
-        self.fdm_dt = 1 / fdm_frequency
+        self.aircraft_id: str = aircraft_id
+        self.fdm_dt: float = 1 / fdm_frequency
         self.viz_dt = None
+        self.enable_trim: bool = enable_trim
+        self.trim_point: TrimPoint = trim_point
+
+        # set the FDM time step
+        self.fdm.set_dt(self.fdm_dt)
+
+        # load the aircraft model
+        self.fdm.load_model(self.aircraft_id)
 
         # code for flightgear output here :
         if enable_fgear_viz:
@@ -28,20 +41,33 @@ class Simulation(object):
         # set the visualization time factor (plot and/or flightgear visualization)
         self.set_viz_time_factor(time_factor=viz_time_factor)
 
-        # initialize the simulation : load aircraft model, load initial conditions
-        ic_path = f'initial_conditions/{aircraft_id}_basic_ic.xml'
-        self.fdm.load_ic(ic_path, False)
-        self.fdm.load_model(aircraft_id)
-        self.fdm.set_dt(self.fdm_dt)
-        success = self.fdm.run_ic()
+        # load and run initial conditions
+        self.load_run_ic()
+
+
+    def load_run_ic(self):
+        # initialize the simulation:
+        # if we start in trimmed flight, load those corresponding ic
+        if self.enable_trim and self.trim_point is not None:
+            self.fdm['ic/h-sl-ft'] = self.trim_point.h # above sea level altitude
+            self.fdm['ic/vc-kts'] = self.trim_point.Va # ic airspeed
+            self.fdm['ic/gamma-deg'] = self.trim_point.gamma # steady level flight
+        # if we start in untrimmed flight, load the basic ic
+        else:
+            ic_path = f'initial_conditions/{self.aircraft_id}_basic_ic.xml'
+            self.fdm.load_ic(ic_path, False)
+
+        success: bool = self.fdm.run_ic()
         if not success:
             raise RuntimeError("Failed to initialize the simulation.")
+        return success
 
     def run_step(self) -> bool:
         result = self.fdm.run()
         if self.viz_dt is not None:
             time.sleep(self.viz_dt)
         return result
+
 
     def set_viz_time_factor(self, time_factor: float) -> None:
         if time_factor is None:

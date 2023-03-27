@@ -4,7 +4,8 @@ from simulation.jsb_simulation import Simulation
 import os
 import argparse
 import random
-import models.aerodynamics
+from trim.trim_point import TrimPoint
+from models.aerodynamics import AeroModel
 from agents.pid import PID
 from math import pi as PI
 from math import atan2
@@ -20,14 +21,22 @@ parser.add_argument('--flight_data', type=str, default='data/flight_data.csv', h
 parser.add_argument('--turb', action='store_true', help='Enable turbulence.')
 parser.add_argument('--wind', action='store_true', help='Enable wind.')
 parser.add_argument('--gust', action='store_true', help='Enable gust.')
+parser.add_argument('--trim', action='store_true', help='Enable trim flight at start.')
 args: argparse.Namespace = parser.parse_args()
 
+# if trim is enabled, construct TrimPoint object
+if args.trim:
+    trim_point: TrimPoint = TrimPoint(aircraft_id=args.aircraft_id)
+else:
+    trim_point: TrimPoint = None
 
-# create a simulation object
+# create a simulation object accordingly
 sim: Simulation = Simulation(fdm_frequency=args.fdm_frequency, # going up to 240Hz solves some spin instability issues -> NaNs
-                 aircraft_id=args.aircraft_id,
-                 viz_time_factor=args.viz_time_factor,
-                 enable_fgear_viz=args.fgear_viz)
+                aircraft_id=args.aircraft_id,
+                viz_time_factor=args.viz_time_factor,
+                enable_fgear_viz=args.fgear_viz,
+                enable_trim=args.trim,
+                trim_point=trim_point)
 
 properties = sim.fdm.query_property_catalog("atmosphere")
 # sim.fdm.print_property_catalog()
@@ -37,8 +46,8 @@ properties = sim.fdm.query_property_catalog("atmosphere")
 if not os.path.exists('data'):
     os.makedirs('data')
 
-# fieldnames: list[str] = ['latitude', 'longitude', 'altitude', 'roll', 'pitch', 'yaw', 'roll_rate', 'pitch_rate', 'yaw_rate', 'airspeed']
-fieldnames: list[str] = ['latitude', 'longitude', 'altitude', 'roll', 'course', 'roll_rate', 'pitch_rate', 'yaw_rate', 'airspeed']
+fieldnames: list[str] = ['latitude', 'longitude', 'altitude', 'roll', 'pitch', 'yaw', 'roll_rate', 'pitch_rate', 'yaw_rate', 'airspeed']
+# fieldnames: list[str] = ['latitude', 'longitude', 'altitude', 'roll', 'course', 'roll_rate', 'pitch_rate', 'yaw_rate', 'airspeed']
 
 # create flight_data csv file with header
 with open(args.flight_data, 'w') as csv_file:
@@ -71,8 +80,14 @@ if args.gust:
     sim.fdm["atmosphere/cosine-gust/Y-velocity-ft_sec"] = 0
     sim.fdm["atmosphere/cosine-gust/Z-velocity-ft_sec"] = 0
 
+# if trim is enabled, set the according flight controls to maintain trimmed flight
+if args.trim:
+    sim.fdm["fcs/throttle-cmd-norm"] = trim_point.throttle
+    sim.fdm["fcs/aileron-cmd-norm"] = trim_point.aileron
+    sim.fdm["fcs/elevator-cmd-norm"] = trim_point.elevator
+
 # create the aerodynamics model
-aero_model: models.aerodynamics.AeroModel = models.aerodynamics.AeroModel(sim.fdm)
+aero_model: AeroModel = AeroModel()
 
 # compute the lateral PID gains
 lat_pid_gains: dict[str, float]
@@ -92,18 +107,12 @@ course_pid: PID = PID(kp=lat_pid_gains["kp_course"], ki=lat_pid_gains["ki_course
 timestep: int = 0
 while sim.run_step() and timestep < 20000:
     # set the ref course angle to be a 90° right turn
-    course_pid.set_reference(PI/2)
-    course_angle: float = atan2(sim.fdm["velocities/v-east-fps"], sim.fdm["velocities/v-north-fps"])
-    course_cmd: float = course_pid.update(state=course_angle, normalize=False) # don't normalize it between -1 and 1
-    roll_pid.set_reference(course_cmd)
-    roll_cmd: float = roll_pid.update(state=sim.fdm["attitude/roll-rad"], state_dot=sim.fdm["velocities/p-rad_sec"], normalize=True)
-    print(f"roll_cmd: {roll_cmd} | course_cmd: {course_cmd}")
-
-    sim.fdm["fcs/aileron-cmd-norm"] = roll_cmd
-
-    # sim.fdm["fcs/aileron-cmd-norm"] = -0.3
-    # sim.fdm["fcs/elevator-cmd-norm"] = -0.05
-    sim.fdm["fcs/throttle-cmd-norm"] = 0.2
+    # course_pid.set_reference(PI/2)
+    # course_angle: float = atan2(sim.fdm["velocities/v-east-fps"], sim.fdm["velocities/v-north-fps"])
+    # course_cmd: float = course_pid.update(state=course_angle, normalize=False) # don't normalize it between -1 and 1
+    # roll_pid.set_reference(course_cmd)
+    # roll_cmd: float = roll_pid.update(state=sim.fdm["attitude/roll-rad"], state_dot=sim.fdm["velocities/p-rad_sec"], normalize=True)
+    # print(f"roll_cmd: {roll_cmd} | course_cmd: {course_cmd}")
 
     latitude: float = sim.fdm["position/lat-gc-deg"]
     longitude: float = sim.fdm["position/long-gc-deg"]
@@ -121,7 +130,7 @@ while sim.run_step() and timestep < 20000:
     pitch_rate: float = sim.fdm["velocities/q-rad_sec"]
     yaw_rate: float = sim.fdm["velocities/r-rad_sec"]
 
-    airspeed: float = sim.fdm["velocities/vc-kts"]
+    airspeed: float = sim.fdm["velocities/vc-kts"]*1.852 # to m/s
 
     # write flight data to csv
     with open(args.flight_data, 'a') as csv_file:
@@ -131,16 +140,15 @@ while sim.run_step() and timestep < 20000:
             fieldnames[1]: longitude,
             fieldnames[2]: altitude,
             fieldnames[3]: roll,
-            # "heading-true-rad": heading,
-            fieldnames[4]: course_angle,
-            # "pitch": pitch,
+            # fieldnames[4]: course_angle,
+            fieldnames[4]: pitch,
             # "psi-rad": psi,
-            # "yaw": yaw,
+            fieldnames[5]: heading,
             # "psi-gt-rad": psi_gt,
-            fieldnames[5]: roll_rate,
-            fieldnames[6]: pitch_rate,
-            fieldnames[7]: yaw_rate,
-            fieldnames[8]: airspeed
+            fieldnames[6]: roll_rate,
+            fieldnames[7]: pitch_rate,
+            fieldnames[8]: yaw_rate,
+            fieldnames[9]: airspeed
         }
         csv_writer.writerow(info)
 
