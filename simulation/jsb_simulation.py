@@ -33,9 +33,6 @@ class Simulation(object):
         # load the aircraft model
         self.fdm.load_model(self.aircraft_id)
 
-        # load and run initial conditions
-        self.load_run_ic()
-
         # code for flightgear output here :
         if enable_fgear_viz:
             self.fdm.set_output_directive(os.path.join(os.path.dirname(os.path.abspath(__file__)), self.FG_OUT_FILE))
@@ -44,11 +41,14 @@ class Simulation(object):
         # set the visualization time factor (plot and/or flightgear visualization)
         self.set_viz_time_factor(time_factor=viz_time_factor)
 
+        # load and run initial conditions
+        self.load_run_ic()
+
 
     def load_run_ic(self):
         # initialize the simulation:
         # if we start in trimmed flight, load those corresponding ic
-        if self.enable_trim:
+        if self.enable_trim and self.trim_point is not None:
             self.fdm['ic/h-sl-ft'] = self.trim_point.h # above sea level altitude
             self.fdm['ic/vc-kts'] = self.trim_point.Va # ic airspeed
             self.fdm['ic/gamma-deg'] = self.trim_point.gamma # steady level flight
@@ -60,8 +60,7 @@ class Simulation(object):
         success: bool = self.fdm.run_ic()
         if not success:
             raise RuntimeError("Failed to initialize the simulation.")
-        pass
-
+        return success
 
     def run_step(self) -> bool:
         result = self.fdm.run()

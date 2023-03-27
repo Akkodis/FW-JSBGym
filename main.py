@@ -27,14 +27,16 @@ args: argparse.Namespace = parser.parse_args()
 # if trim is enabled, construct TrimPoint object
 if args.trim:
     trim_point: TrimPoint = TrimPoint(aircraft_id=args.aircraft_id)
+else:
+    trim_point: TrimPoint = None
 
-# create a simulation object
+# create a simulation object accordingly
 sim: Simulation = Simulation(fdm_frequency=args.fdm_frequency, # going up to 240Hz solves some spin instability issues -> NaNs
-                 aircraft_id=args.aircraft_id,
-                 viz_time_factor=args.viz_time_factor,
-                 enable_fgear_viz=args.fgear_viz,
-                 enable_trim=args.trim,
-                 trim_point=trim_point)
+                aircraft_id=args.aircraft_id,
+                viz_time_factor=args.viz_time_factor,
+                enable_fgear_viz=args.fgear_viz,
+                enable_trim=args.trim,
+                trim_point=trim_point)
 
 properties = sim.fdm.query_property_catalog("atmosphere")
 # sim.fdm.print_property_catalog()
