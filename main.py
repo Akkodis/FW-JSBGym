@@ -33,7 +33,8 @@ sim: Simulation = Simulation(fdm_frequency=args.fdm_frequency, # going up to 240
                  aircraft_id=args.aircraft_id,
                  viz_time_factor=args.viz_time_factor,
                  enable_fgear_viz=args.fgear_viz,
-                 trim=args.trim)
+                 enable_trim=args.trim,
+                 trim_point=trim_point)
 
 properties = sim.fdm.query_property_catalog("atmosphere")
 # sim.fdm.print_property_catalog()
@@ -77,10 +78,11 @@ if args.gust:
     sim.fdm["atmosphere/cosine-gust/Y-velocity-ft_sec"] = 0
     sim.fdm["atmosphere/cosine-gust/Z-velocity-ft_sec"] = 0
 
+# if trim is enabled, set the according flight controls to maintain trimmed flight
 if args.trim:
-    sim.fdm["fcs/throttle-cmd-norm"] = 0.5
-    sim.fdm["fcs/aileron-cmd-norm"] = 0.0
-    sim.fdm["fcs/elevator-cmd-norm"] = 0.04
+    sim.fdm["fcs/throttle-cmd-norm"] = trim_point.throttle
+    sim.fdm["fcs/aileron-cmd-norm"] = trim_point.aileron
+    sim.fdm["fcs/elevator-cmd-norm"] = trim_point.elevator
 
 # create the aerodynamics model
 aero_model: AeroModel = AeroModel()
@@ -110,10 +112,6 @@ while sim.run_step() and timestep < 20000:
     # roll_cmd: float = roll_pid.update(state=sim.fdm["attitude/roll-rad"], state_dot=sim.fdm["velocities/p-rad_sec"], normalize=True)
     # print(f"roll_cmd: {roll_cmd} | course_cmd: {course_cmd}")
 
-    sim.fdm["fcs/throttle-cmd-norm"] = 0.13
-    sim.fdm["fcs/aileron-cmd-norm"] = 0.0
-    sim.fdm["fcs/elevator-cmd-norm"] = 0.04
-
     latitude: float = sim.fdm["position/lat-gc-deg"]
     longitude: float = sim.fdm["position/long-gc-deg"]
     altitude: float = sim.fdm["position/h-sl-meters"]
@@ -140,7 +138,6 @@ while sim.run_step() and timestep < 20000:
             fieldnames[1]: longitude,
             fieldnames[2]: altitude,
             fieldnames[3]: roll,
-            # "heading-true-rad": heading,
             # fieldnames[4]: course_angle,
             fieldnames[4]: pitch,
             # "psi-rad": psi,

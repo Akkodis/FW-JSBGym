@@ -3,6 +3,7 @@ import jsbsim
 import os
 import subprocess
 import time
+from trim.trim_point import TrimPoint
 
 
 class Simulation(object):
@@ -13,15 +14,18 @@ class Simulation(object):
                  aircraft_id: str = 'x8',
                  viz_time_factor: float = 1.0,
                  enable_fgear_viz: bool = False,
-                 trim: bool = False
+                 enable_trim: bool = False,
+                 trim_point: TrimPoint = None
                  ) -> None:
 
+        # initialization of some attributes
         self.fdm = jsbsim.FGFDMExec(None)
         self.fdm.set_debug_level(1)
         self.aircraft_id: str = aircraft_id
         self.fdm_dt: float = 1 / fdm_frequency
         self.viz_dt = None
-        self.trim: bool = trim
+        self.enable_trim: bool = enable_trim
+        self.trim_point: TrimPoint = trim_point
 
         # set the FDM time step
         self.fdm.set_dt(self.fdm_dt)
@@ -44,10 +48,10 @@ class Simulation(object):
     def load_run_ic(self):
         # initialize the simulation:
         # if we start in trimmed flight, load those corresponding ic
-        if self.trim:
-            self.fdm['ic/h-sl-ft'] = 1960
-            self.fdm['ic/vc-kts'] = 33 # ic speed 60 kmh
-            self.fdm['ic/gamma-deg'] = 0 # steady level flight
+        if self.enable_trim:
+            self.fdm['ic/h-sl-ft'] = self.trim_point.h # above sea level altitude
+            self.fdm['ic/vc-kts'] = self.trim_point.Va # ic airspeed
+            self.fdm['ic/gamma-deg'] = self.trim_point.gamma # steady level flight
         # if we start in untrimmed flight, load the basic ic
         else:
             ic_path = f'initial_conditions/{self.aircraft_id}_basic_ic.xml'
