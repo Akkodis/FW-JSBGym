@@ -155,11 +155,15 @@ def compute_trim(mav: AeroModel, Va: float, gamma: float):
                    options={'ftol': 1e-10, 'disp': True})
 
     # extract trim state and input and return
-    trim_state: np.ndarray = np.array([res.x[0:13]]).T
-    trim_input: np.ndarray = np.array([res.x[13:17]]).T
+    trim_state: np.ndarray = np.array([res.x[0:13]]).T.squeeze()
+    trim_input: np.ndarray = np.array([res.x[13:17]]).T.squeeze()
 
-    print('trim_state=', trim_state.T)
-    print('trim_input=', trim_input.T)
+    # print('trim_state=', trim_state.T)
+    # print('trim_input=', trim_input.T)
+    alpha_trim = np.arctan2(trim_state[5], trim_state[3])
+    print(f'\n\nBook Trim results : \nIC: \n\tAirspeed(Va0) = {Va} \n\taltitude(h0) = {h} \n\tflight path angle(gamma0) = {gamma} \
+          \nStates: \n\tAoA(alpha*) = {alpha_trim} \n\tAirspeed(Va*) = {trim_state[3]} \
+          \nInputs: \n\tdt*={trim_input[3]} \n\tde*={trim_input[0]} \n\tda*={trim_input[1]} \n\tdr*={trim_input[2]}')
     return trim_state.squeeze(), trim_input.squeeze(), res.fun
 
 def compute_f_xu(mav: AeroModel, Va, alpha, beta, u, v, w, phi, theta, psi, p, q, r, de, da, dr, dt):
@@ -283,7 +287,7 @@ def main():
     mav: AeroModel = AeroModel()
     results = []
 
-    compute_trim(mav, 18, 0)
+    compute_trim(mav, 17, 0) # 33 kts
 
     # for Va in range(8, 23): # trying Va for 8 to 23 m/s -> 28 to 83 km/h
     #     trim_state, trim_input,objective = compute_trim(mav, Va, gamma)
