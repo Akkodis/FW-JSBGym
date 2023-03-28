@@ -14,3 +14,4 @@ fdm_descriptions/engine/*
 !fdm_descriptions/aircraft/c172p/
 !fdm_descriptions/engine/electric800W.xml
 !fdm_descriptions/engine/eng_io320.xml
+!fdm_descriptions/engine/direct.xml
