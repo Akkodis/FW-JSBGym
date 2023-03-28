@@ -1,11 +1,13 @@
-import jsbsim
 import math
-
+from trim.trim_point import TrimPoint
 
 class AeroModel(object):
     G: float = 9.82  # m/s2
 
-    def __init__(self):
+    def __init__(self, trim: TrimPoint = TrimPoint("x8")):
+
+        # trim point
+        self.trim: TrimPoint = trim
 
         # Inertia matrix coefficients
         self.Ixx: float = 1.2290  # kg*m2
@@ -32,7 +34,8 @@ class AeroModel(object):
         self.gamma7: float = ((self.Ixx - self.Iyy) * self.Ixx + self.Ixz ** 2) / self.gamma
         self.gamma8: float = self.Ixx / self.gamma
 
-        self.Va_trim: float = 65.0 / 3.6  # nominal Va km/h to m/s
+        # Geometric parameters of the aircraft
+        self.Va_trim: float = self.trim.Va_ms   # trim airspeed, chosen to be 33kts -> 16.97 m/s or 61.12 km/h : include it here ?
         self.S: float = 0.75  # wing span m2
         self.b: float = 2.10  # wing span m
         self.c: float = 0.3571 # mean aerodynamic chord m
