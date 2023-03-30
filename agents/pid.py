@@ -15,11 +15,12 @@ class PID:
         self.ref = ref
 
     def _saturate(self, u):
+        u_sat: float = u
         # throttle command is between 0 and 1
         if self.is_throttle:
             if u > self.limit:
                 u_sat = self.limit
-            if u < 0:
+            elif u < 0:
                 u_sat = 0
         # flight control surfaces (aileron, elevator, rudder) are between -limit and +limit
         else:
@@ -27,21 +28,25 @@ class PID:
                 u_sat = self.limit
             elif u <= -self.limit:
                 u_sat = -self.limit
-            else:
-                u_sat = u
         return u_sat
 
     def update(self, state: float, state_dot: float = 0, normalize: bool = True) -> float:
         error: float = self.ref - state
         self.integral += error * self.dt
         self.prev_error = error
-        output: float = self.kp * error + self.ki * self.integral + self.kd * state_dot
-        output = self._saturate(output)
-        if normalize:
-            output = self._normalize(output)
-        return output
+        u: float = self.kp * error + self.ki * self.integral + self.kd * state_dot
+        u = self._saturate(u)
+        # if normalize:
+        #     u = self._normalize(u)
+        return u, error
 
-    def _normalize(self, input: float) -> float:
-        t_min = -1 # target min
-        t_max = 1 # target max
-        return (input - (-self.limit)) / (self.limit - (-self.limit)) * (t_max - t_min) + t_min
+    def _normalize(self, u: float) -> float:
+        t_min: float = 0 # target min
+        t_max: float = 0 # target max
+        if self.is_throttle:
+            t_min = 0
+            t_max = 1
+        else:
+            t_min = -1
+            t_max = 1
+        return (u - (-self.limit)) / (self.limit - (-self.limit)) * (t_max - t_min) + t_min
