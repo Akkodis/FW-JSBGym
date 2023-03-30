@@ -144,7 +144,7 @@ class AeroModel(object):
         self.av1: float = ((self.rho * trim.Va_ms * self.S) / self.mass) / (self.CDo + self.CDalpha * trim.alpha_rad + self.CDde * trim.elevator)
         self.av2: float = (self.Pwatt / self.Khp2w) * self.Khp2ftlbsec
         self.av3: float = self.G * np.cos(trim.theta_rad - trim.alpha_rad)
-        self.v_damping: float = 1.5
+        self.v_damping: float = 1
         self.v_puls: float = 10
 
         # self.compute_lat_pid_gains()
