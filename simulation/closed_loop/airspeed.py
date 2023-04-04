@@ -23,14 +23,13 @@ H: ctl.TransferFunction = ctl.tf(num, den)
 print(H)
 
 t = np.linspace(0, 10, 101)
-Va_ref_ = 0.2 * np.ones(t.shape)
+Va_ref_ = 1.0 * np.ones(t.shape)
 _, y = ctl.forced_response(H, t, U=Va_ref_)
 
 # plotting
 plt.close('all')
 fig_width_cm = 24
 fig_height_cm = 18
-plt.figure(1 , figsize =(fig_width_cm /2.54 , fig_height_cm /2.54))
 plt.subplot(2 , 1 , 1)
 plt.plot(t, y , 'blue')
 plt.plot(t, Va_ref_, 'red')

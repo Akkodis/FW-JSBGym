@@ -30,7 +30,6 @@ _, y = ctl.forced_response(H, t, U=Va_ref_)
 plt.close('all')
 fig_width_cm = 24
 fig_height_cm = 18
-plt.figure(1 , figsize =(fig_width_cm /2.54 , fig_height_cm /2.54))
 plt.subplot(2 , 1 , 1)
 plt.plot(t, y , 'blue')
 plt.plot(t, Va_ref_, 'red')
