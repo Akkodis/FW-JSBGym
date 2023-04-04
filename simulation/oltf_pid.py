@@ -4,12 +4,21 @@ sys.path.append(f'{path.dirname(path.abspath(__file__))}/..')
 import control
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy import integrate
 from models.aerodynamics import AeroModel
 from trim.trim_point import TrimPoint
 from agents.pid import PID
 
+def integrand(t, dt, A, B, U):
+    return np.exp(-A * (t - dt)) * B * U
+
 def integrate_ss(A, B, X, U, dt):
-    X_out = np.exp(A * dt) * X + np.exp(B * dt) * U
+#     integr = dt * (np.exp(-A * 0) * B * U)
+#     print(integr)
+#     X_out = np.exp(A * dt) * X + integr
+    integr = integrate.quad(integrand, 0, dt, args=(dt, A, B, U))
+    print(integr[0])
+    X_out = np.exp(A * dt) * X + integr[0]
     return X_out
 
 trim: TrimPoint = TrimPoint("x8")
@@ -26,7 +35,7 @@ dt = 1/120
 Va_ = 0.0
 
 # reference value of Va_
-Va_ref = 4.5
+Va_ref = 1.0
 
 # arrays for plotting
 Va_array: list = [Va_]
