@@ -30,14 +30,15 @@ class PID:
                 u_sat = -self.limit
         return u_sat
 
-    def update(self, state: float, state_dot: float = 0, normalize: bool = True) -> float:
+    def update(self, state: float, state_dot: float = 0, saturate: bool = False, normalize: bool = False) -> float:
         error: float = self.ref - state
         self.integral += error * self.dt
         self.prev_error = error
         u: float = self.kp * error + self.ki * self.integral + self.kd * state_dot
-        u = self._saturate(u)
-        # if normalize:
-        #     u = self._normalize(u)
+        if saturate:
+            u = self._saturate(u)
+        if normalize:
+            u = self._normalize(u)
         return u, error
 
     def _normalize(self, u: float) -> float:
