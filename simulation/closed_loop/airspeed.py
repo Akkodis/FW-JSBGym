@@ -23,7 +23,7 @@ H: ctl.TransferFunction = ctl.tf(num, den)
 print(H)
 
 t = np.linspace(0, 10, 101)
-Va_ref_ = 1.0 * np.ones(t.shape)
+Va_ref_ = 6.3 * np.ones(t.shape)
 _, y = ctl.forced_response(H, t, U=Va_ref_)
 
 # plotting
@@ -31,6 +31,7 @@ plt.close('all')
 fig_width_cm = 24
 fig_height_cm = 18
 plt.subplot(2 , 1 , 1)
+plt.title('Airspeed closed loop (PI) forced response (via python control pkg)')
 plt.plot(t, y , 'blue')
 plt.plot(t, Va_ref_, 'red')
 plt.xlabel('t [s]')

@@ -1,41 +1,32 @@
 import sys
 from os import path
 sys.path.append(f'{path.dirname(path.abspath(__file__))}/..')
-import control
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy import integrate
 from models.aerodynamics import AeroModel
 from trim.trim_point import TrimPoint
 from agents.pid import PID
 
-def integrand(t, dt, A, B, U):
-    return np.exp(-A * (t - dt)) * B * U
 
 def integrate_ss(A, B, X, U, dt):
-#     integr = dt * (np.exp(-A * 0) * B * U)
-#     print(integr)
-#     X_out = np.exp(A * dt) * X + integr
-    integr = integrate.quad(integrand, 0, dt, args=(dt, A, B, U))
-    print(integr[0])
-    X_out = np.exp(A * dt) * X + integr[0]
+    X_out: float = np.exp(A * dt) * X + dt * np.exp(A * 0) * B * U
     return X_out
 
 trim: TrimPoint = TrimPoint("x8")
 uav: AeroModel = AeroModel(trim=trim)
 
 # matrices A et B
-A = -uav.av1
-B = uav.av2
+A: float = -uav.av1
+B: float = uav.av2
 
 # timestep (120Hz)
-dt = 1/120
+dt: float = 1/120
 
 # initial value of Va_
 Va_ = 0.0
 
 # reference value of Va_
-Va_ref = 1.0
+Va_ref = 6.3
 
 # arrays for plotting
 Va_array: list = [Va_]
@@ -48,10 +39,12 @@ vth_pid: PID = PID(kp=K_vth['kp_vth'], ki=K_vth['ki_vth'], kd=0, dt=dt, limit=ua
 
 # faire tourne la boucle pid pendant 10 secondes à 120Hz
 tsteps = 10*120
-t_pid = np.linspace(0, 10, tsteps+1) # +1 car on a Va_ à 0.0 au début (plotting)
+t_pid: np.ndarray = np.linspace(0, 10, tsteps+1) # +1 car on a Va_ à 0.0 au début (plotting)
 for i in range (0, tsteps):
+    cmd_th_: float
+    err: float
     vth_pid.set_reference(Va_ref) # set reference
-    cmd_th_, err = vth_pid.update(Va_) # get command and error
+    cmd_th_, err = vth_pid.update(Va_, saturate=False) # get command and error
     cmds_th_.append(cmd_th_) # append command : plots
     errs.append(err) # append error : plots
 
@@ -59,8 +52,8 @@ for i in range (0, tsteps):
     Va_ = integrate_ss(A, B, Va_, cmd_th_, dt)
     Va_array.append(Va_) # append Va_ : plots
 
-
 plt.subplot(3, 1, 1)
+plt.title('Coded PID with saturation [0,1] with FTBO sim (custom implementation of integration)')
 plt.plot(t_pid, Va_array, 'blue')
 plt.plot(t_pid, Va_ref * np.ones(t_pid.shape), 'red')
 plt.legend(labels=('Va_', 'Va_ref'))
