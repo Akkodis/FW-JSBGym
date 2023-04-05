@@ -49,9 +49,9 @@ class Simulation(object):
         # initialize the simulation:
         # if we start in trimmed flight, load those corresponding ic
         if self.enable_trim and self.trim_point is not None:
-            self.fdm['ic/h-sl-ft'] = self.trim_point.h # above sea level altitude
-            self.fdm['ic/vc-kts'] = self.trim_point.Va # ic airspeed
-            self.fdm['ic/gamma-deg'] = self.trim_point.gamma # steady level flight
+            self.fdm['ic/h-sl-ft'] = self.trim_point.h_ft # above sea level altitude
+            self.fdm['ic/vc-kts'] = self.trim_point.Va_kts # ic airspeed
+            self.fdm['ic/gamma-deg'] = self.trim_point.gamma_deg # steady level flight
         # if we start in untrimmed flight, load the basic ic
         else:
             ic_path = f'initial_conditions/{self.aircraft_id}_basic_ic.xml'
