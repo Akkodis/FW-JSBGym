@@ -1,6 +1,6 @@
 import sys
 from os import path
-sys.path.append(f'{path.dirname(path.abspath(__file__))}/..')
+sys.path.append(f'{path.dirname(path.abspath(__file__))}/../..')
 import numpy as np
 import matplotlib.pyplot as plt
 from models.aerodynamics import AeroModel
@@ -26,7 +26,7 @@ dt: float = 1/120
 Va_ = 0.0
 
 # reference value of Va_
-Va_ref = 6.3
+Va_ref = 6.0
 
 # arrays for plotting
 Va_array: list = [Va_]
@@ -35,7 +35,10 @@ errs: list = []
 
 # compute pid gains airspeed hold with commanded throttle v_th
 K_vth: dict[str, float] = uav.compute_long_pid_gains()
-vth_pid: PID = PID(kp=K_vth['kp_vth'], ki=K_vth['ki_vth'], kd=0, dt=dt, limit=uav.throttle_limit, is_throttle=True)
+
+# comment / uncomment as desired : use computed pid_gains or use hardcoded, found by hand values
+# vth_pid: PID = PID(kp=K_vth['kp_vth'], ki=K_vth['ki_vth'], kd=0, dt=dt, limit=uav.throttle_limit, is_throttle=True)
+vth_pid: PID = PID(kp=1.0, ki=0.1, kd=0, dt=dt, limit=uav.throttle_limit, is_throttle=True)
 
 # faire tourne la boucle pid pendant 10 secondes à 120Hz
 tsteps = 10*120
@@ -44,7 +47,7 @@ for i in range (0, tsteps):
     cmd_th_: float
     err: float
     vth_pid.set_reference(Va_ref) # set reference
-    cmd_th_, err = vth_pid.update(Va_, saturate=False) # get command and error
+    cmd_th_, err = vth_pid.update(Va_, saturate=True) # get command and error
     cmds_th_.append(cmd_th_) # append command : plots
     errs.append(err) # append error : plots
 
