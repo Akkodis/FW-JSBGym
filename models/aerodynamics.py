@@ -134,9 +134,9 @@ class AeroModel(object):
         # self.a_v1 = ((self.rho * self.Va_trim * self.S) / self.mass) * (self.CDo + self.CDa * )
 
         self.elevator_limit: float = 30.0 * (math.pi / 180)  # elevator actuator max deflection : deg to rad
-        self.pitch_max: float = 45.0 * (math.pi / 180)  # pitch max angle : deg to rad
+        self.pitch_max: float = 15.0 * (math.pi / 180)  # pitch max angle : deg to rad
         self.pitch_err_max: float = self.pitch_max * 2  # max expected error, pitch_max * 2 : rad
-        self.pitch_damping: float = 1.5  # ask if needed to plot the step responses for various damping ratios in something
+        self.pitch_damping: float = 1  # ask if needed to plot the step responses for various damping ratios in something
         self.h_damping: float = 1.5 # same as above but for altitude
 
         # Airspeed hold using throttle
@@ -210,7 +210,11 @@ class AeroModel(object):
 
         long_pid_gains: dict[str, float] = {
             "kp_vth": kp_vth,
-            "ki_vth": ki_vth
+            "ki_vth": ki_vth,
+            "kp_pitch": kp_pitch,
+            "kd_pitch": kd_pitch,
+            "kp_alt": kp_h,
+            "ki_alt": ki_h
         }
         return long_pid_gains
 
