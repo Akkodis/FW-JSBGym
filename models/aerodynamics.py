@@ -152,6 +152,11 @@ class AeroModel(object):
 
 
     def compute_lat_pid_gains(self) -> tuple[dict[str, float], dict[str, float]]:
+        """
+        Computes the PID gains for the lateral control system
+        :return: a tuple of two dictionaries, the first one containing the gains for the roll angle attitude control (inner loop) +
+        course angle hold with commanded roll angle (outer loop), the second one containing the response times of each loop
+        """
         # PID gains for roll attitude control (inner loop)
         kp_roll: float = self.aileron_limit / self.roll_err_max * math.copysign(1, self.a_roll2)
         puls_roll: float = math.sqrt(abs(self.a_roll2) * self.aileron_limit / self.roll_err_max)  # rad.s^-1
@@ -187,7 +192,16 @@ class AeroModel(object):
         return lat_pid_gains, lat_resp_times
 
 
-    def compute_long_pid_gains(self):
+    def compute_long_pid_gains(self) -> tuple[dict[str, float], dict[str, float], float]:
+        """
+        Computes the PID gains for the longitudinal control system
+
+        return: a tuple of two dictionaries: 
+            - long_pid_gains: dict[str, float] : the first one containing the gains for the airspeed hold with commanded throttle +
+        the second is for pitch angle (inner loop) and the third is for altitude hold with commanded pitch (outer loop)
+            - long_resp_times: dict[str, float] : containing the response times of each loop
+            - k_dc_pitch: float : DC gain of the pitch angle inner loop
+        """
         # pitch attitude hold (inner loop)
         kp_pitch: float = self.elevator_limit / self.pitch_err_max * math.copysign(1, self.a_pitch3)
         puls_pitch: float = math.sqrt(self.a_pitch2 + (self.elevator_limit / self.pitch_err_max) * abs(self.a_pitch3))  # rad.s^-1
@@ -209,14 +223,20 @@ class AeroModel(object):
         ki_vth: float = (self.v_puls ** 2) / self.av2
 
         long_pid_gains: dict[str, float] = {
-            "kp_vth": kp_vth,
+            "kp_vth": kp_vth, # airspeed commanded throttle : vth
             "ki_vth": ki_vth,
-            "kp_pitch": kp_pitch,
+            "kp_pitch": kp_pitch, # pitch angle
             "kd_pitch": kd_pitch,
-            "kp_alt": kp_h,
-            "ki_alt": ki_h
+            "kp_h": kp_h, # altitude : h
+            "ki_h": ki_h
         }
-        return long_pid_gains
+
+        long_resp_times: dict[str, float] = {
+            "pitch": response_time_pitch,
+            "alt": response_time_h
+        }
+
+        return long_pid_gains, long_resp_times, k_dc_pitch
 
 
 AeroModel()

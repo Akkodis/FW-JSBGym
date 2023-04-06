@@ -9,9 +9,11 @@ from trim.trim_point import TrimPoint
 
 trim: TrimPoint = TrimPoint("x8")
 uav: AeroModel = AeroModel(trim=trim)
-K_long: dict[str, float] = uav.compute_long_pid_gains()
-kp = K_long['kp_pitch']
-kd = K_long['kd_pitch']
+
+K_long: dict[str, float]
+K_long, _, __ = uav.compute_long_pid_gains()
+kp: float = K_long['kp_pitch']
+kd: float = K_long['kd_pitch']
 
 # airspeed closed loop transfer function (with PI)
 num: list = [kp * uav.a_pitch3]

@@ -9,7 +9,8 @@ from trim.trim_point import TrimPoint
 
 trim: TrimPoint = TrimPoint("x8")
 uav: AeroModel = AeroModel(trim=trim)
-K_vth: dict[str, float] = uav.compute_long_pid_gains()
+K_vth: dict[str, float]
+K_vth, _, __ = uav.compute_long_pid_gains()
 kp = K_vth['kp_vth']
 # kp = 0.5
 ki = K_vth['ki_vth']
