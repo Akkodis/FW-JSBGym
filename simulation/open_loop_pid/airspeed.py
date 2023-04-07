@@ -33,14 +33,16 @@ Va_array: list = [Va_]
 cmds_th_: list = []
 errs: list = []
 
-K_vth: dict[str, float]
-
 # compute pid gains airspeed hold with commanded throttle v_th
-K_vth, _, __ = uav.compute_long_pid_gains()
+K_long: dict[str, float]
+K_long, _, __ = uav.compute_long_pid_gains()
 
 # comment / uncomment as desired : use computed pid_gains or use hardcoded, found by hand values
-# vth_pid: PID = PID(kp=K_vth['kp_vth'], ki=K_vth['ki_vth'], kd=0, dt=dt, limit=uav.throttle_limit, is_throttle=True)
-vth_pid: PID = PID(kp=1.0, ki=0.1, kd=0, dt=dt, limit=uav.throttle_limit, is_throttle=True)
+# kp_vth: float = K_long['kp_vth']
+# ki_vth: float = K_long['ki_vth']
+kp_vth: float = 1.0
+ki_vth: float = 0.1
+vth_pid: PID = PID(kp=kp_vth, ki=ki_vth, kd=0, dt=dt, limit=uav.throttle_limit, is_throttle=True)
 
 # faire tourne la boucle pid pendant 10 secondes à 120Hz
 tsteps = 10*120
