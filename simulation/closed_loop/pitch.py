@@ -21,24 +21,20 @@ den: list = [1, uav.a_pitch1 + (kd * uav.a_pitch3), uav.a_pitch2 + (kp * uav.a_p
 H: ctl.TransferFunction = ctl.tf(num, den)
 print(H)
 
-t = np.linspace(0, 10, 101)
-pitch_ref = 1.0 * np.ones(t.shape)
+t = np.linspace(0, 10, 10*120)
+pitch_ref = 15.0 * (np.pi/180) * np.ones(t.shape)
 _, y = ctl.forced_response(H, t, U=pitch_ref)
+
+# print pitch final value
+print(f'pitch final value: {y[-1]}')
 
 # plotting
 plt.close('all')
-plt.subplot(2 , 1 , 1)
 plt.title('(control) Pitch Angle PD CLFR : no convergence to ref is normal according to the book')
 plt.plot(t, y , 'blue')
 plt.plot(t, pitch_ref, 'red')
 plt.xlabel('t [s]')
 plt.grid()
-plt.legend(labels =('Va_', 'Va_ref_'))
-# plt.subplot(2 , 1 , 2)
-# plt.plot(t , u ,'green')
-# plt.xlabel('t [ s ]')
-# plt.grid()
-# plt.legend(labels =('u',))
+plt.legend(labels =('pitch', 'pitch_ref'))
 
 plt.show()
-pass
