@@ -1,4 +1,5 @@
 import jsbsim
+
 class PID:
     def __init__(self, kp: float = 0, ki: float = 0, kd: float = 0, dt: float = 0, limit: float = 0, is_throttle:bool = False):
         self.kp: float = kp
@@ -34,7 +35,7 @@ class PID:
         error: float = self.ref - state
         self.integral += error * self.dt
         self.prev_error = error
-        u: float = self.kp * error + self.ki * self.integral + self.kd * state_dot
+        u: float = self.kp * error + self.ki * self.integral - self.kd * state_dot
         if saturate:
             u = self._saturate(u)
         if normalize:
