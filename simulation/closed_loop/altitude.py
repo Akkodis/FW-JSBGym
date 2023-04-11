@@ -23,23 +23,17 @@ H: ctl.TransferFunction = ctl.tf(num, den)
 print(H)
 
 t = np.linspace(0, 10, 101)
-Va_ref_ = 1.0 * np.ones(t.shape)
-_, y = ctl.forced_response(H, t, U=Va_ref_)
+h_ref = 1.0 * np.ones(t.shape)
+_, y = ctl.forced_response(H, t, U=h_ref)
 
 # plotting
 plt.close('all')
-plt.subplot(2 , 1 , 1)
 plt.title('(control) Altitude h hold (outer loop)')
 plt.plot(t, y , 'blue')
-plt.plot(t, Va_ref_, 'red')
+plt.plot(t, h_ref, 'red')
 plt.xlabel('t [s]')
 plt.grid()
-plt.legend(labels =('Va_', 'Va_ref_'))
-# plt.subplot(2 , 1 , 2)
-# plt.plot(t , u ,'green')
-# plt.xlabel('t [ s ]')
-# plt.grid()
-# plt.legend(labels =('u',))
+plt.legend(labels =('altitude', 'altitude_ref'))
 
 plt.show()
 pass
