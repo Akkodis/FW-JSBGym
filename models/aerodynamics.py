@@ -211,7 +211,7 @@ class AeroModel(object):
         k_dc_pitch: float = (kp_pitch * self.a_pitch3) / (self.a_pitch2 + (kp_pitch * self.a_pitch3)) # DC Gain of the inner loop
 
         # Altitude hold using commanded pitch (outer loop)
-        bw_factor_pitch: int = 5  # bandwidth factor between pitch inner loop and altitude hold outer loop
+        bw_factor_pitch: int = 10  # bandwidth factor between pitch inner loop and altitude hold outer loop
         puls_h: float = (1 / bw_factor_pitch) * puls_pitch  # rad.s^-1
         kp_h: float = (2 * self.h_damping * puls_h) / (k_dc_pitch * self.Va_trim)
         ki_h: float = puls_h ** 2 / (k_dc_pitch * self.Va_trim)
