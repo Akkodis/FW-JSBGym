@@ -110,7 +110,9 @@ class AeroModel(object):
         self.Crda: float = self.gamma4 * self.Clda + self.gamma8 * self.Cnda
         self.Crdr: float = self.gamma4 * self.Cldr + self.gamma8 * self.Cndr # no rudder -> equals 0.0
 
-        # Roll TF coefficients
+
+        # lateral TF coeffs
+        # roll
         self.a_roll1: float = -1 / 2 * self.rho * self.Va_trim ** 2 * self.S * self.b * self.Cpp * (
                         self.b / (2 * self.Va_trim))
         self.a_roll2: float = 1 / 2 * self.rho * self.Va_trim ** 2 * self.S * self.b * self.Cpda
@@ -129,10 +131,6 @@ class AeroModel(object):
         self.a_pitch1: float = - ((self.rho * self.Va_trim**2 * self.c * self.S) / (2 * self.Iyy)) * self.Cmq * (self.c / (2 * self.Va_trim))
         self.a_pitch2: float = - ((self.rho * self.Va_trim**2 * self.c * self.S) / (2 * self.Iyy)) * self.Cma
         self.a_pitch3: float = ((self.rho * self.Va_trim**2 * self.c * self.S) / (2 * self.Iyy)) * self.Cmde
-
-        # airspeed
-        # self.a_v1 = ((self.rho * self.Va_trim * self.S) / self.mass) * (self.CDo + self.CDa * )
-
         self.elevator_limit: float = 30.0 * (math.pi / 180)  # elevator actuator max deflection : deg to rad
         self.pitch_max: float = 15.0 * (math.pi / 180)  # pitch max angle : deg to rad
         self.pitch_err_max: float = self.pitch_max * 2  # max expected error, pitch_max * 2 : rad
