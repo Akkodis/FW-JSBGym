@@ -167,7 +167,7 @@ class AeroModel(object):
         ki_roll: float = 0.01
 
         # PI gains for the course angle hold control (outer loop)
-        bw_factor_roll: int = 5  # bandwidth factor between roll and course
+        bw_factor_roll: int = 10  # bandwidth factor between roll and course
         puls_course: float = (1 / bw_factor_roll) * puls_roll  # rad.s^-1
         freq_course: float = puls_course / (2 * math.pi)  # Hz
         response_time_course: float = 1 / freq_course  # sec
