@@ -1,5 +1,6 @@
 import yaml
 from yaml import load
+from numpy import rad2deg
 
 try:
     from yaml import CLoader as Loader
@@ -13,24 +14,27 @@ class TrimPoint(object):
         dictionary = yaml.load_all(stream, Loader=Loader)
         key_count = 0
         for doc in dictionary:
-            # print("New document:")
             for key, value in doc.items():
-                # print(key + " : " + str(value))
-                # if type(value) is list:
-                #     print(str(len(value)))
                 match key:
-                    case 'Va':
-                        self.Va: float = value
+                    case 'Va': # trim airspeed
+                        self.Va_kts: float = value # kts
+                        self.Va_ms: float = self.Va_kts / 1.944 # ms
+                        self.Va_kmh: float = self.Va_kts * 1.852 # kmh
                         key_count += 1
-                    case 'AoA':
-                        self.alpha: float = value
+                    case 'AoA': # angle of attack
+                        self.alpha_deg: float = value # deg
+                        self.alpha_rad: float = rad2deg(self.alpha_deg) # rad
                         key_count += 1
-                    case 'gamma':
-                        self.gamma: float = value
+                    case 'gamma': # flight path angle
+                        self.gamma_deg: float = value # deg
+                        self.gamma_rad: float = rad2deg(self.gamma_deg) # rad
                         key_count += 1
-                    case 'h':
-                        self.h: float = value
+                    case 'h': # z position / above sea level altitude
+                        self.h_ft: float = value # ft
+                        self.h_m: float = self.h_ft / 3.281 # m
+                        self.h_km: float = self.h_ft / 3281 # km
                         key_count += 1
+                    # input commands on fcs
                     case 'throttle':
                         self.throttle: float = value
                         key_count += 1
@@ -48,3 +52,7 @@ class TrimPoint(object):
 
         if key_count != 8:
             print("[Warning] Trim point yaml file is missing a key !")
+
+        # no wind:
+        self.theta_deg: float = self.alpha_deg + self.gamma_deg
+        self.theta_rad: float = self.alpha_rad + self.gamma_rad

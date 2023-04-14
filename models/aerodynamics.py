@@ -1,11 +1,14 @@
-import jsbsim
 import math
-
+import numpy as np
+from trim.trim_point import TrimPoint
 
 class AeroModel(object):
     G: float = 9.82  # m/s2
 
-    def __init__(self):
+    def __init__(self, trim: TrimPoint = TrimPoint("x8")):
+
+        # trim point
+        self.trim: TrimPoint = trim
 
         # Inertia matrix coefficients
         self.Ixx: float = 1.2290  # kg*m2
@@ -32,7 +35,8 @@ class AeroModel(object):
         self.gamma7: float = ((self.Ixx - self.Iyy) * self.Ixx + self.Ixz ** 2) / self.gamma
         self.gamma8: float = self.Ixx / self.gamma
 
-        self.Va_trim: float = 65.0 / 3.6  # nominal Va km/h to m/s
+        # Geometric parameters of the aircraft
+        self.Va_trim: float = self.trim.Va_ms   # trim airspeed, chosen to be 33kts -> 16.97 m/s or 61.12 km/h : include it here ?
         self.S: float = 0.75  # wing span m2
         self.b: float = 2.10  # wing span m
         self.c: float = 0.3571 # mean aerodynamic chord m
@@ -106,7 +110,9 @@ class AeroModel(object):
         self.Crda: float = self.gamma4 * self.Clda + self.gamma8 * self.Cnda
         self.Crdr: float = self.gamma4 * self.Cldr + self.gamma8 * self.Cndr # no rudder -> equals 0.0
 
-        # Roll TF coefficients
+
+        # lateral TF coeffs
+        # roll
         self.a_roll1: float = -1 / 2 * self.rho * self.Va_trim ** 2 * self.S * self.b * self.Cpp * (
                         self.b / (2 * self.Va_trim))
         self.a_roll2: float = 1 / 2 * self.rho * self.Va_trim ** 2 * self.S * self.b * self.Cpda
@@ -125,18 +131,30 @@ class AeroModel(object):
         self.a_pitch1: float = - ((self.rho * self.Va_trim**2 * self.c * self.S) / (2 * self.Iyy)) * self.Cmq * (self.c / (2 * self.Va_trim))
         self.a_pitch2: float = - ((self.rho * self.Va_trim**2 * self.c * self.S) / (2 * self.Iyy)) * self.Cma
         self.a_pitch3: float = ((self.rho * self.Va_trim**2 * self.c * self.S) / (2 * self.Iyy)) * self.Cmde
-
-        # airspeed
-        # self.a_v1 = ((self.rho * self.Va_trim * self.S) / self.mass) * (self.CDo + self.CDa * )
-
         self.elevator_limit: float = 30.0 * (math.pi / 180)  # elevator actuator max deflection : deg to rad
-        self.pitch_max: float = 45.0 * (math.pi / 180)  # pitch max angle : deg to rad
+        self.pitch_max: float = 15.0 * (math.pi / 180)  # pitch max angle : deg to rad
         self.pitch_err_max: float = self.pitch_max * 2  # max expected error, pitch_max * 2 : rad
-        self.pitch_damping: float = 1.5  # ask if needed to plot the step responses for various damping ratios in something
+        self.pitch_damping: float = 1  # ask if needed to plot the step responses for various damping ratios in something
         self.h_damping: float = 1.5 # same as above but for altitude
-        self.compute_long_pid_gains()
+
+        # Airspeed hold using throttle
+        self.throttle_limit: float = 1.0  # throttle actuator max value
+        self.av1: float = ((self.rho * trim.Va_ms * self.S) / self.mass) / (self.CDo + self.CDalpha * trim.alpha_rad + self.CDde * trim.elevator)
+        self.av2: float = (self.Pwatt / self.Khp2w) * self.Khp2ftlbsec
+        self.av3: float = self.G * np.cos(trim.theta_rad - trim.alpha_rad)
+        self.v_damping: float = 1
+        self.v_puls: float = 10
+
+        # self.compute_lat_pid_gains()
+        # self.compute_long_pid_gains()
+
 
     def compute_lat_pid_gains(self) -> tuple[dict[str, float], dict[str, float]]:
+        """
+        Computes the PID gains for the lateral control system
+        :return: a tuple of two dictionaries, the first one containing the gains for the roll angle attitude control (inner loop) +
+        course angle hold with commanded roll angle (outer loop), the second one containing the response times of each loop
+        """
         # PID gains for roll attitude control (inner loop)
         kp_roll: float = self.aileron_limit / self.roll_err_max * math.copysign(1, self.a_roll2)
         puls_roll: float = math.sqrt(abs(self.a_roll2) * self.aileron_limit / self.roll_err_max)  # rad.s^-1
@@ -149,7 +167,7 @@ class AeroModel(object):
         ki_roll: float = 0.01
 
         # PI gains for the course angle hold control (outer loop)
-        bw_factor_roll: int = 5  # bandwidth factor between roll and course
+        bw_factor_roll: int = 10  # bandwidth factor between roll and course
         puls_course: float = (1 / bw_factor_roll) * puls_roll  # rad.s^-1
         freq_course: float = puls_course / (2 * math.pi)  # Hz
         response_time_course: float = 1 / freq_course  # sec
@@ -172,7 +190,16 @@ class AeroModel(object):
         return lat_pid_gains, lat_resp_times
 
 
-    def compute_long_pid_gains(self):
+    def compute_long_pid_gains(self) -> tuple[dict[str, float], dict[str, float], float]:
+        """
+        Computes the PID gains for the longitudinal control system
+
+        return: a tuple of two dictionaries: 
+            - long_pid_gains: dict[str, float] : the first one containing the gains for the airspeed hold with commanded throttle +
+        the second is for pitch angle (inner loop) and the third is for altitude hold with commanded pitch (outer loop)
+            - long_resp_times: dict[str, float] : containing the response times of each loop
+            - k_dc_pitch: float : DC gain of the pitch angle inner loop
+        """
         # pitch attitude hold (inner loop)
         kp_pitch: float = self.elevator_limit / self.pitch_err_max * math.copysign(1, self.a_pitch3)
         puls_pitch: float = math.sqrt(self.a_pitch2 + (self.elevator_limit / self.pitch_err_max) * abs(self.a_pitch3))  # rad.s^-1
@@ -182,10 +209,32 @@ class AeroModel(object):
         k_dc_pitch: float = (kp_pitch * self.a_pitch3) / (self.a_pitch2 + (kp_pitch * self.a_pitch3)) # DC Gain of the inner loop
 
         # Altitude hold using commanded pitch (outer loop)
-        bw_factor_pitch: int = 5  # bandwidth factor between pitch inner loop and altitude hold outer loop
+        bw_factor_pitch: int = 10  # bandwidth factor between pitch inner loop and altitude hold outer loop
         puls_h: float = (1 / bw_factor_pitch) * puls_pitch  # rad.s^-1
         kp_h: float = (2 * self.h_damping * puls_h) / (k_dc_pitch * self.Va_trim)
         ki_h: float = puls_h ** 2 / (k_dc_pitch * self.Va_trim)
         freq_h: float = puls_h / (2 * math.pi)  # Hz
         response_time_h: float = 1 / freq_h  # sec
-        pass
+
+        # Airspeed hold using throttle
+        kp_vth: float = (2 * self.v_damping * self.v_puls - self.av1) / self.av2
+        ki_vth: float = (self.v_puls ** 2) / self.av2
+
+        long_pid_gains: dict[str, float] = {
+            "kp_vth": kp_vth, # airspeed commanded throttle : vth
+            "ki_vth": ki_vth,
+            "kp_pitch": kp_pitch, # pitch angle
+            "kd_pitch": kd_pitch,
+            "kp_h": kp_h, # altitude : h
+            "ki_h": ki_h
+        }
+
+        long_resp_times: dict[str, float] = {
+            "pitch": response_time_pitch,
+            "alt": response_time_h
+        }
+
+        return long_pid_gains, long_resp_times, k_dc_pitch
+
+
+AeroModel()
