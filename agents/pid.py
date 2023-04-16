@@ -43,8 +43,8 @@ class PID:
         return u, error
 
     def _normalize(self, u: float) -> float:
-        t_min: float = 0 # target min
-        t_max: float = 0 # target max
+        t_min: float # target min
+        t_max: float # target max
         if self.is_throttle:
             t_min = 0
             t_max = 1

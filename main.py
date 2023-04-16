@@ -103,17 +103,27 @@ roll_pid: PID = PID(kp=lat_pid_gains["kp_roll"], ki=lat_pid_gains["ki_roll"], kd
 course_pid: PID = PID(kp=lat_pid_gains["kp_course"], ki=lat_pid_gains["ki_course"],
                       dt=sim.fdm_dt, limit=aero_model.roll_max)
 
+# compute the longitudinal PID gains
+long_pid_gains: dict[str, float]
+long_resp_times: dict[str, float]
+long_pid_gains, long_resp_times, _ = aero_model.compute_long_pid_gains()
+pitch_pid: PID = PID(kp=1.0, ki=0, kd=0.03,
+                     dt=sim.fdm_dt, limit=aero_model.aileron_limit)
+altitude_pid: PID = PID(kp=0.1, ki=0.6,
+                        dt=sim.fdm_dt, limit=aero_model.pitch_max)
+airspeed_pid: PID = PID(kp=1.0, ki=0.1, kd=0, dt=sim.fdm_dt, limit=aero_model.throttle_limit, is_throttle=True)
+# pitch_pid: PID = PID(kp=long_pid_gains["kp_pitch"], ki=0, kd=long_pid_gains["kd_pitch"],
+#                      dt=sim.fdm_dt, limit=aero_model.aileron_limit)
+# altitude_pid: PID = PID(kp=long_pid_gains["kp_h"], ki=long_pid_gains["ki_h"],
+#                         dt=sim.fdm_dt, limit=aero_model.pitch_max)
+
+
+course_ref: float = 10.0 * (PI / 180)
+altitude_ref: float = 600
+airspeed_ref: float = 62 / 1.852 # km/h to kts
 # simulation loop
 timestep: int = 0
 while sim.run_step() and timestep < 20000:
-    # set the ref course angle to be a 90° right turn
-    # course_pid.set_reference(PI/2)
-    # course_angle: float = atan2(sim.fdm["velocities/v-east-fps"], sim.fdm["velocities/v-north-fps"])
-    # course_cmd: float = course_pid.update(state=course_angle, normalize=False) # don't normalize it between -1 and 1
-    # roll_pid.set_reference(course_cmd)
-    # roll_cmd: float = roll_pid.update(state=sim.fdm["attitude/roll-rad"], state_dot=sim.fdm["velocities/p-rad_sec"], normalize=True)
-    # print(f"roll_cmd: {roll_cmd} | course_cmd: {course_cmd}")
-
     latitude: float = sim.fdm["position/lat-gc-deg"]
     longitude: float = sim.fdm["position/long-gc-deg"]
     altitude: float = sim.fdm["position/h-sl-meters"]
@@ -130,8 +140,46 @@ while sim.run_step() and timestep < 20000:
     pitch_rate: float = sim.fdm["velocities/q-rad_sec"]
     yaw_rate: float = sim.fdm["velocities/r-rad_sec"]
 
-    airspeed: float = sim.fdm["velocities/vc-kts"]*1.852 # to m/s
+    airspeed: float = sim.fdm["velocities/vc-kts"] * 1.852 # to km/h
+    airspeed: float = sim.fdm["velocities/vc-kts"] # kts
 
+    if timestep > 4000:
+
+        # # set the airspeed ref
+        # throttle_cmd: float
+        # throttle_err: float
+        # airspeed_pid.set_reference(airspeed_ref)
+        # throttle_cmd, throttle_err = airspeed_pid.update(state=airspeed, saturate=True)
+        # sim.fdm["fcs/throttle-cmd-norm"] = throttle_cmd
+        # print("throttle_err = ", throttle_err)
+
+
+        # set the altitude ref
+        pitch_cmd: float
+        pitch_err: float
+        altitude_pid.set_reference(altitude_ref)
+        pitch_cmd, pitch_err = altitude_pid.update(state=altitude)
+
+        elevator_cmd: float
+        elevator_err: float
+        pitch_pid.set_reference(pitch_cmd)
+        elevator_cmd, elevator_err = pitch_pid.update(state=pitch, state_dot=pitch_rate, saturate=True, normalize=True)
+        sim.fdm["fcs/elevator-cmd-norm"] = elevator_cmd
+        print(f"h = {altitude}")
+        print(f"de = {elevator_cmd}")
+
+        # set the ref course angle to be a 90° right turn
+        # roll_cmd: float
+        # aileron_cmd: float
+        # course_pid.set_reference(course_ref)
+        # course_angle: float = atan2(sim.fdm["velocities/v-east-fps"], sim.fdm["velocities/v-north-fps"])
+        # course_cmd, _ = course_pid.update(state=course_angle, normalize=False) # don't normalize it between -1 and 1
+        # roll_pid.set_reference(roll_cmd)
+        # aileron_cmd = roll_pid.update(state=sim.fdm["attitude/roll-rad"], state_dot=sim.fdm["velocities/p-rad_sec"], normalize=True)
+        # print(f"aileron_cmd: {aileron_cmd} | roll_cmd: {roll_cmd}")
+        # sim.fdm["fcs/aileron-cmd-rad"]
+
+    
     # write flight data to csv
     with open(args.flight_data, 'a') as csv_file:
         csv_writer: csv.DictWriter = csv.DictWriter(csv_file, fieldnames=fieldnames)
