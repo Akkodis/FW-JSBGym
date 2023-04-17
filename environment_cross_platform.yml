@@ -3,67 +3,74 @@ channels:
   - conda-forge
   - defaults
 dependencies:
+  - wcwidth
+  - bzip2
+  - openssl
+  - pexpect
+  - zeromq
+  - _openmp_mutex
+  - backcall
+  - python-dateutil
+  - libnsl
+  - comm
+  - typing-extensions
   - python=3.11
+  - ld_impl_linux-64
+  - backports
+  - ipython
+  - xz
+  - nest-asyncio
   - matplotlib
   - pandas
-  - executing
-  - xz
-  - setuptools
-  - psutil
-  - tk
-  - wcwidth
-  - debugpy
-  - jupyter_core
-  - backports
-  - python-dateutil
-  - libuuid
-  - libsodium
-  - decorator
-  - nest-asyncio
-  - packaging
-  - parso
-  - ptyprocess
-  - six
-  - asttokens
-  - traitlets
-  - openssl
-  - libzlib
-  - backcall
-  - comm
-  - wheel
-  - libgomp
-  - platformdirs
   - stack_data
-  - _openmp_mutex
-  - ipython
-  - typing_extensions
-  - libffi
-  - libgcc-ng
-  - tornado
   - pygments
-  - pickleshare
-  - pure_eval
-  - libstdcxx-ng
-  - libsqlite
-  - entrypoints
-  - pexpect
-  - typing-extensions
-  - ld_impl_linux-64
-  - prompt-toolkit
-  - libnsl
-  - readline
-  - matplotlib-inline
-  - pip
+  - setuptools
   - python_abi
-  - backports.functools_lru_cache
-  - ca-certificates
-  - bzip2
-  - ncurses
-  - pyzmq
-  - jupyter_client
-  - zeromq
+  - pip
+  - parso
+  - decorator
+  - debugpy
+  - packaging
+  - tk
+  - traitlets
+  - matplotlib-inline
+  - libffi
   - _libgcc_mutex
-  - jedi
+  - libuuid
+  - readline
+  - platformdirs
+  - ptyprocess
+  - libgcc-ng
+  - pickleshare
+  - entrypoints
+  - ncurses
   - ipykernel
+  - executing
+  - libsodium
+  - libstdcxx-ng
+  - pyzmq
+  - wheel
+  - psutil
+  - libgomp
+  - typing_extensions
+  - jupyter_core
+  - ca-certificates
+  - libsqlite
+  - asttokens
+  - six
+  - tornado
+  - prompt-toolkit
+  - libzlib
+  - backports.functools_lru_cache
   - jsbsim
-prefix: /d/dolivare/Apps/miniconda3/envs/jsb
+  - jedi
+  - pure_eval
+  - jupyter_client
+  - scipy
+  - numpy
+  - control
+  - slycot
+  - yaml
+  - pyyaml
+  - simple-pid
+prefix: /d/dolivare/Apps/miniconda3/envs/jsbrl
