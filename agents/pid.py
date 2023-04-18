@@ -1,16 +1,17 @@
 import jsbsim
+import time
 
 class PID:
-    def __init__(self, kp: float = 0, ki: float = 0, kd: float = 0, dt: float = 0, limit: float = 0, is_throttle:bool = False):
+    def __init__(self, kp: float = 0, ki: float = 0, kd: float = 0, limit: float = 0, is_throttle:bool = False):
         self.kp: float = kp
         self.ki: float = ki
         self.kd: float = kd
-        self.dt: float = dt
         self.is_throttle: bool = is_throttle
         self.limit: float = limit
         self.integral: float = 0.0
         self.prev_error: float = 0.0
         self.ref: float = 0.0
+        self.last_time = time.monotonic()
 
     def set_reference(self, ref: float) -> None:
         self.ref = ref
@@ -31,15 +32,23 @@ class PID:
                 u_sat = -self.limit
         return u_sat
 
-    def update(self, state: float, state_dot: float = 0, saturate: bool = False, normalize: bool = False) -> float:
+    def update(self, state: float, state_dot: float = 0, dt: float = None, saturate: bool = False, normalize: bool = False) -> float:
+        now = time.monotonic()
+        if dt is None:
+            dt = now - self.last_time if (now - self.last_time) else 1e-16
+            print("dt_pid: ", dt)
+        elif dt <= 0:
+            raise ValueError('dt has negative value {}, must be positive'.format(dt))
+
         error: float = self.ref - state
-        self.integral += error * self.dt
+        self.integral += error * dt
         self.prev_error = error
         u: float = self.kp * error + self.ki * self.integral - self.kd * state_dot
         if saturate:
             u = self._saturate(u)
         if normalize:
             u = self._normalize(u)
+        self.last_time = now
         return u, error
 
     def _normalize(self, u: float) -> float:
