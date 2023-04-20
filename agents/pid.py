@@ -1,11 +1,14 @@
-import jsbsim
 import time
+from trim.trim_point import TrimPoint
 
 class PID:
-    def __init__(self, kp: float = 0, ki: float = 0, kd: float = 0, limit: float = 0, is_throttle:bool = False):
+    def __init__(self, kp: float = 0, ki: float = 0, kd: float = 0, dt: float = None,
+                 trim: TrimPoint = None, limit: float = 0, is_throttle:bool = False):
         self.kp: float = kp
         self.ki: float = ki
         self.kd: float = kd
+        self.dt: float = dt
+        self.trim: TrimPoint = trim
         self.is_throttle: bool = is_throttle
         self.limit: float = limit
         self.integral: float = 0.0
@@ -32,18 +35,20 @@ class PID:
                 u_sat = -self.limit
         return u_sat
 
-    def update(self, state: float, state_dot: float = 0, dt: float = None, saturate: bool = False, normalize: bool = False) -> float:
+    def update(self, state: float, state_dot: float = 0, saturate: bool = False, normalize: bool = False) -> float:
         now = time.monotonic()
-        if dt is None:
-            dt = now - self.last_time if (now - self.last_time) else 1e-16
-            print("dt_pid: ", dt)
-        elif dt <= 0:
-            raise ValueError('dt has negative value {}, must be positive'.format(dt))
+        if self.dt is None:
+            self.dt = now - self.last_time if (now - self.last_time) else 1e-16
+        elif self.dt <= 0:
+            raise ValueError('dt has negative value {}, must be positive'.format(self.dt))
 
         error: float = self.ref - state
-        self.integral += error * dt
+        self.integral += error * self.dt
         self.prev_error = error
         u: float = self.kp * error + self.ki * self.integral - self.kd * state_dot
+
+        if self.is_throttle:
+            u = self.trim.throttle + u
         if saturate:
             u = self._saturate(u)
         if normalize:
