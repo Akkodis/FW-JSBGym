@@ -7,7 +7,7 @@ from os import path
 from matplotlib.animation import FuncAnimation
 
 
-def animate(i, axis, args) -> None:
+def animate_states(i, axis, args) -> None:
     data = pd.read_csv(f'{path.dirname(path.abspath(__file__))}/../data/flight_data.csv')
     # data = pd.read_csv(f'{path.dirname(path.abspath(__file__))}/../data/std_turb.csv')
     lat = data['latitude']
@@ -55,7 +55,7 @@ def animate(i, axis, args) -> None:
     axis[0, 1].legend()
 
     axis[1, 0].plot(tsteps, airspeed, label='airspeed')
-    axis[1, 0].set_title("airspeed (km/h)")
+    axis[1, 0].set_title("airspeed (kts)")
     axis[1, 0].legend()
 
     if args.scale:
@@ -75,14 +75,37 @@ def animate(i, axis, args) -> None:
     axis[1, 1].legend()
     plt.tight_layout()
 
+def animate_cmds(i, axis, args) -> None:
+    data = pd.read_csv(f'{path.dirname(path.abspath(__file__))}/../data/flight_data.csv')
+    throttle_cmd = data['throttle_cmd']
+    elevator_cmd = data['elevator_cmd']
+    aileron_cmd = data['aileron_cmd']
+
+    num_steps = len(data.index)
+    tsteps = np.linspace(0, num_steps-1, num=num_steps)
+
+
+    axis.cla()
+
+    axis.plot(tsteps, throttle_cmd, label='thr_cmd')
+    axis.plot(tsteps, elevator_cmd, label='elevator_cmd')
+    axis.plot(tsteps, aileron_cmd, label='aileron_cmd')
+    axis.set_title("commands")
+    axis.legend()
+
 # parse command line arguments
 parser = ArgumentParser(description='Run JSBSim simulation.')
 parser.add_argument('--scale', action='store_true', help='True: keep aspect ratio, False: scale to fit data (for trajectory plot)')
 args: Namespace = parser.parse_args()
 
-fig, ax = plt.subplots(2, 2)
-ax[1, 1].remove()
-ax[1, 1] = fig.add_subplot(2, 2, 4, projection='3d')
+# figure animation for states
+fig_s, ax_s = plt.subplots(2, 2)
+ax_s[1, 1].remove()
+ax_s[1, 1] = fig_s.add_subplot(2, 2, 4, projection='3d')
 # ax[1, 1].set_aspect('equalxy', 'box')
-ani = FuncAnimation(plt.gcf(), animate, fargs=(ax, args, ), interval=50)
+ani = FuncAnimation(plt.gcf(), animate_states, fargs=(ax_s, args, ), interval=50)
+
+# figure animation for commands
+fig_c, ax_c = plt.subplots()
+ani_c = FuncAnimation(plt.gcf(), animate_cmds, fargs=(ax_c, args, ), interval=50)
 plt.show()
