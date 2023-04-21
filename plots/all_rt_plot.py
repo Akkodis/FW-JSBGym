@@ -16,7 +16,7 @@ def animate_states(i, axis, args) -> None:
 
     roll = data['roll']
     pitch = data['pitch']
-    yaw = data['yaw']
+    course = data['course']
 
     # course = data['course']
     # heading = data['heading-true-rad']
@@ -38,7 +38,7 @@ def animate_states(i, axis, args) -> None:
 
     axis[0, 0].plot(tsteps, roll, label='roll')
     axis[0, 0].plot(tsteps, pitch, label='pitch')
-    axis[0, 0].plot(tsteps, yaw, label='yaw')
+    axis[0, 0].plot(tsteps, course, label='course')
     axis[0, 0].set_title("attitude angles (rad)")
     axis[0, 0].legend()
 
@@ -59,11 +59,11 @@ def animate_states(i, axis, args) -> None:
     axis[1, 0].legend()
 
     if args.scale:
-        init_zrange: list[int] = [400, 800]
-        max_boundZ: float = max(alt.max(), init_zrange[1])
-        min_boundZ: float = min(alt.min(), init_zrange[0])
-        boundZ: int = max(abs(max_boundZ), abs(min_boundZ))
-        axis[1, 1].set_zlim(-boundZ, boundZ)
+        # init_zrange: list[int] = [400, 800]
+        # max_boundZ: float = max(alt.max(), init_zrange[1])
+        # min_boundZ: float = min(alt.min(), init_zrange[0])
+        # boundZ: int = max(abs(max_boundZ), abs(min_boundZ))
+        axis[1, 1].set_zlim(alt.iat[-1]-200, alt.iat[-1]+200)
 
         max_bound2D: float = max(lat.max(), lon.max())
         min_bound2D: float = min(lat.min(), lon.min())
