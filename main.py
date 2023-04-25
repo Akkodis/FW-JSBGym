@@ -171,12 +171,12 @@ long_pid_gains, long_resp_times, _ = x8.compute_long_pid_gains()
 # kd_airspeed: float = 0.0
 
 ##### my tuned gains #######
-kp_pitch: float = -1.0
-ki_pitch: float = -0.0
-kd_pitch: float = -0.0
+kp_pitch: float = -10.0
+ki_pitch: float = -0.5
+kd_pitch: float = -2.0
 
-kp_alt: float = 0.015
-ki_alt: float = 0.0005
+kp_alt: float = 0.02
+ki_alt: float = 0.001
 kd_alt: float = 0.0
 
 kp_airspeed: float = 0.9
