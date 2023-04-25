@@ -135,7 +135,7 @@ class AeroModel(object):
         self.pitch_max: float = 15.0 * (math.pi / 180)  # pitch max angle : deg to rad
         self.pitch_err_max: float = self.pitch_max * 2  # max expected error, pitch_max * 2 : rad
         self.pitch_damping: float = 1  # ask if needed to plot the step responses for various damping ratios in something
-        self.h_damping: float = 1.5 # same as above but for altitude
+        self.h_damping: float = 1 # same as above but for altitude
 
         # Airspeed hold using throttle
         self.throttle_limit: float = 1.0  # throttle actuator max value
@@ -143,7 +143,7 @@ class AeroModel(object):
         self.av2: float = (self.Pwatt / self.Khp2w) * self.Khp2ftlbsec
         self.av3: float = self.G * np.cos(trim.theta_rad - trim.alpha_rad)
         self.v_damping: float = 1
-        self.v_puls: float = 10
+        self.v_puls: float = 2
 
         # self.compute_lat_pid_gains()
         # self.compute_long_pid_gains()
@@ -235,6 +235,3 @@ class AeroModel(object):
         }
 
         return long_pid_gains, long_resp_times, k_dc_pitch
-
-
-AeroModel()

@@ -9,6 +9,7 @@ from models.aerodynamics import AeroModel
 from agents.pid import PID
 from math import pi as PI
 from math import atan2
+from simple_pid import PID as SPID
 
 # parse command line arguments
 parser = argparse.ArgumentParser(description='Run JSBSim simulation.')
@@ -46,8 +47,15 @@ properties = sim.fdm.query_property_catalog("atmosphere")
 if not os.path.exists('data'):
     os.makedirs('data')
 
-fieldnames: list[str] = ['latitude', 'longitude', 'altitude', 'roll', 'pitch', 'yaw', 'roll_rate', 'pitch_rate', 'yaw_rate', 'airspeed']
-# fieldnames: list[str] = ['latitude', 'longitude', 'altitude', 'roll', 'course', 'roll_rate', 'pitch_rate', 'yaw_rate', 'airspeed']
+fieldnames: list[str] = ['latitude', 'longitude', 'altitude', 
+                         'roll', 'pitch', 'course', 
+                         'roll_rate', 'pitch_rate', 'yaw_rate', 'airspeed',
+                         'throttle_cmd', 'elevator_cmd', 'aileron_cmd',
+                         'airspeed_ref', 'altitude_ref', 'course_ref',
+                         'airspeed_err', 'altitude_err', 'course_err',
+                         'pitch_err', 'roll_err',
+                         'pitch_cmd', 'roll_cmd',
+                         ]
 
 # create flight_data csv file with header
 with open(args.flight_data, 'w') as csv_file:
@@ -87,42 +95,123 @@ if args.trim:
     sim.fdm["fcs/elevator-cmd-norm"] = trim_point.elevator
 
 # create the aerodynamics model
-aero_model: AeroModel = AeroModel()
+x8: AeroModel = AeroModel()
 
 # compute the lateral PID gains
 lat_pid_gains: dict[str, float]
 lat_resp_times: dict[str, float]
-lat_pid_gains, lat_resp_times = aero_model.compute_lat_pid_gains()
+lat_pid_gains, lat_resp_times = x8.compute_lat_pid_gains()
+
+##### book computed gains #####
+# kp_roll: float = lat_pid_gains["kp_roll"]
+# ki_roll: float = lat_pid_gains["ki_roll"]
+# kd_roll: float = lat_pid_gains["kd_roll"]
+
+# kp_course: float = lat_pid_gains["kp_course"]
+# ki_course: float = lat_pid_gains["ki_course"]
+
+##### fw-airsim gains #####
+# kp_roll: float = 0.20
+# ki_roll: float = 0.0
+# kd_roll: float = 0.089
+
+# kp_course: float = 0.01
+# ki_course: float = 0.003191
+
+##### hand tuned gains #####
+kp_roll: float = 0.5
+ki_roll: float = 0.0
+kd_roll: float = 0.2
+
+kp_course: float = 0.4
+ki_course: float = 0.0
+
 
 # create lateral PID controller
 # roll PID (inner loop)
-roll_pid: PID = PID(kp=lat_pid_gains["kp_roll"], ki=lat_pid_gains["ki_roll"], kd=lat_pid_gains["kd_roll"],
-                    dt=sim.fdm_dt, limit=aero_model.aileron_limit)
+roll_pid: PID = PID(kp=kp_roll, ki=ki_roll, kd=kd_roll,
+                    dt=sim.fdm_dt, limit=x8.aileron_limit)
 
 # course angle PID (outer loop)
-course_pid: PID = PID(kp=lat_pid_gains["kp_course"], ki=lat_pid_gains["ki_course"],
-                      dt=sim.fdm_dt, limit=aero_model.roll_max)
+course_pid: PID = PID(kp=kp_course, ki=ki_course,
+                      dt=sim.fdm_dt, limit=x8.roll_max)
+
+# compute the longitudinal PID gains
+long_pid_gains: dict[str, float]
+long_resp_times: dict[str, float]
+long_pid_gains, long_resp_times, _ = x8.compute_long_pid_gains()
+
+# kp gains for pitch must be negative, because a negative elevator deflection is required to increase pitch
+##### book computed gains #######
+# kp_pitch: float = long_pid_gains["kp_pitch"] # -1.0
+# ki_pitch: float = 0.0
+# kd_pitch: float = long_pid_gains["kd_pitch"] # -0.388
+
+# kp_alt: float = long_pid_gains["kp_h"] #0.479
+# ki_alt: float = long_pid_gains["ki_h"] # 0.322
+# kd_alt: float = 0.0
+
+# kp_airspeed: float = long_pid_gains["kp_vth"] # 0.604
+# ki_airspeed: float = long_pid_gains["ki_vth"] # 0.678
+# kd_airspeed: float = 0.0
+
+##### fw-airsim gains #######
+# kp_pitch: float = -1.0
+# ki_pitch: float = -0.0
+# kd_pitch: float = -0.03
+
+# kp_alt: float = 0.1
+# # ki_alt: float = 0.6
+# ki_alt: float = 0.0
+# kd_alt: float = 0.0
+
+# kp_airspeed: float = 1.0
+# # ki_airspeed: float = 0.035
+# ki_airspeed: float = 0.0
+# kd_airspeed: float = 0.0
+
+##### my tuned gains #######
+kp_pitch: float = -10.0
+ki_pitch: float = -0.5
+kd_pitch: float = -2.0
+
+kp_alt: float = 0.02
+ki_alt: float = 0.001
+kd_alt: float = 0.0
+
+kp_airspeed: float = 0.9
+ki_airspeed: float = 0.1
+kd_airspeed: float = 0.0
+
+pitch_pid: PID = PID(kp=kp_pitch, ki=ki_pitch, kd=kd_pitch,
+                    dt=sim.fdm_dt, trim=trim_point, limit=x8.aileron_limit)
+altitude_pid: PID = PID(kp=kp_alt, ki=ki_alt, kd=kd_alt,
+                        dt=sim.fdm_dt, trim=trim_point, limit=x8.pitch_max)
+airspeed_pid: PID = PID(kp=kp_airspeed, ki=ki_airspeed, kd=kd_airspeed,
+                        dt=sim.fdm_dt, trim=trim_point, limit=x8.throttle_limit, is_throttle=True)
+
+# references
+course_ref: float = 45.0 * (PI / 180)
+altitude_ref: float = 2000 # ft
+airspeed_ref: float = 34 # kts
+
+# initializing cmds and errors to 0 to 0
+throttle_cmd = airspeed_err = pitch_cmd = altitude_err = elevator_cmd = pitch_err  = \
+roll_cmd = course_err = aileron_cmd = roll_err = 0.0
 
 # simulation loop
 timestep: int = 0
 while sim.run_step() and timestep < 20000:
-    # set the ref course angle to be a 90° right turn
-    # course_pid.set_reference(PI/2)
-    # course_angle: float = atan2(sim.fdm["velocities/v-east-fps"], sim.fdm["velocities/v-north-fps"])
-    # course_cmd: float = course_pid.update(state=course_angle, normalize=False) # don't normalize it between -1 and 1
-    # roll_pid.set_reference(course_cmd)
-    # roll_cmd: float = roll_pid.update(state=sim.fdm["attitude/roll-rad"], state_dot=sim.fdm["velocities/p-rad_sec"], normalize=True)
-    # print(f"roll_cmd: {roll_cmd} | course_cmd: {course_cmd}")
-
     latitude: float = sim.fdm["position/lat-gc-deg"]
     longitude: float = sim.fdm["position/long-gc-deg"]
-    altitude: float = sim.fdm["position/h-sl-meters"]
+    altitude: float = sim.fdm["position/h-sl-ft"]
 
     roll: float = sim.fdm["attitude/roll-rad"]
     pitch: float = sim.fdm["attitude/pitch-rad"]
-    heading: float = sim.fdm["attitude/heading-true-rad"]
+    # heading: float = sim.fdm["attitude/heading-true-rad"]
     psi: float = sim.fdm["attitude/psi-rad"]
     psi_gt: float = sim.fdm["flight-path/psi-gt-rad"]
+    course_angle: float = atan2(sim.fdm["velocities/v-east-fps"], sim.fdm["velocities/v-north-fps"])
 
     # print(f"2PI = {2*PI} | psi-gt = {psi_gt}")
 
@@ -130,7 +219,49 @@ while sim.run_step() and timestep < 20000:
     pitch_rate: float = sim.fdm["velocities/q-rad_sec"]
     yaw_rate: float = sim.fdm["velocities/r-rad_sec"]
 
-    airspeed: float = sim.fdm["velocities/vc-kts"]*1.852 # to m/s
+    # airspeed: float = sim.fdm["velocities/vc-kts"] * 1.852 # to km/h
+    airspeed: float = sim.fdm["velocities/vt-fps"] * 0.5925 # fps to kts
+
+    print(f"h = {altitude}")
+    print(f"Va = {airspeed}")
+
+    if timestep > 2000:
+        # input("Press Enter to continue...")
+        # set the airspeed ref
+        airspeed_pid.set_reference(airspeed_ref)
+        throttle_cmd, airspeed_err = airspeed_pid.update(state=airspeed, saturate=True)
+        sim.fdm["fcs/throttle-cmd-norm"] = throttle_cmd
+        print("airspeed_err = ", airspeed_err)
+        print("dt = ", sim.fdm["fcs/throttle-cmd-norm"])
+
+        # set the altitude ref
+        altitude_pid.set_reference(altitude_ref)
+        pitch_cmd, altitude_err = altitude_pid.update(state=altitude, saturate=True)
+        print(f"alt_err = {altitude_err}")
+        print(f"pitch_cmd = {pitch_cmd}")
+
+        pitch_pid.set_reference(pitch_cmd)
+        elevator_cmd, pitch_err = pitch_pid.update(state=pitch, state_dot=pitch_rate, saturate=True, normalize=True)
+        sim.fdm["fcs/elevator-cmd-norm"] = elevator_cmd
+        print(f"pitch_err = {pitch_err}")
+        print("de = ", sim.fdm["fcs/elevator-cmd-norm"])
+
+        # set the ref course angle to be a 90° right turn
+        course_pid.set_reference(course_ref)
+        roll_cmd, course_err = course_pid.update(state=course_angle, saturate=True)
+        print(f"course_err = {course_err}")
+        print(f"roll_cmd = {roll_cmd}")
+
+        roll_pid.set_reference(roll_cmd)
+        aileron_cmd, roll_err = roll_pid.update(state=roll, state_dot=roll_rate, saturate=True, normalize=True)
+        sim.fdm["fcs/aileron-cmd-norm"] = aileron_cmd
+        print(f"roll_err = {roll_err}")
+        print("da = ", sim.fdm["fcs/aileron-cmd-norm"])
+
+    # controls
+    throttle: float = sim.fdm["fcs/throttle-cmd-norm"]
+    aileron: float = sim.fdm["fcs/aileron-cmd-norm"]
+    elevator: float = sim.fdm["fcs/elevator-cmd-norm"]
 
     # write flight data to csv
     with open(args.flight_data, 'a') as csv_file:
@@ -140,15 +271,25 @@ while sim.run_step() and timestep < 20000:
             fieldnames[1]: longitude,
             fieldnames[2]: altitude,
             fieldnames[3]: roll,
-            # fieldnames[4]: course_angle,
             fieldnames[4]: pitch,
-            # "psi-rad": psi,
-            fieldnames[5]: heading,
-            # "psi-gt-rad": psi_gt,
+            fieldnames[5]: course_angle,
             fieldnames[6]: roll_rate,
             fieldnames[7]: pitch_rate,
             fieldnames[8]: yaw_rate,
-            fieldnames[9]: airspeed
+            fieldnames[9]: airspeed,
+            fieldnames[10]: throttle,
+            fieldnames[11]: elevator,
+            fieldnames[12]: aileron,
+            fieldnames[13]: airspeed_ref,
+            fieldnames[14]: altitude_ref,
+            fieldnames[15]: course_ref,
+            fieldnames[16]: airspeed_err,
+            fieldnames[17]: altitude_err,
+            fieldnames[18]: course_err,
+            fieldnames[19]: pitch_err,
+            fieldnames[20]: roll_err,
+            fieldnames[21]: pitch_cmd,
+            fieldnames[22]: roll_cmd,
         }
         csv_writer.writerow(info)
 
