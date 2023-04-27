@@ -209,9 +209,9 @@ while sim.run_step() and timestep < 20000:
     roll: float = sim.fdm["attitude/roll-rad"]
     pitch: float = sim.fdm["attitude/pitch-rad"]
     # heading: float = sim.fdm["attitude/heading-true-rad"]
-    psi: float = sim.fdm["attitude/psi-rad"]
-    psi_gt: float = sim.fdm["flight-path/psi-gt-rad"]
-    course_angle: float = atan2(sim.fdm["velocities/v-east-fps"], sim.fdm["velocities/v-north-fps"])
+    # psi: float = sim.fdm["attitude/psi-rad"]
+    # psi_gt: float = sim.fdm["flight-path/psi-gt-rad"]
+    course_angle: float = (atan2(sim.fdm["velocities/v-east-fps"], sim.fdm["velocities/v-north-fps"]) + 2 * PI) % (2 * PI) # rad [0, 2PI]
 
     # print(f"2PI = {2*PI} | psi-gt = {psi_gt}")
 
@@ -248,7 +248,7 @@ while sim.run_step() and timestep < 20000:
 
         # set the ref course angle to be a 90° right turn
         course_pid.set_reference(course_ref)
-        roll_cmd, course_err = course_pid.update(state=course_angle, saturate=True)
+        roll_cmd, course_err = course_pid.update(state=course_angle, saturate=True, is_course=True)
         print(f"course_err = {course_err}")
         print(f"roll_cmd = {roll_cmd}")
 
