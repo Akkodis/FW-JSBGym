@@ -152,6 +152,8 @@ def animate(i, axis, args) -> None:
     axis[2, 1].set_title('angular velocities (rad/s)')
     axis[2, 1].legend()
 
+    ax[2, 2].set_axis_off()
+
     # return alt_plt, alt_ref_plt,
     return alt_plt, alt_ref_plt, course_plt, course_ref_plt, traj_plt, pitch_plt, pitch_cmd_plt, \
            roll_plt, roll_cmd_plt, airspeed_plt, airspeed_ref_plt, aileron_cmd_plt, elevator_cmd_plt, throttle_cmd_plt, \
