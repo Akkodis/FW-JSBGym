@@ -56,10 +56,8 @@ U_h: float = 0
 # timestep (120Hz)
 dt: float = 1/120
 
-# reference : pitch_ref = une ref et pitch_dot_ref = 0 -> on veut vitesse nulle à l'arrivée
-# pitch_ref: float = 45.0 * (np.pi / 180) # deg to rad
-X_h_ref: float = 1
-# pitch_ref: float = 1.0 # for step response testing
+# reference altitude
+X_h_ref: float = 5
 
 # placeholder ref, will be filled by the h_pid
 X_pitch_ref: np.ndarray = np.array([[0        ],
@@ -79,12 +77,19 @@ err_h_arr: np.array = np.array(X_h_ref - X_h)
 # PID gains
 K_long: dict[str, float]
 K_long, _, __ = uav.compute_long_pid_gains()
-kp_pitch: float = K_long['kp_pitch']
-kd_pitch: float = K_long['kd_pitch']
-kp_h: float = K_long['kp_h']
-ki_h: float = K_long['ki_h']
+# kp_pitch: float = K_long['kp_pitch']
+# kd_pitch: float = K_long['kd_pitch']
+# kp_h: float = K_long['kp_h']
+# ki_h: float = K_long['ki_h']
+
+# custom gains
+kp_pitch = -10.0
+kd_pitch = -2.0
+kp_h = 0.2
+ki_h = 0.0
+
 pitch_pid: PID = PID(kp=kp_pitch, ki=0, kd=kd_pitch, dt=dt, limit=uav.elevator_limit, is_throttle=False)
-h_pid: PID = PID(kp=kp_h, ki=ki_h, kd=0, dt=dt, is_throttle=False)
+h_pid: PID = PID(kp=kp_h, ki=ki_h, kd=0, dt=dt, limit=uav.pitch_max, is_throttle=False)
 
 tsteps: int = 10*120
 t_pid: np.ndarray = np.linspace(0, 10, tsteps+1) # +1 car on a une val initiale dans X_arr au début (plotting)
@@ -94,7 +99,7 @@ for i in range (0, tsteps):
 
     # set reference altitude to attain
     h_pid.set_reference(X_h_ref)
-    U_h, err_h = h_pid.update(state=X_h, saturate=False) # computing the according pitch command
+    U_h, err_h = h_pid.update(state=X_h, saturate=True) # computing the according pitch command
     U_h_arr = np.append(U_h_arr, U_h)
     err_h_arr  = np.append(err_h_arr, err_h)
 

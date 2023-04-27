@@ -23,14 +23,14 @@ B: float = uav.av2
 dt: float = 1/120
 
 # initial value of Va_
-Va_ = 0.0
+Va = 0.0
 
-# reference value of Va_
+# reference value of Va
 Va_ref = 6.0
 
 # arrays for plotting
-Va_array: list = [Va_]
-cmds_th_: list = []
+Va_array: list = [Va]
+cmds_th: list = []
 errs: list = []
 
 # compute pid gains airspeed hold with commanded throttle v_th
@@ -38,37 +38,37 @@ K_long: dict[str, float]
 K_long, _, __ = uav.compute_long_pid_gains()
 
 # comment / uncomment as desired : use computed pid_gains or use hardcoded, found by hand values
-# kp_vth: float = K_long['kp_vth']
-# ki_vth: float = K_long['ki_vth']
-kp_vth: float = 1.0
-ki_vth: float = 0.1
-vth_pid: PID = PID(kp=kp_vth, ki=ki_vth, kd=0, dt=dt, limit=uav.throttle_limit, is_throttle=True)
+kp_vth: float = K_long['kp_vth']
+ki_vth: float = K_long['ki_vth']
+# kp_vth: float = 1.0
+# ki_vth: float = 0.1
+vth_pid: PID = PID(kp=kp_vth, ki=ki_vth, kd=0, dt=dt, trim=trim, limit=uav.throttle_limit, is_throttle=True)
 
 # faire tourne la boucle pid pendant 10 secondes à 120Hz
 tsteps = 10*120
-t_pid: np.ndarray = np.linspace(0, 10, tsteps+1) # +1 car on a Va_ à 0.0 au début (plotting)
+t_pid: np.ndarray = np.linspace(0, 10, tsteps+1) # +1 car on a Va à 0.0 au début (plotting)
 for i in range (0, tsteps):
     cmd_th_: float
     err: float
     vth_pid.set_reference(Va_ref) # set reference
-    cmd_th_, err = vth_pid.update(Va_, saturate=True) # get command and error
-    cmds_th_.append(cmd_th_) # append command : plots
+    cmd_th, err = vth_pid.update(Va, saturate=True) # get command and error
+    cmds_th.append(cmd_th) # append command : plots
     errs.append(err) # append error : plots
 
-    # integrate the model and get the next Va_ state
-    Va_ = integrate_ss(A, B, Va_, cmd_th_, dt)
-    Va_array.append(Va_) # append Va_ : plots
+    # integrate the model and get the next Va state
+    Va = integrate_ss(A, B, Va, cmd_th, dt)
+    Va_array.append(Va) # append Va : plots
 
 plt.subplot(3, 1, 1)
 plt.title('Coded PID with saturation [0,1] with FTBO sim (custom implementation of integration)')
 plt.plot(t_pid, Va_array, 'blue')
 plt.plot(t_pid, Va_ref * np.ones(t_pid.shape), 'red')
-plt.legend(labels=('Va_', 'Va_ref'))
+plt.legend(labels=('Va', 'Va_ref'))
 plt.grid()
 
 plt.subplot(3, 1, 2)
-plt.plot(t_pid[0:tsteps], cmds_th_, 'green')
-plt.legend(labels=('cmd_th_',))
+plt.plot(t_pid[0:tsteps], cmds_th, 'green')
+plt.legend(labels=('cmd_th',))
 plt.grid()
 
 plt.subplot(3, 1, 3)

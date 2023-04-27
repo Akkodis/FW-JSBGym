@@ -59,10 +59,8 @@ U_course: float = 0
 # timestep (120Hz)
 dt: float = 1/120
 
-# reference : pitch_ref = une ref et pitch_dot_ref = 0 -> on veut vitesse nulle à l'arrivée
-# pitch_ref: float = 45.0 * (np.pi / 180) # deg to rad
-X_course_ref: float = 10.0 * (np.pi / 180) # deg to rad
-# pitch_ref: float = 1.0 # for step response testing
+# reference
+X_course_ref: float = 45.0 * (np.pi / 180) # deg to rad
 
 # placeholder ref, will be filled by the h_pid
 X_roll_ref: np.ndarray = np.array([[0        ],
@@ -87,8 +85,8 @@ ki_roll: float = K_lat['ki_roll']
 kd_roll: float = K_lat['kd_roll']
 kp_course: float = K_lat['kp_course']
 ki_course: float = K_lat['ki_course']
-roll_pid: PID = PID(kp=kp_roll, ki=ki_roll, kd=kd_roll, limit=uav.aileron_limit, is_throttle=False)
-course_pid: PID = PID(kp=kp_course, ki=ki_course, kd=0, dt=dt, is_throttle=False)
+roll_pid: PID = PID(kp=kp_roll, ki=ki_roll, kd=kd_roll, dt=dt, limit=uav.aileron_limit, is_throttle=False)
+course_pid: PID = PID(kp=kp_course, ki=ki_course, kd=0, dt=dt, limit=uav.roll_max, is_throttle=False)
 
 tsteps: int = 10*120
 t_pid: np.ndarray = np.linspace(0, 10, tsteps+1) # +1 car on a une val initiale dans X_arr au début (plotting)
@@ -98,7 +96,7 @@ for i in range (0, tsteps):
 
     # set reference altitude to attain
     course_pid.set_reference(X_course_ref)
-    U_course, err_course = course_pid.update(state=X_course, saturate=False) # computing the according pitch command
+    U_course, err_course = course_pid.update(state=X_course, saturate=True) # computing the according pitch command
     U_course_arr = np.append(U_course_arr, U_course)
     err_course_arr  = np.append(err_course_arr, err_course)
 
@@ -158,7 +156,7 @@ plt.grid()
 plt.subplot(4, 2, 6)
 plt.plot(t_pid, err_course_arr, 'black')
 plt.legend(labels=('error_course',))
-plt.ylabel('[m]')
+plt.ylabel('[rad]')
 plt.grid()
 
 
