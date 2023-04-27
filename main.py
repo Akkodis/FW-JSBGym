@@ -66,16 +66,13 @@ with open(args.flight_data, 'w') as csv_file:
 rand_seed: int = random.randint(0, 1000000)
 sim.fdm["simulation/randomseed"] = rand_seed
 
-# set wind
-if args.wind:
-    # sim.fdm["atmosphere/wind-north-fps"] = 100
-    sim.fdm["atmosphere/wind-east-fps"] = 40
+
 
 # set turbulences
 if args.turb:
     sim.fdm["atmosphere/turb-type"] = 4 # Tustin turbulence type
-    sim.fdm["atmosphere/turbulence/milspec/windspeed_at_20ft_AGL-fps"] = 30
-    sim.fdm["atmosphere/turbulence/milspec/severity"] = 3
+    sim.fdm["atmosphere/turbulence/milspec/windspeed_at_20ft_AGL-fps"] = 10
+    sim.fdm["atmosphere/turbulence/milspec/severity"] = 1
 
 # set wind gust
 if args.gust:
@@ -191,7 +188,7 @@ airspeed_pid: PID = PID(kp=kp_airspeed, ki=ki_airspeed, kd=kd_airspeed,
                         dt=sim.fdm_dt, trim=trim_point, limit=x8.throttle_limit, is_throttle=True)
 
 # references
-course_ref: float = 45.0 * (PI / 180)
+course_ref: float = 230 * (PI / 180)
 altitude_ref: float = 2000 # ft
 airspeed_ref: float = 34 # kts
 
@@ -222,41 +219,28 @@ while sim.run_step() and timestep < 20000:
     # airspeed: float = sim.fdm["velocities/vc-kts"] * 1.852 # to km/h
     airspeed: float = sim.fdm["velocities/vt-fps"] * 0.5925 # fps to kts
 
-    print(f"h = {altitude}")
-    print(f"Va = {airspeed}")
-
     if timestep > 2000:
         # input("Press Enter to continue...")
         # set the airspeed ref
         airspeed_pid.set_reference(airspeed_ref)
         throttle_cmd, airspeed_err = airspeed_pid.update(state=airspeed, saturate=True)
         sim.fdm["fcs/throttle-cmd-norm"] = throttle_cmd
-        print("airspeed_err = ", airspeed_err)
-        print("dt = ", sim.fdm["fcs/throttle-cmd-norm"])
 
         # set the altitude ref
         altitude_pid.set_reference(altitude_ref)
         pitch_cmd, altitude_err = altitude_pid.update(state=altitude, saturate=True)
-        print(f"alt_err = {altitude_err}")
-        print(f"pitch_cmd = {pitch_cmd}")
 
         pitch_pid.set_reference(pitch_cmd)
         elevator_cmd, pitch_err = pitch_pid.update(state=pitch, state_dot=pitch_rate, saturate=True, normalize=True)
         sim.fdm["fcs/elevator-cmd-norm"] = elevator_cmd
-        print(f"pitch_err = {pitch_err}")
-        print("de = ", sim.fdm["fcs/elevator-cmd-norm"])
 
         # set the ref course angle to be a 90° right turn
         course_pid.set_reference(course_ref)
         roll_cmd, course_err = course_pid.update(state=course_angle, saturate=True, is_course=True)
-        print(f"course_err = {course_err}")
-        print(f"roll_cmd = {roll_cmd}")
 
         roll_pid.set_reference(roll_cmd)
         aileron_cmd, roll_err = roll_pid.update(state=roll, state_dot=roll_rate, saturate=True, normalize=True)
         sim.fdm["fcs/aileron-cmd-norm"] = aileron_cmd
-        print(f"roll_err = {roll_err}")
-        print("da = ", sim.fdm["fcs/aileron-cmd-norm"])
 
     # controls
     throttle: float = sim.fdm["fcs/throttle-cmd-norm"]
@@ -292,6 +276,11 @@ while sim.run_step() and timestep < 20000:
             fieldnames[22]: roll_cmd,
         }
         csv_writer.writerow(info)
+
+    if timestep == 1500 and args.wind:
+        # set wind
+        # sim.fdm["atmosphere/wind-north-fps"] = 100
+        sim.fdm["atmosphere/wind-east-fps"] = 40
 
     if timestep == 6000 and args.gust:
         sim.fdm["atmosphere/cosine-gust/start"] = 1
