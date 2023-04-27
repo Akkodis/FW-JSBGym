@@ -91,7 +91,7 @@ class FlightGearVisualizer(object):
 
     def __init__(self, sim: Simulation) -> None:
         self.flightgear_process = self.launch_flightgear(aircraft_fgear_id=sim.aircraft_id)
-        time.sleep(10)
+        time.sleep(15)
 
     def launch_flightgear(self, aircraft_fgear_id: str = 'c172p') -> subprocess.Popen:
         # cmd for running flightgear(binary apt package version 2020.3.13) from terminal
