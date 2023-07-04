@@ -287,7 +287,7 @@ def main():
     mav: AeroModel = AeroModel()
     results = []
 
-    compute_trim(mav, 17, 0) # 33 kts
+    compute_trim(mav, 33, 0) # 33 kts
 
     # for Va in range(8, 23): # trying Va for 8 to 23 m/s -> 28 to 83 km/h
     #     trim_state, trim_input,objective = compute_trim(mav, Va, gamma)

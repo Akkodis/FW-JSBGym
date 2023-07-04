@@ -94,13 +94,13 @@ def animate(i, axis, args) -> None:
     tsteps = np.linspace(0, num_steps-1, num=num_steps)
     
     alt_plt ,= axis[0, 0].plot(tsteps, alt, label='altitude')
-    alt_ref_plt, = axis[0, 0].plot(tsteps, altitude_ref, label='altitude_ref')
+    # alt_ref_plt, = axis[0, 0].plot(tsteps, altitude_ref, label='altitude_ref')
     # axis[0, 0].plot(tsteps, altitude_err, label='altitude_err')
     axis[0, 0].set_title("altitude control (ft)")
     axis[0, 0].legend()
 
     course_plt, = axis[0, 1].plot(tsteps, course, label='course')
-    course_ref_plt, = axis[0, 1].plot(tsteps, course_ref, label='course_ref')
+    # course_ref_plt, = axis[0, 1].plot(tsteps, course_ref, label='course_ref')
     # axis[0, 1].plot(tsteps, course_err, label='course_err')
     axis[0, 1].set_title("course control (rad)")
     axis[0, 1].legend()
@@ -123,19 +123,19 @@ def animate(i, axis, args) -> None:
     # plt.tight_layout()
 
     pitch_plt, = axis[1, 0].plot(tsteps, pitch, label='pitch')
-    pitch_cmd_plt, = axis[1, 0].plot(tsteps, pitch_cmd, label='pitch_ref/cmd')
+    # pitch_cmd_plt, = axis[1, 0].plot(tsteps, pitch_cmd, label='pitch_ref/cmd')
     # axis[1, 0].plot(tsteps, pitch_err, label='pitch_err')
     axis[1, 0].set_title('pitch control (rad)')
     axis[1, 0].legend()
 
     roll_plt, = axis[1, 1].plot(tsteps, roll, label='roll')
-    roll_cmd_plt, = axis[1, 1].plot(tsteps, roll_cmd, label='roll_ref/cmd')
+    # roll_cmd_plt, = axis[1, 1].plot(tsteps, roll_cmd, label='roll_ref/cmd')
     # axis[1, 1].plot(tsteps, roll_err, label='roll_err')
     axis[1, 1].set_title('roll control (rad)')
     axis[1, 1].legend()
 
     airspeed_plt, = axis[1, 2].plot(tsteps, airspeed, label='airspeed')
-    airspeed_ref_plt, = axis[1, 2].plot(tsteps, airspeed_ref, label='airspeed_ref')
+    # airspeed_ref_plt, = axis[1, 2].plot(tsteps, airspeed_ref, label='airspeed_ref')
     # axis[1, 2].plot(tsteps, airspeed_err, label='airspeed_err')
     axis[1, 2].set_title('airspeed control (kts)')
     axis[1, 2].legend()
@@ -155,9 +155,9 @@ def animate(i, axis, args) -> None:
     ax[2, 2].set_axis_off()
 
     # return alt_plt, alt_ref_plt,
-    return alt_plt, alt_ref_plt, course_plt, course_ref_plt, traj_plt, pitch_plt, pitch_cmd_plt, \
-           roll_plt, roll_cmd_plt, airspeed_plt, airspeed_ref_plt, aileron_cmd_plt, elevator_cmd_plt, throttle_cmd_plt, \
-           roll_rate_plt, pitch_rate_plt, yaw_rate_plt,
+    # return alt_plt, alt_ref_plt, course_plt, course_ref_plt, traj_plt, pitch_plt, pitch_cmd_plt, \
+    #        roll_plt, roll_cmd_plt, airspeed_plt, airspeed_ref_plt, aileron_cmd_plt, elevator_cmd_plt, throttle_cmd_plt, \
+    #        roll_rate_plt, pitch_rate_plt, yaw_rate_plt,
 
 # parse command line arguments
 parser = ArgumentParser(description='Plotting Telemetry Data')
