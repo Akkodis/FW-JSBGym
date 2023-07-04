@@ -168,16 +168,16 @@ long_pid_gains, long_resp_times, _ = x8.compute_long_pid_gains()
 # kd_airspeed: float = 0.0
 
 ##### my tuned gains #######
-kp_pitch: float = -10.0
-ki_pitch: float = -0.5
+kp_pitch: float = -19.0
+ki_pitch: float = -0.0
 kd_pitch: float = -2.0
 
-kp_alt: float = 0.02
-ki_alt: float = 0.001
+kp_alt: float = 0.1
+ki_alt: float = 0.0001
 kd_alt: float = 0.0
 
-kp_airspeed: float = 0.9
-ki_airspeed: float = 0.1
+kp_airspeed: float = 1.2
+ki_airspeed: float = 0.0
 kd_airspeed: float = 0.0
 
 pitch_pid: PID = PID(kp=kp_pitch, ki=ki_pitch, kd=kd_pitch,
@@ -219,25 +219,30 @@ while sim.run_step() and timestep < 20000:
     # airspeed: float = sim.fdm["velocities/vc-kts"] * 1.852 # to km/h
     airspeed: float = sim.fdm["velocities/vt-fps"] * 0.5925 # fps to kts
 
-    if timestep > 2000:
+    # command longitunal control first
+    if timestep > 1000:
         # input("Press Enter to continue...")
         # set the airspeed ref
         airspeed_pid.set_reference(airspeed_ref)
         throttle_cmd, airspeed_err = airspeed_pid.update(state=airspeed, saturate=True)
         sim.fdm["fcs/throttle-cmd-norm"] = throttle_cmd
 
-        # set the altitude ref
+        # set the altitude ref (outer loop)
         altitude_pid.set_reference(altitude_ref)
         pitch_cmd, altitude_err = altitude_pid.update(state=altitude, saturate=True)
 
+        # set the pitch_ref (inner loop)
         pitch_pid.set_reference(pitch_cmd)
         elevator_cmd, pitch_err = pitch_pid.update(state=pitch, state_dot=pitch_rate, saturate=True, normalize=True)
         sim.fdm["fcs/elevator-cmd-norm"] = elevator_cmd
 
-        # set the ref course angle to be a 90° right turn
+    # wait a bit and start commanding lateral control (decoupling of both lat and lon dynamics is necessary to PID control)
+    if timestep > 3000:
+        # set the ref course angle (outer loop)
         course_pid.set_reference(course_ref)
         roll_cmd, course_err = course_pid.update(state=course_angle, saturate=True, is_course=True)
 
+        # set the roll_ref (inner loop)
         roll_pid.set_reference(roll_cmd)
         aileron_cmd, roll_err = roll_pid.update(state=roll, state_dot=roll_rate, saturate=True, normalize=True)
         sim.fdm["fcs/aileron-cmd-norm"] = aileron_cmd
