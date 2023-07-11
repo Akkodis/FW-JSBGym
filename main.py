@@ -219,8 +219,9 @@ while sim.run_step() and timestep < 20000:
     # airspeed: float = sim.fdm["velocities/vc-kts"] * 1.852 # to km/h
     airspeed: float = sim.fdm["velocities/vt-fps"] * 0.5925 # fps to kts
 
-    # command longitunal control first
-    if timestep > 1000:
+    # if the 2nd if is commented out: control everything at the same time
+    # command longitudinal control first
+    if timestep > 2000:
         # input("Press Enter to continue...")
         # set the airspeed ref
         airspeed_pid.set_reference(airspeed_ref)
@@ -237,7 +238,7 @@ while sim.run_step() and timestep < 20000:
         sim.fdm["fcs/elevator-cmd-norm"] = elevator_cmd
 
     # wait a bit and start commanding lateral control (decoupling of both lat and lon dynamics is necessary to PID control)
-    if timestep > 3000:
+    # if timestep > 3000:
         # set the ref course angle (outer loop)
         course_pid.set_reference(course_ref)
         roll_cmd, course_err = course_pid.update(state=course_angle, saturate=True, is_course=True)

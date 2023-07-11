@@ -94,13 +94,13 @@ def animate(i, axis, args) -> None:
     tsteps = np.linspace(0, num_steps-1, num=num_steps)
     
     alt_plt ,= axis[0, 0].plot(tsteps, alt, label='altitude')
-    # alt_ref_plt, = axis[0, 0].plot(tsteps, altitude_ref, label='altitude_ref')
+    alt_ref_plt, = axis[0, 0].plot(tsteps, altitude_ref, label='altitude_ref')
     # axis[0, 0].plot(tsteps, altitude_err, label='altitude_err')
     axis[0, 0].set_title("altitude control (ft)")
     axis[0, 0].legend()
 
     course_plt, = axis[0, 1].plot(tsteps, course, label='course')
-    # course_ref_plt, = axis[0, 1].plot(tsteps, course_ref, label='course_ref')
+    course_ref_plt, = axis[0, 1].plot(tsteps, course_ref, label='course_ref')
     # axis[0, 1].plot(tsteps, course_err, label='course_err')
     axis[0, 1].set_title("course control (rad)")
     axis[0, 1].legend()
@@ -135,7 +135,7 @@ def animate(i, axis, args) -> None:
     axis[1, 1].legend()
 
     airspeed_plt, = axis[1, 2].plot(tsteps, airspeed, label='airspeed')
-    # airspeed_ref_plt, = axis[1, 2].plot(tsteps, airspeed_ref, label='airspeed_ref')
+    airspeed_ref_plt, = axis[1, 2].plot(tsteps, airspeed_ref, label='airspeed_ref')
     # axis[1, 2].plot(tsteps, airspeed_err, label='airspeed_err')
     axis[1, 2].set_title('airspeed control (kts)')
     axis[1, 2].legend()
