@@ -55,7 +55,7 @@ fieldnames: list[str] = ['latitude', 'longitude', 'altitude',
                          'airspeed_err', 'altitude_err', 'course_err',
                          'pitch_err', 'roll_err',
                          'pitch_cmd', 'roll_cmd',
-                         'aileron_pos', 'left_aileron_control', 'left_aileron_pos_rad'
+                         'aileron_pos', 'right_aileron_pos_rad', 'left_aileron_pos_rad'
                          ]
 
 # create flight_data csv file with header
@@ -211,7 +211,7 @@ while sim.run_step() and timestep < 20000:
     # psi_gt: float = sim.fdm["flight-path/psi-gt-rad"]
     course_angle: float = (atan2(sim.fdm["velocities/v-east-fps"], sim.fdm["velocities/v-north-fps"]) + 2 * PI) % (2 * PI) # rad [0, 2PI]
     aileron_pos = sim.fdm["fcs/effective-aileron-pos"]
-    left_aileron_control = sim.fdm["fcs/left-aileron-control"]
+    right_pos_rad = sim.fdm["fcs/right-aileron-pos-rad"]
     left_pos_rad = sim.fdm["fcs/left-aileron-pos-rad"]
 
     # print(f"2PI = {2*PI} | psi-gt = {psi_gt}")
@@ -286,7 +286,7 @@ while sim.run_step() and timestep < 20000:
             fieldnames[21]: pitch_cmd,
             fieldnames[22]: roll_cmd,
             fieldnames[23]: aileron_pos,
-            fieldnames[24]: left_aileron_control,
+            fieldnames[24]: right_pos_rad,
             fieldnames[25]: left_pos_rad
         }
         csv_writer.writerow(info)

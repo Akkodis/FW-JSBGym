@@ -67,7 +67,7 @@ def animate(i, axis, args) -> None:
     elevator_cmd = data['elevator_cmd']
     aileron_cmd = data['aileron_cmd']
     aileron_pos = data['aileron_pos']
-    left_aileron_control = data['left_aileron_control']
+    right_aileron_pos_rad = data['right_aileron_pos_rad']
     left_aileron_pos_rad = data['left_aileron_pos_rad']
     pitch_cmd = data['pitch_cmd']
     roll_cmd = data['roll_cmd']
@@ -139,9 +139,9 @@ def animate(i, axis, args) -> None:
     # aileron_cmd_plt, = axis[2, 0].plot(tsteps, aileron_cmd, label='aileron_cmd')
     # elevator_cmd_plt, = axis[2, 0].plot(tsteps, elevator_cmd, label='elevator_cmd')
     # throttle_cmd_plt, = axis[2, 0].plot(tsteps, throttle_cmd, label='throttle_cmd')
-    # aileron_pos_plt, = axis[2, 0].plot(tsteps, aileron_pos, label='aileron_pos')
-    left_aileron_pos_rad_plt = axis[2, 0].plot(tsteps, left_aileron_pos_rad, label='left_aileron_pos_rad')
-    left_aileron_control_plt = axis[2, 0].plot(tsteps, left_aileron_control, label='left_aileron_control')
+    aileron_pos_plt, = axis[2, 0].plot(tsteps, aileron_pos, label='aileron_pos')
+    # left_aileron_pos_rad_plt = axis[2, 0].plot(tsteps, left_aileron_pos_rad, label='left_aileron_pos_rad')
+    right_aileron_pos_rad_plt = axis[2, 0].plot(tsteps, right_aileron_pos_rad, label='right_aileron_pos_rad')
     axis[2, 0].set_title('commands')
     axis[2, 0].legend()
 
