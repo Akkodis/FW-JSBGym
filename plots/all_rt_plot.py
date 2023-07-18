@@ -140,7 +140,7 @@ def animate(i, axis, args) -> None:
     # elevator_cmd_plt, = axis[2, 0].plot(tsteps, elevator_cmd, label='elevator_cmd')
     # throttle_cmd_plt, = axis[2, 0].plot(tsteps, throttle_cmd, label='throttle_cmd')
     aileron_pos_plt, = axis[2, 0].plot(tsteps, aileron_pos, label='aileron_pos')
-    # left_aileron_pos_rad_plt = axis[2, 0].plot(tsteps, left_aileron_pos_rad, label='left_aileron_pos_rad')
+    left_aileron_pos_rad_plt = axis[2, 0].plot(tsteps, left_aileron_pos_rad, label='left_aileron_pos_rad')
     right_aileron_pos_rad_plt = axis[2, 0].plot(tsteps, right_aileron_pos_rad, label='right_aileron_pos_rad')
     axis[2, 0].set_title('commands')
     axis[2, 0].legend()
