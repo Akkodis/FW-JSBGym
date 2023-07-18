@@ -29,8 +29,6 @@ class Property(collections.namedtuple('Property', ['name', 'description'])):
 
 # position and attitude
 altitude_sl_ft = BoundedProperty('position/h-sl-ft', 'altitude above mean sea level [ft]', -1400, 85000)
-print(altitude_sl_ft.max)
-print(altitude_sl_ft.get_legal_name())
 pitch_rad = BoundedProperty('attitude/pitch-rad', 'pitch [rad]', -0.5 * math.pi, 0.5 * math.pi)
 roll_rad = BoundedProperty('attitude/roll-rad', 'roll [rad]', -math.pi, math.pi)
 heading_rad = BoundedProperty('attitude/psi-rad', 'yaw [rad', -math.pi, math.pi)
@@ -55,7 +53,7 @@ p_radps = BoundedProperty('velocities/p-rad_sec', 'roll rate [rad/s]', -2 * math
 q_radps = BoundedProperty('velocities/q-rad_sec', 'pitch rate [rad/s]', -2 * math.pi, 2 * math.pi)
 r_radps = BoundedProperty('velocities/r-rad_sec', 'yaw rate [rad/s]', -2 * math.pi, 2 * math.pi)
 altitude_rate_fps = Property('velocities/h-dot-fps', 'Rate of altitude change [ft/s]')
-airspeed = Property('velocities/vt-fps', 'True aircraft airspeed [ft/s]')   # not certain about this one
+airspeed = BoundedProperty('velocities/vt-fps', 'True aircraft airspeed [ft/s]', float('-inf'), float('+inf'))
 alpha = Property('aero/alpha-rad', 'aircraft angle of attack [rad]')
 ci2vel = Property('aero/ci2vel', 'chord/2*airspeed')
 
@@ -69,8 +67,8 @@ gear = BoundedProperty('gear/gear-pos-norm', 'landing gear position, normalised'
 
 aileron_left_rad = Property('fcs/left-aileron-pos-rad', 'left aileron deflection [rad]')
 aileron_right_rad = Property('fcs/right-aileron-pos-rad', 'right aileron deflection [rad]')
-aileron_combined_rad = Property('fcs/effective-aileron-pos', 'combined effective aileron deflection [rad]')
-elevator_rad = Property('fcs/elevator-pos-rad', 'elevator deflection [rad]')
+aileron_combined_rad = BoundedProperty('fcs/effective-aileron-pos', 'combined effective aileron deflection [rad]', -1.04, 1.04)
+elevator_rad = BoundedProperty('fcs/elevator-pos-rad', 'elevator deflection [rad]', -0.52, 0.52)
 rudder_rad = Property('fcs/rudder-pos-rad', 'rudder deflection [rad]')
 
 # engines

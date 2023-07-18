@@ -4,6 +4,8 @@ import os
 import subprocess
 import time
 from trim.trim_point import TrimPoint
+from typing import Dict
+from utils import jsbsim_properties as prp
 
 
 class Simulation(object):
@@ -34,16 +36,15 @@ class Simulation(object):
         self.fdm.load_model(self.aircraft_id)
 
         # code for flightgear output here :
-        if enable_fgear_viz:
-            self.fdm.set_output_directive(os.path.join(os.path.dirname(os.path.abspath(__file__)), self.FG_OUT_FILE))
-            self.fgear_viz = FlightGearVisualizer(self)
+        # if enable_fgear_viz:
+        #     self.fdm.set_output_directive(os.path.join(os.path.dirname(os.path.abspath(__file__)), self.FG_OUT_FILE))
+        #     self.fgear_viz = FlightGearVisualizer(self)
 
         # set the visualization time factor (plot and/or flightgear visualization)
         self.set_viz_time_factor(time_factor=viz_time_factor)
 
         # load and run initial conditions
         self.load_run_ic()
-
 
     def load_run_ic(self):
         # initialize the simulation:
@@ -76,6 +77,9 @@ class Simulation(object):
             raise ValueError("The time factor must be strictly positive.")
         else:
             self.viz_dt = self.fdm_dt / time_factor
+
+    def reinitialise(self, init_conditions: Dict['prp.Property', float] = None):
+        self.set_
 
 
 class FlightGearVisualizer(object):
