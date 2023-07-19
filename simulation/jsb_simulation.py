@@ -78,9 +78,6 @@ class Simulation(object):
         else:
             self.viz_dt = self.fdm_dt / time_factor
 
-    def reinitialise(self, init_conditions: Dict['prp.Property', float] = None):
-        self.set_
-
 
 class FlightGearVisualizer(object):
     TYPE = 'socket'
