@@ -1,6 +1,7 @@
 import gymnasium as gym
 import numpy as np
 import math
+import csv
 
 
 from abc import ABC, abstractmethod
@@ -40,7 +41,7 @@ class AttitudeControlTask(Task, ABC):
     State: Type[NamedTuple]
     TargetState: Type[NamedTuple]
 
-    def __init__(self, aircraft_id: str, fdm_freq: float, episode_time_s: float = DEFAULT_EPISODE_TIME_S):
+    def __init__(self, aircraft_id: str, fdm_freq: float, flight_data_logfile: str = "data/flight_data.csv", episode_time_s: float = DEFAULT_EPISODE_TIME_S):
         self.episode_time_s: float = episode_time_s
         max_episode_steps: int = math.ceil(episode_time_s * fdm_freq)
         self.steps_left: BoundedProperty = BoundedProperty("info/steps_left", "steps remaining in the current episode", 0, max_episode_steps)
@@ -51,6 +52,31 @@ class AttitudeControlTask(Task, ABC):
 
         # create target state NamedTuple structure
         self.TargetState = namedtuple('TargetState', [f"target_{t_state_var.get_legal_name()}" for t_state_var in self.target_state_vars])
+
+        # create and set up csv logging file with flight telemetry
+        self.fieldnames: Tuple[str] = (
+                            'latitude', 'longitude', 'altitude', 
+                            'roll', 'pitch', 'course', 
+                            'roll_rate', 'pitch_rate', 'yaw_rate', 'airspeed',
+                            'throttle_cmd', 'elevator_cmd', 'aileron_cmd',
+                            'airspeed_ref', 'altitude_ref', 'course_ref',
+                            'airspeed_err', 'altitude_err', 'course_err',
+        )
+
+        self.flight_data_logfile: str = flight_data_logfile
+        with open(self.flight_data_logfile, 'w') as csvfile:
+            csv_writer = csv.DictWriter(csvfile, fieldnames=self.fieldnames)
+            csv_writer.writeheader()
+        
+        self.telemetry: Tuple(BoundedProperty, ...) = (
+            prp.lat_gc_deg, prp.lng_gc_deg, prp.altitude_sl_ft,
+            prp.roll_rad, prp.pitch_rad, prp.heading_rad,
+            prp.p_radps, prp.q_radps, prp.r_radps, prp.airspeed_kts,
+            prp.throttle_cmd, prp.elevator_cmd, prp.aileron_cmd,
+            self.prp_target_airspeed_kts, self.prp_target_pitch_rad, self.prp_target_roll_rad,
+            self.prp_airspeed_err, self.prp_pitch_err, self.prp_roll_err
+        )
+
 
     def reset_task(self, sim: Simulation) -> None:
         # reset task class attributes with initial conditions
@@ -111,3 +137,11 @@ class AttitudeControlTask(Task, ABC):
         sim[self.prp_target_roll_rad]: float = sim[prp.initial_roll_rad]
         sim[self.prp_target_pitch_rad]: float = sim[prp.initial_pitch_rad]
 
+    def flight_data_logging(self, sim: Simulation):
+       # write flight data to csv
+        with open(self.flight_data_logfile, 'a') as csv_file:
+            csv_writer: csv.DictWriter = csv.DictWriter(csv_file, fieldnames=self.fieldnames)
+            info: dict[str, float] = {}
+            for fieldname, prop in zip(self.fieldnames, self.telemetry):
+                info[fieldname] = sim[prop]
+            csv_writer.writerow(info)

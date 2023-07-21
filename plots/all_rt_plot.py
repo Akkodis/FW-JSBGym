@@ -47,7 +47,8 @@ from matplotlib.animation import FuncAnimation
 #     return alt_plt, alt_ref_plt,
 
 def animate(i, axis, args) -> None:
-    data = pd.read_csv(f'{path.dirname(path.abspath(__file__))}/../data/flight_data.csv')
+    # data = pd.read_csv(f'{path.dirname(path.abspath(__file__))}/../data/flight_data.csv')
+    data = pd.read_csv(f'{path.dirname(path.abspath(__file__))}/../data/gym_flight_data.csv')
     # data = pd.read_csv(f'{path.dirname(path.abspath(__file__))}/../data/std_turb.csv')
     lat = data['latitude']
     lon = data['longitude']

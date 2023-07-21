@@ -26,7 +26,10 @@ class JSBSimEnv(gym.Env):
         # simulation attribute, will be initialized in reset() with a call to Simulation()
         self.sim: Simulation = None
         # task to perform, implemented as a wrapper, customizing action, observation, reward, etc. according to the task
-        self.task = task_type(aircraft_id, episode_time_s, fdm_frequency)
+        self.task = task_type(aircraft_id=aircraft_id,
+                              fdm_freq=fdm_frequency,
+                              flight_data_logfile="data/gym_flight_data.csv",
+                              episode_time_s=episode_time_s)
         self.fdm_frequency: float = fdm_frequency
         self.sim_steps_after_agent_action: int = int(self.fdm_frequency // agent_frequency)
         self.aircraft_id: str = aircraft_id
@@ -92,8 +95,17 @@ class JSBSimEnv(gym.Env):
         # check if the episode is done
         done = self.task.is_terminal(self.sim)
 
+        # write the telemetry to a log csv file
+        self.task.flight_data_logging(self.sim)
+
         info: Dict = {"steps_left": self.sim[self.task.steps_left],
                       "reward": reward}
 
         return state, reward, done, info
+
+
+    def render(self, mode='plot'):
+        if mode == 'plot':
+            pass
+        pass
 
