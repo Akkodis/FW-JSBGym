@@ -6,13 +6,13 @@ from envs.tasks import AttitudeControlTask, Task
 from simulation.jsb_simulation import Simulation
 from trim.trim_point import TrimPoint
 from typing import Dict, NamedTuple, Type, Tuple
-from collections import namedtuple
+
 
 class JSBSimEnv(gym.Env):
     metadata = {"render_modes": ["plot", "flightgear"]}
 
     def __init__(self,
-                 task_type: Type[Task],
+                 task_type: Type[AttitudeControlTask],
                  render_mode=None,
                  fdm_frequency=120.0,
                  agent_frequency=60.0,
@@ -28,7 +28,7 @@ class JSBSimEnv(gym.Env):
         # task to perform, implemented as a wrapper, customizing action, observation, reward, etc. according to the task
         self.task = task_type(aircraft_id, episode_time_s, fdm_frequency)
         self.fdm_frequency: float = fdm_frequency
-        self.sim_steps_after_agent_action: int = self.fdm_frequency // agent_frequency
+        self.sim_steps_after_agent_action: int = int(self.fdm_frequency // agent_frequency)
         self.aircraft_id: str = aircraft_id
         self.viz_time_factor: float = viz_time_factor
         self.enable_fgear_viz: bool = enable_fgear_viz
@@ -60,8 +60,8 @@ class JSBSimEnv(gym.Env):
                                   viz_time_factor=self.viz_time_factor,
                                   enable_trim=self.enable_trim,
                                   trim_point=self.trim_point)
-        # reset the task's target
-        self.task.reset_target_state(self.sim)
+        # reset the task
+        self.task.reset_task(self.sim)
 
         # observe the first state after reset and return it
         state: np.ndarray = self.task.observe_state(self.sim)
@@ -71,7 +71,7 @@ class JSBSimEnv(gym.Env):
     def step(self, action: np.ndarray) -> Tuple[np.ndarray, float, bool, Dict]:
         if action.shape != self.action_space.shape:
             raise ValueError("Action shape is not valid.")
-        for prop, command in zip(self.action_vars, action):
+        for prop, command in zip(self.task.action_vars, action):
             self.sim[prop] = command
 
         # run the simulation for sim_steps_after_agent_action steps
@@ -79,8 +79,9 @@ class JSBSimEnv(gym.Env):
             self.sim.run_step()
 
         # decrement the steps left
-        self.task.sim[self.steps_left] -= 1
-        
+        self.sim[self.task.steps_left] -= 1
+        self.task.update_errors(self.sim)
+
         # get the state
         state: np.ndarray = self.task.observe_state(self.sim)
 
@@ -89,9 +90,9 @@ class JSBSimEnv(gym.Env):
         # reward: float = self.reward()
 
         # check if the episode is done
-        done = self.task.is_terminal()
+        done = self.task.is_terminal(self.sim)
 
-        info: Dict = {"steps_left": self.sim.fdm[self.steps_left.name],
+        info: Dict = {"steps_left": self.sim[self.task.steps_left],
                       "reward": reward}
 
         return state, reward, done, info

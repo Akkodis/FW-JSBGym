@@ -42,8 +42,8 @@ class AttitudeControlTask(Task, ABC):
 
     def __init__(self, aircraft_id: str, fdm_freq: float, episode_time_s: float = DEFAULT_EPISODE_TIME_S):
         self.episode_time_s: float = episode_time_s
-        episode_steps: int = math.ceil(episode_time_s * fdm_freq)
-        self.steps_left: BoundedProperty = BoundedProperty("info/steps_left", "steps remaining in the current episode", 0, episode_steps)
+        max_episode_steps: int = math.ceil(episode_time_s * fdm_freq)
+        self.steps_left: BoundedProperty = BoundedProperty("info/steps_left", "steps remaining in the current episode", 0, max_episode_steps)
         self.aircraft_id: str = aircraft_id
 
         # create state NamedTuple structure
@@ -52,13 +52,17 @@ class AttitudeControlTask(Task, ABC):
         # create target state NamedTuple structure
         self.TargetState = namedtuple('TargetState', [f"target_{t_state_var.get_legal_name()}" for t_state_var in self.target_state_vars])
 
+    def reset_task(self, sim: Simulation) -> None:
+        # reset task class attributes with initial conditions
+        self.reset_target_state(sim)
+        sim[self.steps_left] = self.steps_left.max
 
     def is_terminal(self, sim: Simulation) -> bool:
         # if the episode is done, return True
-        is_terminal_step: bool = sim[self.steps_left.name] <= 0
+        is_terminal_step: bool = sim[self.steps_left] <= 0
 
         # check collision with ground
-        is_crashed: bool = sim[prp.altitude_sl_ft.name] <= 0
+        is_crashed: bool = sim[prp.altitude_sl_ft] <= 0
 
         return is_terminal_step or is_crashed
 
