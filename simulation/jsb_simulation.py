@@ -4,7 +4,7 @@ import os
 import subprocess
 import time
 from trim.trim_point import TrimPoint
-from typing import Dict
+from typing import Dict, Union
 from utils import jsbsim_properties as prp
 
 
@@ -45,6 +45,15 @@ class Simulation(object):
 
         # load and run initial conditions
         self.load_run_ic()
+
+
+    def __getitem__(self, prop: Union[prp.Property, prp.BoundedProperty]) -> float:
+        return self.fdm[prop.name]
+
+
+    def __setitem__(self, prop: Union[prp.Property, prp.BoundedProperty], value) -> None:
+        self.fdm[prop.name] = value
+
 
     def load_run_ic(self):
         # initialize the simulation:
