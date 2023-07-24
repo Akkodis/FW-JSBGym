@@ -6,6 +6,7 @@ from envs.tasks import AttitudeControlTask, Task
 from simulation.jsb_simulation import Simulation
 from trim.trim_point import TrimPoint
 from typing import Dict, NamedTuple, Type, Tuple
+from visualizers.visualizer import PlotVisualizer
 
 
 class JSBSimEnv(gym.Env):
@@ -37,10 +38,11 @@ class JSBSimEnv(gym.Env):
         self.enable_fgear_viz: bool = enable_fgear_viz
         self.enable_trim: bool = enable_trim
         self.trim_point: TrimPoint = trim_point
+        self.plot_viz: PlotVisualizer = None
 
         # raise error if render mode is not None or not in the render_modes list
         assert render_mode is None or render_mode in self.metadata["render_modes"]
-        self.render_mode: render_mode
+        self.render_mode = render_mode
 
         self.action_space = self.task.get_action_space()
         self.observation_space = self.task.get_observation_space()
@@ -68,6 +70,9 @@ class JSBSimEnv(gym.Env):
 
         # observe the first state after reset and return it
         state: np.ndarray = self.task.observe_state(self.sim)
+
+        self.render()
+
         return state
 
 
@@ -100,12 +105,14 @@ class JSBSimEnv(gym.Env):
 
         info: Dict = {"steps_left": self.sim[self.task.steps_left],
                       "reward": reward}
+        
+        self.render()
 
         return state, reward, done, info
 
 
-    def render(self, mode='plot'):
-        if mode == 'plot':
-            pass
-        pass
-
+    def render(self) -> None:
+        if self.render_mode == 'plot':
+            if not self.plot_viz:
+                self.plot_viz = PlotVisualizer()
+            self.plot_viz.update_plot()

@@ -41,6 +41,7 @@ class AttitudeControlTask(Task, ABC):
     State: Type[NamedTuple]
     TargetState: Type[NamedTuple]
 
+
     def __init__(self, aircraft_id: str, fdm_freq: float, flight_data_logfile: str = "data/flight_data.csv", episode_time_s: float = DEFAULT_EPISODE_TIME_S):
         self.episode_time_s: float = episode_time_s
         max_episode_steps: int = math.ceil(episode_time_s * fdm_freq)
@@ -92,6 +93,7 @@ class AttitudeControlTask(Task, ABC):
 
         return is_terminal_step or is_crashed
 
+
     def get_action_space(self) -> gym.spaces.Box:
         # defining observation space based on pre-chosen state variables
         state_lows: np.ndarray = np.array([state_var.min for state_var in self.state_vars])
@@ -137,6 +139,7 @@ class AttitudeControlTask(Task, ABC):
         sim[self.prp_target_roll_rad]: float = sim[prp.initial_roll_rad]
         sim[self.prp_target_pitch_rad]: float = sim[prp.initial_pitch_rad]
 
+
     def flight_data_logging(self, sim: Simulation):
        # write flight data to csv
         with open(self.flight_data_logfile, 'a') as csv_file:
@@ -145,3 +148,8 @@ class AttitudeControlTask(Task, ABC):
             for fieldname, prop in zip(self.fieldnames, self.telemetry):
                 info[fieldname] = sim[prop]
             csv_writer.writerow(info)
+
+
+    def get_props_to_plot(self) -> Tuple[BoundedProperty,...]:
+        no_err_state_vars: Tuple[BoundedProperty, ...] = self.state_vars[0:len(self.state_vars)-3]
+        return no_err_state_vars + self.action_vars + self.target_state_vars
