@@ -114,5 +114,5 @@ class JSBSimEnv(gym.Env):
     def render(self) -> None:
         if self.render_mode == 'plot':
             if not self.plot_viz:
-                self.plot_viz = PlotVisualizer()
-            self.plot_viz.update_plot()
+                self.plot_viz = PlotVisualizer(self.task.get_props_to_plot())
+            self.plot_viz.update_plot(self.sim)
