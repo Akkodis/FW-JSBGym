@@ -10,7 +10,7 @@ from visualizers.visualizer import PlotVisualizer
 
 
 class JSBSimEnv(gym.Env):
-    metadata = {"render_modes": ["plot", "flightgear"]}
+    metadata = {"render_modes": ["plot", "plot_scale", "flightgear"]}
 
     def __init__(self,
                  task_type: Type[AttitudeControlTask],
@@ -112,4 +112,9 @@ class JSBSimEnv(gym.Env):
 
 
     def render(self) -> None:
-        pass
+        if self.render_mode == 'plot_scale':
+            if not self.plot_viz:
+                self.plot_viz = PlotVisualizer(scale=True)
+        if self.render_mode == 'plot':
+            if not self.plot_viz:
+                self.plot_viz = PlotVisualizer(scale=False)
