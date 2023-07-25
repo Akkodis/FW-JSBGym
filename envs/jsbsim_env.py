@@ -2,15 +2,14 @@ import gymnasium as gym
 import numpy as np
 from gymnasium import spaces
 
-from envs.tasks import AttitudeControlTask, Task
+from envs.tasks import AttitudeControlTask
 from simulation.jsb_simulation import Simulation
-from trim.trim_point import TrimPoint
 from typing import Dict, NamedTuple, Type, Tuple
-from visualizers.visualizer import PlotVisualizer
+from visualizers.visualizer import PlotVisualizer, FlightGearVisualizer
 
 
 class JSBSimEnv(gym.Env):
-    metadata = {"render_modes": ["plot", "plot_scale", "flightgear"]}
+    metadata = {"render_modes": ["plot", "plot_scale", "fgear", "fgear_plt", "fgear_plt_scale"]}
 
     def __init__(self,
                  task_type: Type[AttitudeControlTask],
@@ -19,10 +18,7 @@ class JSBSimEnv(gym.Env):
                  agent_frequency=60.0,
                  episode_time_s=60.0,
                  aircraft_id='x8',
-                 viz_time_factor=1.0,
-                 enable_fgear_viz=False,
-                 enable_trim=False,
-                 trim_point=None) -> None:
+                 viz_time_factor=1.0) -> None:
 
         # simulation attribute, will be initialized in reset() with a call to Simulation()
         self.sim: Simulation = None
@@ -35,15 +31,18 @@ class JSBSimEnv(gym.Env):
         self.sim_steps_after_agent_action: int = int(self.fdm_frequency // agent_frequency)
         self.aircraft_id: str = aircraft_id
         self.viz_time_factor: float = viz_time_factor
-        self.enable_fgear_viz: bool = enable_fgear_viz
-        self.enable_trim: bool = enable_trim
-        self.trim_point: TrimPoint = trim_point
         self.plot_viz: PlotVisualizer = None
+        self.fgear_viz: FlightGearVisualizer = None
 
         # raise error if render mode is not None or not in the render_modes list
         assert render_mode is None or render_mode in self.metadata["render_modes"]
         self.render_mode = render_mode
 
+        self.enable_fgear_output: bool = False
+        if self.render_mode in self.metadata["render_modes"][2:]:
+            self.enable_fgear_output = True
+        print(self.metadata["render_modes"][:-3])
+        print('enable fgear = ', self.enable_fgear_output)
         self.action_space = self.task.get_action_space()
         self.observation_space = self.task.get_observation_space()
 
@@ -63,8 +62,7 @@ class JSBSimEnv(gym.Env):
             self.sim = Simulation(fdm_frequency =self.fdm_frequency,
                                   aircraft_id=self.aircraft_id,
                                   viz_time_factor=self.viz_time_factor,
-                                  enable_trim=self.enable_trim,
-                                  trim_point=self.trim_point)
+                                  enable_fgear_output=self.enable_fgear_output)
         # reset the task
         self.task.reset_task(self.sim)
 
@@ -105,8 +103,7 @@ class JSBSimEnv(gym.Env):
 
         info: Dict = {"steps_left": self.sim[self.task.steps_left],
                       "reward": reward}
-        
-        self.render()
+        # self.render()
 
         return state, reward, done, info
 
@@ -118,3 +115,17 @@ class JSBSimEnv(gym.Env):
         if self.render_mode == 'plot':
             if not self.plot_viz:
                 self.plot_viz = PlotVisualizer(scale=False)
+        if self.render_mode == 'fgear':
+            if not self.fgear_viz:
+                self.fgear_viz = FlightGearVisualizer(self.sim)
+        if self.render_mode == 'fgear_plt':
+            if not self.plot_viz:
+                self.plot_viz = PlotVisualizer(scale=False)
+            if not self.fgear_viz:
+                self.fgear_viz = FlightGearVisualizer(self.sim)
+        if self.render_mode == 'fgear_plt_scale':
+            if not self.plot_viz:
+                self.plot_viz = PlotVisualizer(scale=True)
+            if not self.fgear_viz:
+                self.fgear_viz = FlightGearVisualizer(self.sim)
+

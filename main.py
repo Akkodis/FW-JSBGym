@@ -10,6 +10,7 @@ from agents.pid import PID
 from math import pi as PI
 from math import atan2
 from simple_pid import PID as SPID
+from visualizers.visualizer import FlightGearVisualizer
 
 # parse command line arguments
 parser = argparse.ArgumentParser(description='Run JSBSim simulation.')
@@ -35,9 +36,12 @@ else:
 sim: Simulation = Simulation(fdm_frequency=args.fdm_frequency, # going up to 240Hz solves some spin instability issues -> NaNs
                 aircraft_id=args.aircraft_id,
                 viz_time_factor=args.viz_time_factor,
-                enable_fgear_viz=args.fgear_viz,
+                enable_fgear_output=args.fgear_viz,
                 enable_trim=args.trim,
                 trim_point=trim_point)
+
+if args.fgear_viz:
+    fgear_viz = FlightGearVisualizer(sim)
 
 properties = sim.fdm.query_property_catalog("atmosphere")
 # sim.fdm.print_property_catalog()

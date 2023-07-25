@@ -15,7 +15,7 @@ class Simulation(object):
                  fdm_frequency: float = 120.0, # 120.0 Hz is the default frequency of the JSBSim FDM
                  aircraft_id: str = 'x8',
                  viz_time_factor: float = 1.0,
-                 enable_fgear_viz: bool = False,
+                 enable_fgear_output: bool = False,
                  enable_trim: bool = False,
                  trim_point: TrimPoint = None
                  ) -> None:
@@ -36,9 +36,8 @@ class Simulation(object):
         self.fdm.load_model(self.aircraft_id)
 
         # code for flightgear output here :
-        # if enable_fgear_viz:
-        #     self.fdm.set_output_directive(os.path.join(os.path.dirname(os.path.abspath(__file__)), self.FG_OUT_FILE))
-        #     self.fgear_viz = FlightGearVisualizer(self)
+        if enable_fgear_output:
+            self.fdm.set_output_directive(os.path.join(os.path.dirname(os.path.abspath(__file__)), self.FG_OUT_FILE))
 
         # set the visualization time factor (plot and/or flightgear visualization)
         self.set_viz_time_factor(time_factor=viz_time_factor)
@@ -88,40 +87,40 @@ class Simulation(object):
             self.viz_dt = self.fdm_dt / time_factor
 
 
-class FlightGearVisualizer(object):
-    TYPE = 'socket'
-    DIRECTION = 'in'
-    RATE = 60
-    SERVER = ''
-    PORT = 5550
-    PROTOCOL = 'udp'
-    LOADED_MESSAGE = "Primer reset to 0"
-    TIME = 'noon'
-    AIRCRAFT_FG_ID = 'c172p'
+# class FlightGearVisualizer(object):
+#     TYPE = 'socket'
+#     DIRECTION = 'in'
+#     RATE = 60
+#     SERVER = ''
+#     PORT = 5550
+#     PROTOCOL = 'udp'
+#     LOADED_MESSAGE = "Primer reset to 0"
+#     TIME = 'noon'
+#     AIRCRAFT_FG_ID = 'c172p'
 
-    def __init__(self, sim: Simulation) -> None:
-        self.flightgear_process = self.launch_flightgear(aircraft_fgear_id=sim.aircraft_id)
-        time.sleep(15)
+#     def __init__(self, sim: Simulation) -> None:
+#         self.flightgear_process = self.launch_flightgear(aircraft_fgear_id=sim.aircraft_id)
+#         time.sleep(15)
 
-    def launch_flightgear(self, aircraft_fgear_id: str = 'c172p') -> subprocess.Popen:
-        # cmd for running flightgear(binary apt package version 2020.3.13) from terminal
-        # cmd = f'fgfs --fdm=null --native-fdm=socket,in,60,,5550,udp --aircraft={aircraft_fgear_id} --timeofday=noon \
-        # --disable-ai-traffic --disable-real-weather-fetch'
+#     def launch_flightgear(self, aircraft_fgear_id: str = 'c172p') -> subprocess.Popen:
+#         # cmd for running flightgear(binary apt package version 2020.3.13) from terminal
+#         # cmd = f'fgfs --fdm=null --native-fdm=socket,in,60,,5550,udp --aircraft={aircraft_fgear_id} --timeofday=noon \
+#         # --disable-ai-traffic --disable-real-weather-fetch'
 
-        # cmd for running flightgear(.AppImage version 2020.3.17) from terminal
-        cmd: str = f'exec $HOME/Apps/FlightGear-2020.3.17/FlightGear-2020.3.17-x86_64.AppImage --fdm=null \
-        --native-fdm=socket,in,60,,5550,udp --aircraft=c172p --timeofday=noon --disable-ai-traffic --disable-real-weather-fetch'
+#         # cmd for running flightgear(.AppImage version 2020.3.17) from terminal
+#         cmd: str = f'exec $HOME/Apps/FlightGear-2020.3.17/FlightGear-2020.3.17-x86_64.AppImage --fdm=null \
+#         --native-fdm=socket,in,60,,5550,udp --aircraft=c172p --timeofday=noon --disable-ai-traffic --disable-real-weather-fetch'
 
-        flightgear_process = subprocess.Popen(cmd,
-                                              shell=True,
-                                              stdout=subprocess.PIPE,
-                                              stderr=subprocess.STDOUT)
-        print("Started FlightGear process with PID: ", flightgear_process.pid)
-        while True:
-            out = flightgear_process.stdout.readline().decode()
-            if self.LOADED_MESSAGE in out:
-                print("FlightGear loaded successfully.")
-                break
-            else:
-                print(out.strip())
-        return flightgear_process
+#         flightgear_process = subprocess.Popen(cmd,
+#                                               shell=True,
+#                                               stdout=subprocess.PIPE,
+#                                               stderr=subprocess.STDOUT)
+#         print("Started FlightGear process with PID: ", flightgear_process.pid)
+#         while True:
+#             out = flightgear_process.stdout.readline().decode()
+#             if self.LOADED_MESSAGE in out:
+#                 print("FlightGear loaded successfully.")
+#                 break
+#             else:
+#                 print(out.strip())
+#         return flightgear_process

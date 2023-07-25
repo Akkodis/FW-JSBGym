@@ -3,7 +3,7 @@ from envs.tasks import AttitudeControlTask
 from trim.trim_point import TrimPoint
 import numpy as np
 
-env = JSBSimEnv(task_type=AttitudeControlTask, render_mode='plot_scale')
+env = JSBSimEnv(task_type=AttitudeControlTask, render_mode='fgear_plt_scale')
 obs = env.reset()
 trim_point: TrimPoint = TrimPoint(aircraft_id='x8')
 
