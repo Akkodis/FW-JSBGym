@@ -110,5 +110,6 @@ ax[0, 2].remove()
 ax[0, 2] = fig.add_subplot(3, 3, 3, projection='3d')
 # ax[0, 2].set_aspect('equalxy', 'box')
 ani = FuncAnimation(plt.gcf(), animate, fargs=(ax, args, ), interval=50, blit=False)
+print("Animation plot started...", file=sys.stderr)
 
 plt.show()

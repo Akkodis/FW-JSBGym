@@ -14,12 +14,12 @@ class PlotVisualizer(object):
                                                           shell=True,
                                                           stdout=subprocess.PIPE,
                                                           stderr=subprocess.STDOUT)
-        print("Started PlotVisualizer process with PID: ", self.process.pid)
+        print("Started attitude_control_telemetry.py process with PID: ", self.process.pid)
         while True:
             out: str = self.process.stdout.readline().decode()
             print(out.strip())
-            if "ani = FuncAnimation(plt.gcf(), animate, fargs=(ax, args, ), interval=50, blit=False)" in out:
-                print("PlotVisualizer loaded successfully.")
+            if "Animation plot started..." in out:
+                print("attitude_control_telemetry.py loaded successfully.")
                 break
 
 
