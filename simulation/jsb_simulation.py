@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import jsbsim
 import os
-import subprocess
 import time
 from trim.trim_point import TrimPoint
 from typing import Dict, Union
