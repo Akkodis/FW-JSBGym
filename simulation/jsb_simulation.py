@@ -8,23 +8,44 @@ from utils import jsbsim_properties as prp
 
 
 class Simulation(object):
+    """
+        Simulation class. Wrapper class for the JSBSim FDM.
+        Access to the FDM properties is done through the `__getitem__` and `__setitem__` methods, by only providing BoundedProperty or Property object as keys.
+        Example: `sim[prp.airspeed_kts] = 30.0` sets the airspeed to 30 kts.
+
+        Attr:
+            - `fdm`: the JSBSim FDM object
+            - `aircraft_id`: the aircraft to simulate
+            - `fdm_dt`: the time step of the FDM
+            - `viz_dt`: the time step of the visualization
+            - `enable_trim`: whether to start the simulation in trimmed flight
+            - `trim_point`: the trim point to start the simulation in
+            - `FG_OUT_FILE`: the name of the file containing the FlightGear output protocol settings
+    """
     FG_OUT_FILE = 'flightgear.xml'
 
     def __init__(self,
-                 fdm_frequency: float = 120.0, # 120.0 Hz is the default frequency of the JSBSim FDM
+                 fdm_frequency: float,
                  aircraft_id: str = 'x8',
-                 viz_time_factor: float = 1.0,
+                 viz_time_factor: float = None,
                  enable_fgear_output: bool = False,
                  enable_trim: bool = False,
                  trim_point: TrimPoint = None
                  ) -> None:
-
-        # initialization of some attributes
+        """
+            Args:
+                - `fdm_frequency`: the frequency of the flight dynamics model (JSBSim) simulation
+                - `aircraft_id`: the aircraft to simulate
+                - `viz_time_factor`: the factor by which the simulation time is scaled for visualization
+                - `enable_fgear_output`: whether to enable FlightGear output for JSBSim <-> FGear communcation
+                - `enable_trim`: whether to start the simulation in trimmed flight
+                - `trim_point`: the trim point to start the simulation in
+        """
         self.fdm = jsbsim.FGFDMExec('fdm_descriptions') # provide the path of the fdm_descriptions folder containing the aircraft, engine, etc. .xml files
         self.fdm.set_debug_level(1)
         self.aircraft_id: str = aircraft_id
         self.fdm_dt: float = 1 / fdm_frequency
-        self.viz_dt = None
+        self.viz_dt: float = None
         self.enable_trim: bool = enable_trim
         self.trim_point: TrimPoint = trim_point
 
@@ -53,73 +74,51 @@ class Simulation(object):
         self.fdm[prop.name] = value
 
 
-    def load_run_ic(self):
-        # initialize the simulation:
+    def load_run_ic(self) -> bool:
+        """
+            Load and run the initial conditions of the simulation.
+
+            Returns:
+                - `success`: whether the simulation was initialized successfully
+        """
         # if we start in trimmed flight, load those corresponding ic
         if self.enable_trim and self.trim_point is not None:
             self.fdm['ic/h-sl-ft'] = self.trim_point.h_ft # above sea level altitude
             self.fdm['ic/vc-kts'] = self.trim_point.Va_kts # ic airspeed
             self.fdm['ic/gamma-deg'] = self.trim_point.gamma_deg # steady level flight
-        # if we start in untrimmed flight, load the basic ic
+        # if we start in untrimmed flight, load the basic ic from file
         else:
-            ic_path = f'initial_conditions/{self.aircraft_id}_basic_ic.xml'
+            ic_path: str = f'initial_conditions/{self.aircraft_id}_basic_ic.xml'
             self.fdm.load_ic(ic_path, False)
 
+        # error handling for ic loading
         success: bool = self.fdm.run_ic()
         if not success:
             raise RuntimeError("Failed to initialize the simulation.")
         return success
 
+
     def run_step(self) -> bool:
-        result = self.fdm.run()
+        """
+            Run one step of the JSBSim simulation.
+        """
+        # run the simulation for one step
+        result: bool = self.fdm.run()
+        # sleep for the visualization time step if needed
         if self.viz_dt is not None:
             time.sleep(self.viz_dt)
         return result
 
 
     def set_viz_time_factor(self, time_factor: float) -> None:
+        """
+            Set the time factor for visualization.
+        """
         if time_factor is None:
             self.viz_dt = None
         elif time_factor <= 0:
             raise ValueError("The time factor must be strictly positive.")
         else:
+            # Convert the time factor into a time step period for visualization
             self.viz_dt = self.fdm_dt / time_factor
 
-
-# class FlightGearVisualizer(object):
-#     TYPE = 'socket'
-#     DIRECTION = 'in'
-#     RATE = 60
-#     SERVER = ''
-#     PORT = 5550
-#     PROTOCOL = 'udp'
-#     LOADED_MESSAGE = "Primer reset to 0"
-#     TIME = 'noon'
-#     AIRCRAFT_FG_ID = 'c172p'
-
-#     def __init__(self, sim: Simulation) -> None:
-#         self.flightgear_process = self.launch_flightgear(aircraft_fgear_id=sim.aircraft_id)
-#         time.sleep(15)
-
-#     def launch_flightgear(self, aircraft_fgear_id: str = 'c172p') -> subprocess.Popen:
-#         # cmd for running flightgear(binary apt package version 2020.3.13) from terminal
-#         # cmd = f'fgfs --fdm=null --native-fdm=socket,in,60,,5550,udp --aircraft={aircraft_fgear_id} --timeofday=noon \
-#         # --disable-ai-traffic --disable-real-weather-fetch'
-
-#         # cmd for running flightgear(.AppImage version 2020.3.17) from terminal
-#         cmd: str = f'exec $HOME/Apps/FlightGear-2020.3.17/FlightGear-2020.3.17-x86_64.AppImage --fdm=null \
-#         --native-fdm=socket,in,60,,5550,udp --aircraft=c172p --timeofday=noon --disable-ai-traffic --disable-real-weather-fetch'
-
-#         flightgear_process = subprocess.Popen(cmd,
-#                                               shell=True,
-#                                               stdout=subprocess.PIPE,
-#                                               stderr=subprocess.STDOUT)
-#         print("Started FlightGear process with PID: ", flightgear_process.pid)
-#         while True:
-#             out = flightgear_process.stdout.readline().decode()
-#             if self.LOADED_MESSAGE in out:
-#                 print("FlightGear loaded successfully.")
-#                 break
-#             else:
-#                 print(out.strip())
-#         return flightgear_process
