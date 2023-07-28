@@ -96,7 +96,7 @@ class AttitudeControlTask(Task, ABC):
         self.observation: Deque[self.State] = deque(maxlen=self.obs_history_size) # self.State type: NamedTuple
 
         # declaring action history. Deque with a maximum length of obs_history_size (action history size = observation history size)
-        self.action_hist: Deque[np.ndarray] = deque(maxlen=self.obs_history_size) # self.State type: NamedTuple
+        self.action_hist: Deque[np.ndarray] = deque(maxlen=self.obs_history_size) # action type: np.ndarray
 
         # declaring target state NamedTuple structure
         self.TargetState: NamedTuple = namedtuple('TargetState', [f"target_{t_state_var.get_legal_name()}" for t_state_var in self.target_state_vars])
@@ -301,8 +301,11 @@ class AttitudeControlTask(Task, ABC):
         # computing the cost attached to changing actuator setpoints to promote smooth non-oscillatory actuator behaviour
         diff: float = 0.0 # sum over all diffs between fcs commands of 2 consecutive timesteps
         r_fcs_raw: float = 0.0 # unclipped, unscaled fcs reward component
-        for fcs in range(self.action_hist[1].shape[0]): # iterate through different fcs : [elevator: 0, aileron: 1, throttle: 2]
-            for t in reversed(range(self.action_hist[0].shape[0])): # iterate through different timesteps backwards
+        # print(self.action_hist)
+        # print(self.action_hist[2][1])
+        # print(self.action_hist[-1][1])
+        for fcs in range(len(self.action_vars)): # iterate through different fcs : [elevator: 0, aileron: 1, throttle: 2]
+            for t in reversed(range(1, self.action_hist.maxlen)): # iterate through different timesteps backwards (avoid the t=0 case, for t-1=-1)
                 diff += abs(self.action_hist[t][fcs] - self.action_hist[t-1][fcs]) # sum over all history of the command difference between t and t-1 for the same actuator
             r_fcs_raw += diff # sum those cmd diffs over all actuators
         r_fcs = np.clip(r_fcs_raw / 60, 0, 0.1) # flight control surface reward component
