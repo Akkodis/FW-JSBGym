@@ -3,7 +3,7 @@ import jsbsim
 import os
 import time
 from trim.trim_point import TrimPoint
-from typing import Dict, Union
+from typing import Union
 from utils import jsbsim_properties as prp
 
 

@@ -1,10 +1,9 @@
 import gymnasium as gym
 import numpy as np
-from gymnasium import spaces
 
 from envs.tasks import AttitudeControlTask
 from simulation.jsb_simulation import Simulation
-from typing import Dict, NamedTuple, Type, Tuple
+from typing import Dict, Type, Tuple
 from visualizers.visualizer import PlotVisualizer, FlightGearVisualizer
 
 
@@ -26,7 +25,7 @@ class JSBSimEnv(gym.Env):
             - `action_space`: the action space of the environment
             - `observation_space`: the observation space of the environment
     """
-    metadata = {"render_modes": ["none", "plot", "plot_scale", "fgear", "fgear_plot", "fgear_plot_scale"]}
+    metadata: Dict[str, str] = {"render_modes": ["none", "plot", "plot_scale", "fgear", "fgear_plot", "fgear_plot_scale"]}
 
     def __init__(self,
                  task_type: Type[AttitudeControlTask],
@@ -35,7 +34,8 @@ class JSBSimEnv(gym.Env):
                  agent_frequency: float=60.0,
                  episode_time_s: float=60.0,
                  aircraft_id: str='x8',
-                 viz_time_factor: float=1.0) -> None:
+                 viz_time_factor: float=1.0,
+                 obs_history_size: int=5) -> None:
 
         """
         Gymnasium JSBSim environment for reinforcement learning.
@@ -53,10 +53,10 @@ class JSBSimEnv(gym.Env):
         # simulation attribute, will be initialized in reset() with a call to Simulation()
         self.sim: Simulation = None
         # task to perform, implemented as a wrapper, customizing action, observation, reward, etc. according to the task
-        self.task = task_type(aircraft_id=aircraft_id,
-                              fdm_freq=fdm_frequency,
+        self.task = task_type(fdm_freq=fdm_frequency,
                               flight_data_logfile="data/gym_flight_data.csv",
-                              episode_time_s=episode_time_s)
+                              episode_time_s=episode_time_s,
+                              obs_history_size=obs_history_size)
         self.fdm_frequency: float = fdm_frequency
         self.sim_steps_after_agent_action: int = int(self.fdm_frequency // agent_frequency)
         self.aircraft_id: str = aircraft_id
@@ -110,15 +110,12 @@ class JSBSimEnv(gym.Env):
                                   viz_time_factor=self.viz_time_factor,
                                   enable_fgear_output=self.enable_fgear_output)
         # reset the task
-        self.task.reset_task(self.sim)
-
-        # observe the first state after reset and return it
-        state: np.ndarray = self.task.observe_state(self.sim)
+        obs: np.ndarray = self.task.reset_task(self.sim)
 
         # launch the environment visualizers
         self.render()
 
-        return state
+        return obs
 
 
     def step(self, action: np.ndarray) -> Tuple[np.ndarray, float, bool, Dict]:
@@ -130,7 +127,7 @@ class JSBSimEnv(gym.Env):
                 - `action`: an action provided by an agent, to be stepped through the environment's dynamics
 
             Returns:
-                - `state`: the state of the environment after the action, the reward obtained, whether the episode of terminated, and additional info
+                - The `obs` of the environment after the action, the `reward` obtained, whether the episode of terminated - `done`, and additional `info`
         """
         # check if the action is valid
         if action.shape != self.action_space.shape:
@@ -155,11 +152,10 @@ class JSBSimEnv(gym.Env):
         state: np.ndarray = self.task.observe_state(self.sim)
 
         # get the reward
-        reward = 0
-        # reward: float = self.reward()
+        reward: float = self.task.reward(self.sim)
 
         # check if the episode is done
-        done = self.task.is_terminal(self.sim)
+        done: bool = self.task.is_terminal(self.sim)
 
         # info dict for debugging and misc infos
         info: Dict = {"steps_left": self.sim[self.task.steps_left],
