@@ -6,7 +6,7 @@ import csv
 
 from abc import ABC
 from simulation.jsb_simulation import Simulation
-from typing import Type, NamedTuple, Tuple, Deque
+from typing import Type, NamedTuple, Tuple, Deque, Dict
 from utils import jsbsim_properties as prp
 from utils.jsbsim_properties import BoundedProperty
 from collections import namedtuple, deque
@@ -39,7 +39,7 @@ class AttitudeControlTask(Task, ABC):
 
     """
     DEFAULT_EPISODE_TIME_S = 60.0
-    
+
     state_vars: Tuple[BoundedProperty, ...] = (
         prp.airspeed_kts, # airspeed
         prp.roll_rad, prp.pitch_rad, # attitude
@@ -95,6 +95,9 @@ class AttitudeControlTask(Task, ABC):
         # declaring observation. Deque with a maximum length of obs_history_size
         self.observation: Deque[self.State] = deque(maxlen=self.obs_history_size) # self.State type: NamedTuple
 
+        # declaring action history. Deque with a maximum length of obs_history_size (action history size = observation history size)
+        self.action_hist: Deque[np.ndarray] = deque(maxlen=self.obs_history_size) # self.State type: NamedTuple
+
         # declaring target state NamedTuple structure
         self.TargetState: NamedTuple = namedtuple('TargetState', [f"target_{t_state_var.get_legal_name()}" for t_state_var in self.target_state_vars])
         self.target: self.TargetState = None
@@ -119,12 +122,62 @@ class AttitudeControlTask(Task, ABC):
                 - `sim`: the simulation object containing the JSBSim FDM
         """
         self.reset_target_state(sim) # reset task target state
+        self.update_errors(sim) # reset task errors
+        self.update_action_history() # reset action history
         sim[self.steps_left] = self.steps_left.max # reset the number of steps left in the episode to the max
 
         # reset observation and return the first observation of the episode
         self.observation.clear()
         obs: np.ndarray = self.observe_state(sim, first_obs=True)
         return obs
+
+
+    def step_task(self, sim: Simulation, action: np.ndarray, sim_steps_after_agent_action: int) -> Tuple[np.ndarray, float, bool, dict]:
+        # apply the action to the simulation
+        for prop, command in zip(self.action_vars, action):
+            sim[prop] = command
+        self.update_action_history(action) # update the action history
+
+        # run the simulation for sim_steps_after_agent_action steps
+        for _ in range(sim_steps_after_agent_action):
+            sim.run_step()
+            # write the telemetry to a log csv file every fdm step (as opposed to every agent step -> to put out of this for loop)
+            self.flight_data_logging(sim)
+            # decrement the steps left
+            sim[self.steps_left] -= 1
+
+        # get the state
+        obs: np.ndarray = self.observe_state(sim)
+
+        # update the errors
+        self.update_errors(sim)
+
+        # get the reward
+        reward: float = self.reward(sim)
+
+        # check if the episode is done
+        done: bool = self.is_terminal(sim)
+
+        # info dict for debugging and misc infos
+        info: Dict = {"steps_left": sim[self.steps_left],
+                      "reward": reward}
+
+        return obs, reward, done, info
+    
+
+    def update_action_history(self, action: np.ndarray=None) -> None:
+        """
+            Update the action history with the newest action and drop the oldest action.
+            If it's the first action, the action history is initialized to `obs_history_size` * `action`.
+        """
+        # if it's the first action -> action is None: fill action history with [0, 0, 0]
+        init_action: np.ndarray = np.array([0, 0, 0])
+        if action is None:
+            for _ in range(self.obs_history_size):
+                self.action_hist.append(init_action)
+        # else just append the newest action
+        else:
+            self.action_hist.append(action)
 
 
     def is_terminal(self, sim: Simulation) -> bool:
@@ -168,19 +221,18 @@ class AttitudeControlTask(Task, ABC):
     def observe_state(self, sim: Simulation, first_obs: bool = False) -> np.ndarray:
         """
             Observe the state of the aircraft, i.e. the state variables defined in the `state_vars` tuple, `obs_history_size` times.\\
-            If it's the first observation, the observation is `obs_history_size` * `state`.\\
+            If it's the first observation, the observation is initialized to `obs_history_size` * `state`.\\
             Otherwise the observation is the newest `state` appended to the observation history and the oldest is dropped.
         """
-        self.update_errors(sim) # update errors
         self.state = self.State(*[sim[prop] for prop in self.state_vars]) # create state named tuple with state variable values from the sim properties
 
         # if it's the first observation i.e. following a reset(): fill observation with obs_history_size * state
         if first_obs:
             for _ in range(self.obs_history_size):
-                self.observation.appendleft(self.state)
+                self.observation.append(self.state)
         # else just append the newest state
         else:
-            self.observation.appendleft(self.state)
+            self.observation.append(self.state)
 
         # return observation as a numpy array
         obs_nparray: np.ndarray = np.array(self.observation).flatten()
@@ -238,9 +290,20 @@ class AttitudeControlTask(Task, ABC):
 
     def reward(self, sim:Simulation) -> float:
         """
-            Calculate the reward for the current step.
+            Calculate the reward for the current step.\\
+            Returns:
+                - reward scalar: float
         """
-        r_roll = np.clip(abs(sim[prp.roll_err]) / 3.3, 0, 0.3)
-        r_pitch = np.clip(abs(sim[prp.roll_err]) / 2.25, 0, 0.3)
-        r_airspeed = np.clip(abs(sim[prp.roll_err]) / 25, 0, 0.3)
-        return -(r_roll + r_pitch + r_airspeed)
+        r_roll = np.clip(abs(sim[prp.roll_err]) / 3.3, 0, 0.3) # roll reward component
+        r_pitch = np.clip(abs(sim[prp.roll_err]) / 2.25, 0, 0.3) # pitch reward component
+        r_airspeed = np.clip(abs(sim[prp.roll_err]) / 25, 0, 0.3) # airspeed reward component
+
+        # computing the cost attached to changing actuator setpoints to promote smooth non-oscillatory actuator behaviour
+        diff: float = 0.0 # sum over all diffs between fcs commands of 2 consecutive timesteps
+        r_fcs_raw: float = 0.0 # unclipped, unscaled fcs reward component
+        for fcs in range(self.action_hist[1].shape[0]): # iterate through different fcs : [elevator: 0, aileron: 1, throttle: 2]
+            for t in reversed(range(self.action_hist[0].shape[0])): # iterate through different timesteps backwards
+                diff += abs(self.action_hist[t][fcs] - self.action_hist[t-1][fcs]) # sum over all history of the command difference between t and t-1 for the same actuator
+            r_fcs_raw += diff # sum those cmd diffs over all actuators
+        r_fcs = np.clip(r_fcs_raw / 60, 0, 0.1) # flight control surface reward component
+        return -(r_roll + r_pitch + r_airspeed + r_fcs)

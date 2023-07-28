@@ -11,7 +11,7 @@ trim_point: TrimPoint = TrimPoint(aircraft_id='x8')
 
 done = False
 while not done:
-    # action = env.action_space.sample()
-    action = np.array([trim_point.elevator, trim_point.aileron, trim_point.throttle])
+    action = env.action_space.sample()
+    # action = np.array([trim_point.elevator, trim_point.aileron, trim_point.throttle])
     obs, reward, done, info = env.step(action)
-    # print(info)
+    print(info)

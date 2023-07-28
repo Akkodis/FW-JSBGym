@@ -133,35 +133,7 @@ class JSBSimEnv(gym.Env):
         if action.shape != self.action_space.shape:
             raise ValueError("Action shape is not valid.")
 
-        # apply the action to the simulation
-        for prop, command in zip(self.task.action_vars, action):
-            self.sim[prop] = command
-
-        # run the simulation for sim_steps_after_agent_action steps
-        for _ in range(self.sim_steps_after_agent_action):
-            self.sim.run_step()
-            # write the telemetry to a log csv file every fdm step (as opposed to every agent step -> to put out of this for loop)
-            self.task.flight_data_logging(self.sim)
-            # decrement the steps left
-            self.sim[self.task.steps_left] -= 1
-
-        # update the errors
-        self.task.update_errors(self.sim)
-
-        # get the state
-        state: np.ndarray = self.task.observe_state(self.sim)
-
-        # get the reward
-        reward: float = self.task.reward(self.sim)
-
-        # check if the episode is done
-        done: bool = self.task.is_terminal(self.sim)
-
-        # info dict for debugging and misc infos
-        info: Dict = {"steps_left": self.sim[self.task.steps_left],
-                      "reward": reward}
-
-        return state, reward, done, info
+        return self.task.step_task(self.sim, action, self.sim_steps_after_agent_action)
 
 
     def render(self) -> None:
