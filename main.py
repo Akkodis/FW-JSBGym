@@ -59,7 +59,8 @@ fieldnames: list[str] = ['latitude', 'longitude', 'altitude',
                          'airspeed_err', 'altitude_err', 'course_err',
                          'pitch_err', 'roll_err',
                          'pitch_cmd', 'roll_cmd',
-                         'aileron_pos', 'right_aileron_pos_rad', 'left_aileron_pos_rad'
+                         'aileron_pos', 'right_aileron_pos_rad', 'left_aileron_pos_rad',
+                         'windspeed_north_mps', 'windspeed_east_mps', 'windspeed_down_mps'
                          ]
 
 # create flight_data csv file with header
@@ -69,15 +70,14 @@ with open(args.flight_data, 'w') as csv_file:
 
 # set seed for random number generator
 rand_seed: int = random.randint(0, 1000000)
-sim.fdm["simulation/randomseed"] = rand_seed
-
+sim.fdm["simulation/randomseed"] = 1
 
 
 # set turbulences
 if args.turb:
-    sim.fdm["atmosphere/turb-type"] = 4 # Tustin turbulence type
-    sim.fdm["atmosphere/turbulence/milspec/windspeed_at_20ft_AGL-fps"] = 10
-    sim.fdm["atmosphere/turbulence/milspec/severity"] = 1
+    sim.fdm["atmosphere/turb-type"] = 3 # Tustin turbulence type
+    sim.fdm["atmosphere/turbulence/milspec/windspeed_at_20ft_AGL-fps"] = 75
+    sim.fdm["atmosphere/turbulence/milspec/severity"] = 6
 
 # set wind gust
 if args.gust:
@@ -225,36 +225,40 @@ while sim.run_step() and timestep < 20000:
     yaw_rate: float = sim.fdm["velocities/r-rad_sec"]
 
     # airspeed: float = sim.fdm["velocities/vc-kts"] * 1.852 # to km/h
-    airspeed: float = sim.fdm["velocities/vt-fps"] * 0.5925 # fps to kts
+    airspeed: float = sim.fdm["velocities/vt-fps"] / 1.688 # fps to kts
+
+    windspeed_north_mps: float = sim.fdm["atmosphere/total-wind-north-fps"] / 3.281 # fps to mps
+    windspeed_east_mps: float = sim.fdm["atmosphere/total-wind-east-fps"] / 3.281 # fps to mps
+    windspeed_down_mps: float = sim.fdm["atmosphere/total-wind-down-fps"] / 3.281 # fps to mps
 
     # if the 2nd if is commented out: control everything at the same time
     # command longitudinal control first
-    if timestep > 2000:
-        # input("Press Enter to continue...")
-        # set the airspeed ref
-        airspeed_pid.set_reference(airspeed_ref)
-        throttle_cmd, airspeed_err = airspeed_pid.update(state=airspeed, saturate=True)
-        sim.fdm["fcs/throttle-cmd-norm"] = throttle_cmd
+    # if timestep > 2000:
+    #     # input("Press Enter to continue...")
+    #     # set the airspeed ref
+    #     airspeed_pid.set_reference(airspeed_ref)
+    #     throttle_cmd, airspeed_err = airspeed_pid.update(state=airspeed, saturate=True)
+    #     sim.fdm["fcs/throttle-cmd-norm"] = throttle_cmd
 
-        # set the altitude ref (outer loop)
-        altitude_pid.set_reference(altitude_ref)
-        pitch_cmd, altitude_err = altitude_pid.update(state=altitude, saturate=True)
+    #     # set the altitude ref (outer loop)
+    #     altitude_pid.set_reference(altitude_ref)
+    #     pitch_cmd, altitude_err = altitude_pid.update(state=altitude, saturate=True)
 
-        # set the pitch_ref (inner loop)
-        pitch_pid.set_reference(pitch_cmd)
-        elevator_cmd, pitch_err = pitch_pid.update(state=pitch, state_dot=pitch_rate, saturate=True, normalize=True)
-        sim.fdm["fcs/elevator-cmd-norm"] = elevator_cmd
+    #     # set the pitch_ref (inner loop)
+    #     pitch_pid.set_reference(pitch_cmd)
+    #     elevator_cmd, pitch_err = pitch_pid.update(state=pitch, state_dot=pitch_rate, saturate=True, normalize=True)
+    #     sim.fdm["fcs/elevator-cmd-norm"] = elevator_cmd
 
-    # wait a bit and start commanding lateral control (decoupling of both lat and lon dynamics is necessary to PID control)
-    # if timestep > 3000:
-        # set the ref course angle (outer loop)
-        course_pid.set_reference(course_ref)
-        roll_cmd, course_err = course_pid.update(state=course_angle, saturate=True, is_course=True)
+    # # wait a bit and start commanding lateral control (decoupling of both lat and lon dynamics is necessary to PID control)
+    # # if timestep > 3000:
+    #     # set the ref course angle (outer loop)
+    #     course_pid.set_reference(course_ref)
+    #     roll_cmd, course_err = course_pid.update(state=course_angle, saturate=True, is_course=True)
 
-        # set the roll_ref (inner loop)
-        roll_pid.set_reference(roll_cmd)
-        aileron_cmd, roll_err = roll_pid.update(state=roll, state_dot=roll_rate, saturate=True, normalize=True)
-        sim.fdm["fcs/aileron-cmd-norm"] = aileron_cmd
+    #     # set the roll_ref (inner loop)
+    #     roll_pid.set_reference(roll_cmd)
+    #     aileron_cmd, roll_err = roll_pid.update(state=roll, state_dot=roll_rate, saturate=True, normalize=True)
+    #     sim.fdm["fcs/aileron-cmd-norm"] = aileron_cmd
 
 
     # controls
@@ -291,7 +295,10 @@ while sim.run_step() and timestep < 20000:
             fieldnames[22]: roll_cmd,
             fieldnames[23]: aileron_pos,
             fieldnames[24]: right_pos_rad,
-            fieldnames[25]: left_pos_rad
+            fieldnames[25]: left_pos_rad,
+            fieldnames[26]: windspeed_north_mps,
+            fieldnames[27]: windspeed_east_mps,
+            fieldnames[28]: windspeed_down_mps
         }
         csv_writer.writerow(info)
 

@@ -82,6 +82,10 @@ def animate(i, axis, args) -> None:
     pitch_err = data['pitch_err']
     roll_err = data['roll_err']
 
+    windspeed_north = data['windspeed_north_mps']
+    windspeed_east = data['windspeed_east_mps']
+    windspeed_down = data['windspeed_down_mps']
+
     for(dim_1) in axis:
         for(dim_2) in dim_1:
             dim_2.cla()
@@ -151,7 +155,12 @@ def animate(i, axis, args) -> None:
     axis[2, 1].set_title('angular velocities (rad/s)')
     axis[2, 1].legend()
 
-    ax[2, 2].set_axis_off()
+    # ax[2, 2].set_axis_off()
+    axis[2, 2].plot(tsteps, windspeed_north, label='windspeed_north')
+    axis[2, 2].plot(tsteps, windspeed_east, label='windspeed_east')
+    axis[2, 2].plot(tsteps, windspeed_down, label='windspeed_down')
+    axis[2, 2].set_title('wind speed (m/s)')
+    axis[2, 2].legend()
 
     # return alt_plt, alt_ref_plt,
     # return alt_plt, alt_ref_plt, course_plt, course_ref_plt, traj_plt, pitch_plt, pitch_cmd_plt, \
