@@ -7,12 +7,13 @@ JSBoutX8.csv
 a.py
 
 # ignore those folders
-jsbsim-rl/fdm_descriptions/aircraft/*
-jsbsim-rl/fdm_descriptions/engine/*
+jsbgym/fdm_descriptions/aircraft/*
+jsbgym/fdm_descriptions/engine/*
+jsbgym/agents/runs/
 
 # but except those folders and those files
-!jsbsim-rl/fdm_descriptions/aircraft/x8/
-!jsbsim-rl/fdm_descriptions/aircraft/c172p/
-!jsbsim-rl/fdm_descriptions/engine/electric800W.xml
-!jsbsim-rl/fdm_descriptions/engine/eng_io320.xml
-!jsbsim-rl/fdm_descriptions/engine/direct.xml
+!jsbgym/fdm_descriptions/aircraft/x8/
+!jsbgym/fdm_descriptions/aircraft/c172p/
+!jsbgym/fdm_descriptions/engine/electric800W.xml
+!jsbgym/fdm_descriptions/engine/eng_io320.xml
+!jsbgym/fdm_descriptions/engine/direct.xml
