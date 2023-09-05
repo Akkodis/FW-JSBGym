@@ -1,0 +1,28 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "gym_test",
+            "type": "python",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/jsbgym",
+            "program": "gym_test.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            // "args": ["--trim"]
+        },
+       {
+            "name": "ppo_debug",
+            "type": "python",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/jsbgym/agents",
+            "program": "ppo_continuous_action.py",
+            "args": ["--env-id", "JSBSimEnv-v0", "--num-envs", "2"],
+            "console": "integratedTerminal",
+            "justMyCode": true,
+        }
+    ]
+}
