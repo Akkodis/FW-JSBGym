@@ -18,7 +18,7 @@
             "name": "ppo_debug",
             "type": "python",
             "request": "launch",
-            "cwd": "${workspaceFolder}/jsbgym/agents",
+            "cwd": "${workspaceFolder}/jsbgym",
             "program": "ppo_continuous_action.py",
             "args": ["--env-id", "JSBSimEnv-v0", "--num-envs", "2"],
             "console": "integratedTerminal",

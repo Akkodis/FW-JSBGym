@@ -1,7 +1,7 @@
 import gymnasium as gym
 import numpy as np
 
-from jsbgym.envs.tasks import AttitudeControlTask
+from jsbgym.envs.tasks import AttitudeControlTask, Task
 from jsbgym.simulation.jsb_simulation import Simulation
 from typing import Dict, Type, Tuple
 from jsbgym.visualizers.visualizer import PlotVisualizer, FlightGearVisualizer
@@ -28,14 +28,16 @@ class JSBSimEnv(gym.Env):
     metadata: Dict[str, str] = {"render_modes": ["none", "plot", "plot_scale", "fgear", "fgear_plot", "fgear_plot_scale"]}
 
     def __init__(self,
-                 task_type: Type[AttitudeControlTask],
+                 task: Type[Task] = AttitudeControlTask,
                  render_mode: str=None,
                  fdm_frequency: float=240.0, # 120Hz being the default frequency of the JSBSim FDM
                  agent_frequency: float=60.0,
-                 episode_time_s: float=60.0,
+                 episode_time_s: float=20.0,
                  aircraft_id: str='x8',
                  viz_time_factor: float=1.0,
-                 obs_history_size: int=5) -> None:
+                 obs_is_matrix: bool=False,
+                 obs_history_size: int=5,
+                 flight_data_logfile: str = "data/gym_flight_data.csv") -> None:
 
         """
         Gymnasium JSBSim environment for reinforcement learning.
@@ -53,9 +55,10 @@ class JSBSimEnv(gym.Env):
         # simulation attribute, will be initialized in reset() with a call to Simulation()
         self.sim: Simulation = None
         # task to perform, implemented as a wrapper, customizing action, observation, reward, etc. according to the task
-        self.task = task_type(fdm_freq=fdm_frequency,
-                              flight_data_logfile="data/gym_flight_data.csv",
+        self.task = task(fdm_freq=fdm_frequency,
+                              flight_data_logfile=flight_data_logfile,
                               episode_time_s=episode_time_s,
+                              obs_is_matrix=obs_is_matrix,
                               obs_history_size=obs_history_size)
         self.fdm_frequency: float = fdm_frequency
         self.sim_steps_after_agent_action: int = int(self.fdm_frequency // agent_frequency)
@@ -83,9 +86,10 @@ class JSBSimEnv(gym.Env):
         # get action and observation space from the task
         self.action_space = self.task.get_action_space()
         self.observation_space = self.task.get_observation_space()
+        print("obs space : ", self.observation_space)
 
 
-    def reset(self, seed=None) -> np.ndarray:
+    def reset(self, seed: int=None, options: dict=None) -> Tuple[np.ndarray, dict]:
         """
         Resets the state of the environment and returns an initial observation.
 
@@ -95,10 +99,6 @@ class JSBSimEnv(gym.Env):
         Returns:
             - `state`: the initial state of the environment after reset
         """
-        # reset the random number generator
-        super().reset(seed=seed)
-        if seed is not None:
-                self.sim["simulation/randomseed"] = seed
 
         if self.sim:
             # reintialize the simulation
@@ -109,13 +109,19 @@ class JSBSimEnv(gym.Env):
                                   aircraft_id=self.aircraft_id,
                                   viz_time_factor=self.viz_time_factor,
                                   enable_fgear_output=self.enable_fgear_output)
+
+        # reset the random number generator
+        super().reset(seed=seed)
+        if seed is not None:
+                self.sim["simulation/randomseed"] = seed
+
         # reset the task
         obs: np.ndarray = self.task.reset_task(self.sim)
 
         # launch the environment visualizers
         self.render()
 
-        return obs
+        return obs, {}
 
 
     def step(self, action: np.ndarray) -> Tuple[np.ndarray, float, bool, Dict]:

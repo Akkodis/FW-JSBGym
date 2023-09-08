@@ -4,7 +4,7 @@ import os
 import time
 from jsbgym.trim.trim_point import TrimPoint
 from typing import Union
-from utils import jsbsim_properties as prp
+from jsbgym.utils import jsbsim_properties as prp
 
 
 class Simulation(object):
@@ -66,12 +66,18 @@ class Simulation(object):
         self.load_run_ic()
 
 
-    def __getitem__(self, prop: Union[prp.Property, prp.BoundedProperty]) -> float:
-        return self.fdm[prop.name]
+    def __getitem__(self, prop: Union[prp.Property, prp.BoundedProperty] | str) -> float:
+        if isinstance(prop, str):
+            return self.fdm[prop]
+        else:
+            return self.fdm[prop.name]
 
 
-    def __setitem__(self, prop: Union[prp.Property, prp.BoundedProperty], value) -> None:
-        self.fdm[prop.name] = value
+    def __setitem__(self, prop: Union[prp.Property, prp.BoundedProperty] | str, value) -> None:
+        if isinstance(prop, str):
+            self.fdm[prop] = value
+        else:
+            self.fdm[prop.name] = value
 
 
     def load_run_ic(self) -> bool:

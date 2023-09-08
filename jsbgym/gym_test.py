@@ -3,7 +3,7 @@ from jsbgym.envs.tasks import AttitudeControlTask
 from jsbgym.trim.trim_point import TrimPoint
 import numpy as np
 
-env = JSBSimEnv(task_type=AttitudeControlTask, episode_time_s=15, render_mode='plot_scale')
+env = JSBSimEnv(episode_time_s=15, render_mode='plot_scale')
 # env = JSBSimEnv(task_type=AttitudeControlTask, episode_time_s=15, render_mode='fgear_plot_scale')
 # env = JSBSimEnv(task_type=AttitudeControlTask, episode_time_s=15, render_mode='none')
 obs = env.reset()

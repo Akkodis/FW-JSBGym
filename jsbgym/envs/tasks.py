@@ -7,8 +7,8 @@ import csv
 from abc import ABC
 from jsbgym.simulation.jsb_simulation import Simulation
 from typing import Type, NamedTuple, Tuple, Deque, Dict
-from utils import jsbsim_properties as prp
-from utils.jsbsim_properties import BoundedProperty
+from jsbgym.utils import jsbsim_properties as prp
+from jsbgym.utils.jsbsim_properties import BoundedProperty
 from collections import namedtuple, deque
 
 
@@ -44,6 +44,7 @@ class AttitudeControlTask(Task, ABC):
         prp.airspeed_kts, # airspeed
         prp.roll_rad, prp.pitch_rad, # attitude
         prp.p_radps, prp.q_radps, prp.r_radps, # angular rates
+        prp.target_airspeed_kts, prp.target_roll_rad, prp.target_pitch_rad, # targets
         prp.airspeed_err, prp.roll_err, prp.pitch_err # errors
     )
 
@@ -72,7 +73,8 @@ class AttitudeControlTask(Task, ABC):
     TargetState: Type[NamedTuple]
     Errors: Type[NamedTuple]
 
-    def __init__(self, fdm_freq: float, obs_history_size: int, flight_data_logfile: str = "data/flight_data.csv", episode_time_s: float = DEFAULT_EPISODE_TIME_S):
+    def __init__(self, fdm_freq: float, obs_history_size: int, flight_data_logfile: str = "data/flight_data.csv", 
+                 obs_is_matrix: bool = False, episode_time_s: float = DEFAULT_EPISODE_TIME_S):
         """
             Args:
                 - `fdm_freq`: jsbsim FDM frequency
@@ -85,6 +87,8 @@ class AttitudeControlTask(Task, ABC):
         max_episode_steps: int = math.ceil(episode_time_s * fdm_freq)
         self.steps_left: BoundedProperty = BoundedProperty("info/steps_left", "steps remaining in the current episode", 0, max_episode_steps)
 
+        self.obs_is_matrix = obs_is_matrix
+
         # observation history size
         self.obs_history_size: int = obs_history_size
 
@@ -93,7 +97,7 @@ class AttitudeControlTask(Task, ABC):
         self.state: self.State = None
 
         # declaring observation. Deque with a maximum length of obs_history_size
-        self.observation: Deque[self.State] = deque(maxlen=self.obs_history_size) # self.State type: NamedTuple
+        self.observation: Deque[np.ndarray] = deque(maxlen=self.obs_history_size) # deque of 1D nparrays containing self.State
 
         # declaring action history. Deque with a maximum length of obs_history_size (action history size = observation history size)
         self.action_hist: Deque[np.ndarray] = deque(maxlen=self.obs_history_size) # action type: np.ndarray
@@ -200,10 +204,16 @@ class AttitudeControlTask(Task, ABC):
         state_lows: np.ndarray = np.array([state_var.min for state_var in self.state_vars])
         state_highs: np.ndarray = np.array([state_var.max for state_var in self.state_vars])
 
-        # multiply state_lows and state_highs by obs_history_size to get the observation space
-        observation_space = gym.spaces.Box(low=np.tile(state_lows, self.obs_history_size),
-                                           high=np.tile(state_highs, self.obs_history_size), 
-                                           dtype=np.float32)
+        # check if we want a matrix formatted observation space shape=(obs_history_size, state_vars) for CNN policy
+        if self.obs_is_matrix:
+            state_lows: np.ndarray = np.array([state_lows for _ in range(self.obs_history_size)])
+            state_highs: np.ndarray = np.array([state_highs for _ in range(self.obs_history_size)])
+            observation_space = gym.spaces.Box(low=np.array(state_lows), high=np.array(state_highs), dtype=np.float32)
+        else: # else we want a vector formatted observation space len=(obs_history_size * state_vars) for MLP policy
+            # multiply state_lows and state_highs by obs_history_size to get the observation space
+            observation_space = gym.spaces.Box(low=np.tile(state_lows, self.obs_history_size),
+                                            high=np.tile(state_highs, self.obs_history_size), 
+                                            dtype=np.float32)
         return observation_space
 
 
@@ -235,7 +245,7 @@ class AttitudeControlTask(Task, ABC):
             self.observation.append(self.state)
 
         # return observation as a numpy array
-        obs_nparray: np.ndarray = np.array(self.observation).flatten()
+        obs_nparray: np.ndarray = np.array(self.observation)
         return obs_nparray
 
 

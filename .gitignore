@@ -9,7 +9,7 @@ a.py
 # ignore those folders
 jsbgym/fdm_descriptions/aircraft/*
 jsbgym/fdm_descriptions/engine/*
-jsbgym/agents/runs/
+runs/
 
 # but except those folders and those files
 !jsbgym/fdm_descriptions/aircraft/x8/
