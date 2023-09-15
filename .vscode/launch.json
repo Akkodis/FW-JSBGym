@@ -22,6 +22,15 @@
             "program": "ppo_continuous_action.py",
             "args": ["--env-id", "JSBSimEnv-v0", "--num-envs", "2"],
             "console": "integratedTerminal",
+            "justMyCode": false,
+        },
+        {
+            "name": "a.py",
+            "type": "python",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/jsbgym",
+            "program": "a.py",
+            "console": "integratedTerminal",
             "justMyCode": true,
         }
     ]
