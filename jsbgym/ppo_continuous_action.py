@@ -80,9 +80,9 @@ def parse_args():
 def make_env(env_id, idx, capture_video, run_name, gamma):
     def thunk():
         if capture_video:
-            env = gym.make(env_id, flight_data_logfile="/data/gym_flight_data.csv", obs_is_matrix=True, render_mode="rgb_array")
+            env = gym.make(env_id, flight_data_logfile="data/gym_flight_data.csv", obs_is_matrix=True, render_mode="rgb_array")
         else:
-            env = gym.make(env_id, flight_data_logfile="/data/gym_flight_data.csv", obs_is_matrix=True)
+            env = gym.make(env_id, flight_data_logfile="data/gym_flight_data.csv", obs_is_matrix=True)
         # env = gym.wrappers.FlattenObservation(env)  # deal with dm_control's Dict observation space
         env = gym.wrappers.RecordEpisodeStatistics(env)
         if capture_video:
@@ -91,7 +91,7 @@ def make_env(env_id, idx, capture_video, run_name, gamma):
         env = gym.wrappers.ClipAction(env)
         env = gym.wrappers.NormalizeObservation(env)
         env = gym.wrappers.TransformObservation(env, lambda obs: np.clip(obs, -10, 10))
-        env = gym.wrappers.TransformObservation(env, lambda obs: np.expand_dims(obs, axis=0))
+        # env = gym.wrappers.TransformObservation(env, lambda obs: np.expand_dims(obs, axis=0))
         env = gym.wrappers.NormalizeReward(env, gamma=gamma)
         env = gym.wrappers.TransformReward(env, lambda reward: np.clip(reward, -10, 10))
         return env
@@ -212,6 +212,9 @@ if __name__ == "__main__":
 
             # ALGO LOGIC: action logic
             with torch.no_grad():
+                if np.isnan(next_obs).any():
+                    print("NAN OBSERVATION")
+                    exit()
                 action, logprob, _, value = agent.get_action_and_value(next_obs)
                 values[step] = value.flatten()
             actions[step] = action
