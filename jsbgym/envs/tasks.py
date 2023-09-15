@@ -97,7 +97,8 @@ class AttitudeControlTask(Task, ABC):
         self.state: self.State = None
 
         # declaring observation. Deque with a maximum length of obs_history_size
-        self.observation: Deque[np.ndarray] = deque(maxlen=self.obs_history_size) # deque of 1D nparrays containing self.State
+        self.observation_deque: Deque[np.ndarray] = deque(maxlen=self.obs_history_size) # deque of 1D nparrays containing self.State
+        self.observation: np.ndarray = None # observation of the agent in a numpy array format
 
         # declaring action history. Deque with a maximum length of obs_history_size (action history size = observation history size)
         self.action_hist: Deque[np.ndarray] = deque(maxlen=self.obs_history_size) # action type: np.ndarray
@@ -109,6 +110,11 @@ class AttitudeControlTask(Task, ABC):
         # declaring error NamedTuple structure
         self.Errors: NamedTuple = namedtuple('Errors', [f"{error_var.get_legal_name()}_err" for error_var in self.error_vars])
         self.errors: self.Errors = None
+
+        self.ErrorThresholds: NamedTuple = namedtuple('ErrorThresholds', [f"{error_var.get_legal_name()}_err_threshold" for error_var in self.error_vars])
+        self.error_th = self.ErrorThresholds(0.1, 0.1, 0.1) # error thresholds for airspeed, roll and pitch
+
+        self.reached_tsteps: int = 0 # number of timesteps the agent has reached the target state
 
         # create and set up csv logging file with flight telemetry
         self.flight_data_logfile: str = flight_data_logfile
@@ -131,7 +137,7 @@ class AttitudeControlTask(Task, ABC):
         sim[self.steps_left] = self.steps_left.max # reset the number of steps left in the episode to the max
 
         # reset observation and return the first observation of the episode
-        self.observation.clear()
+        self.observation_deque.clear()
         obs: np.ndarray = self.observe_state(sim, first_obs=True)
         return obs
 
@@ -160,13 +166,14 @@ class AttitudeControlTask(Task, ABC):
         reward: float = self.reward(sim)
 
         # check if the episode is done
-        done: bool = self.is_terminal(sim)
+        terminated: bool = self.is_terminated(sim)
+        truncated: bool = self.is_truncated(sim)
 
         # info dict for debugging and misc infos
         info: Dict = {"steps_left": sim[self.steps_left],
                       "reward": reward}
 
-        return obs, reward, done, info
+        return obs, reward, terminated, truncated, info
     
 
     def update_action_history(self, action: np.ndarray=None) -> None:
@@ -184,16 +191,36 @@ class AttitudeControlTask(Task, ABC):
             self.action_hist.append(action)
 
 
-    def is_terminal(self, sim: Simulation) -> bool:
+    def is_truncated(self, sim: Simulation) -> bool:
         """
-            Check if the current step is terminal, i.e. if the episode is done.
+            Check if the episode is truncated, i.e. if the episode reaches the maximum number of steps.
 
             Args:
                 - `sim`: the simulation object containing the JSBSim FDM
         """
         is_terminal_step: bool = sim[self.steps_left] <= 0 # if the episode is done, return True
+        is_obs_nan: bool = np.isnan(self.observation).any() # if the observation contains NaNs (due to JSBSim diverging), return True
+        return is_terminal_step or is_obs_nan
+
+
+    def is_terminated(self, sim: Simulation) -> bool:
+        """
+            Check if the episode is terminated, i.e. if the agent reaches the target state or crashes.
+        """
         is_crashed: bool = sim[prp.altitude_sl_ft] <= 0 # check collision with ground
-        return is_terminal_step or is_crashed
+        is_target_reached: bool = False
+        np_err: np.ndarray = np.array(self.errors[:])
+        np_err_th: np.ndarray = np.array(self.error_th[:])
+
+        # every time the agent reaches the target state, increment the reached_tsteps counter
+        if np.all(np_err < np_err_th):
+            self.reached_tsteps += 1
+
+        # if the agent has reached the target state for 5 seconds, return True
+        if self.reached_tsteps >= 5 * (1/sim.fdm_dt):
+            is_target_reached = True
+
+        return is_crashed or is_target_reached
 
 
     def get_observation_space(self) -> gym.spaces.Box:
@@ -201,13 +228,13 @@ class AttitudeControlTask(Task, ABC):
             Get the observation space of the task.
         """
         # defining observation space based on pre-chosen state variables
-        state_lows: np.ndarray = np.array([state_var.min for state_var in self.state_vars])
-        state_highs: np.ndarray = np.array([state_var.max for state_var in self.state_vars])
+        state_lows: np.ndarray = np.array([state_var.min for state_var in self.state_vars], dtype=np.float32)
+        state_highs: np.ndarray = np.array([state_var.max for state_var in self.state_vars], dtype=np.float32)
 
         # check if we want a matrix formatted observation space shape=(obs_history_size, state_vars) for CNN policy
         if self.obs_is_matrix:
-            state_lows: np.ndarray = np.array([state_lows for _ in range(self.obs_history_size)])
-            state_highs: np.ndarray = np.array([state_highs for _ in range(self.obs_history_size)])
+            state_lows: np.ndarray = np.expand_dims(np.array([state_lows for _ in range(self.obs_history_size)]), axis=0)
+            state_highs: np.ndarray = np.expand_dims(np.array([state_highs for _ in range(self.obs_history_size)]), axis=0)
             observation_space = gym.spaces.Box(low=np.array(state_lows), high=np.array(state_highs), dtype=np.float32)
         else: # else we want a vector formatted observation space len=(obs_history_size * state_vars) for MLP policy
             # multiply state_lows and state_highs by obs_history_size to get the observation space
@@ -222,8 +249,8 @@ class AttitudeControlTask(Task, ABC):
             Get the action space of the task.
         """
         # define action space
-        action_lows: np.ndarray = np.array([action_var.min for action_var in self.action_vars])
-        action_highs: np.ndarray = np.array([action_var.max for action_var in self.action_vars])
+        action_lows: np.ndarray = np.array([action_var.min for action_var in self.action_vars], dtype=np.float32)
+        action_highs: np.ndarray = np.array([action_var.max for action_var in self.action_vars], dtype=np.float32)
         action_space = gym.spaces.Box(low=action_lows, high=action_highs, dtype=np.float32)
         return action_space
 
@@ -239,14 +266,17 @@ class AttitudeControlTask(Task, ABC):
         # if it's the first observation i.e. following a reset(): fill observation with obs_history_size * state
         if first_obs:
             for _ in range(self.obs_history_size):
-                self.observation.append(self.state)
+                self.observation_deque.append(self.state)
         # else just append the newest state
         else:
-            self.observation.append(self.state)
+            self.observation_deque.append(self.state)
 
-        # return observation as a numpy array
-        obs_nparray: np.ndarray = np.array(self.observation)
-        return obs_nparray
+        # return observation as a numpy array and add one channel dim for CNN policy
+        if self.obs_is_matrix:
+            self.observation: np.ndarray = np.expand_dims(np.array(self.observation_deque), axis=0).astype(np.float32)
+        else:
+            self.observation: np.ndarray = np.array(self.observation_deque).astype(np.float32)
+        return self.observation
 
 
     def update_errors(self, sim: Simulation) -> None:
