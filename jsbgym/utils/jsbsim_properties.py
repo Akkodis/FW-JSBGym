@@ -29,7 +29,8 @@ class Property(collections.namedtuple('Property', ['name', 'description'])):
 
 # position and attitude
 altitude_sl_ft = BoundedProperty('position/h-sl-ft', 'altitude above mean sea level [ft]', -1400, 85000)
-pitch_rad = BoundedProperty('attitude/pitch-rad', 'pitch [rad]', -0.5 * math.pi, 0.5 * math.pi)
+altitude_sl_m = BoundedProperty('position/h-sl-meters', 'altitude above mean sea level [m]', -427, 26000)
+pitch_rad = BoundedProperty('attitude/pitch-rad', 'pitch [rad]', -math.pi, math.pi)
 roll_rad = BoundedProperty('attitude/roll-rad', 'roll [rad]', -math.pi, math.pi)
 heading_rad = BoundedProperty('attitude/psi-rad', 'yaw [rad', -math.pi, math.pi)
 heading_deg = BoundedProperty('attitude/psi-deg', 'heading [deg]', 0, 360)
@@ -50,12 +51,13 @@ w_fps = BoundedProperty('velocities/w-fps', 'body frame z-axis velocity [ft/s]',
 v_north_fps = BoundedProperty('velocities/v-north-fps', 'velocity true north [ft/s]', float('-inf'), float('+inf'))
 v_east_fps = BoundedProperty('velocities/v-east-fps', 'velocity east [ft/s]', float('-inf'), float('+inf'))
 v_down_fps = BoundedProperty('velocities/v-down-fps', 'velocity downwards [ft/s]', float('-inf'), float('+inf'))
-p_radps = BoundedProperty('velocities/p-rad_sec', 'roll rate [rad/s]', -2 * math.pi, 2 * math.pi)
-q_radps = BoundedProperty('velocities/q-rad_sec', 'pitch rate [rad/s]', -2 * math.pi, 2 * math.pi)
-r_radps = BoundedProperty('velocities/r-rad_sec', 'yaw rate [rad/s]', -2 * math.pi, 2 * math.pi)
+p_radps = BoundedProperty('velocities/p-rad_sec', 'roll rate [rad/s]', -10, 10)
+q_radps = BoundedProperty('velocities/q-rad_sec', 'pitch rate [rad/s]', -10, 10)
+r_radps = BoundedProperty('velocities/r-rad_sec', 'yaw rate [rad/s]', -10, 10)
 altitude_rate_fps = Property('velocities/h-dot-fps', 'Rate of altitude change [ft/s]')
 airspeed_fps = BoundedProperty('velocities/vt-fps', 'True aircraft airspeed [ft/s]', float('-inf'), float('+inf'))
 airspeed_kts = BoundedProperty('velocities/vtrue-kts', 'True aircraft airspeed [kts]', float('-inf'), float('+inf'))
+airspeed_mps = BoundedProperty('velocities/vt-mps', 'True aircraft airspeed [m/s]', 0, 42) # 42 m/s = 150 km/h = 81 knots
 alpha = Property('aero/alpha-rad', 'aircraft angle of attack [rad]')
 ci2vel = Property('aero/ci2vel', 'chord/2*airspeed')
 
@@ -134,9 +136,10 @@ Cmq = Property('aero/coefficient/Cmq', 'pitch rate pitch')
 CmDe = Property('aero/coefficient/CmDe', 'pitch due to elevator')
 
 # additional custom properties for error and target values
-airspeed_err = BoundedProperty("error/airspeed-err", "airspeed error", 0, float('+inf'))
-roll_err = BoundedProperty("error/roll-err", "roll error", -math.pi, math.pi)
-pitch_err = BoundedProperty("error/pitch-err", "pitch error", -math.pi, math.pi)
-target_airspeed_kts = BoundedProperty("target/airspeed", "desired airspeed", 0, float('+inf'))
+airspeed_err = BoundedProperty("error/airspeed-err", "airspeed error", -42, 42)
+roll_err = BoundedProperty("error/roll-err", "roll error", -2*math.pi, 2*math.pi)
+pitch_err = BoundedProperty("error/pitch-err", "pitch error", -2*math.pi, 2*math.pi)
+target_airspeed_kts = BoundedProperty("target/airspeed", "desired airspeed", float('-inf'), float('+inf'))
+target_airspeed_mps = BoundedProperty("target/airspeed", "desired airspeed", 0, 42)
 target_roll_rad = BoundedProperty("target/roll-rad", "desired roll angle [rad]", -math.pi, math.pi)
 target_pitch_rad = BoundedProperty("target/pitch-rad", "desired pitch angle [rad]", -math.pi, math.pi)
