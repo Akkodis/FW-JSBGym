@@ -20,7 +20,7 @@
             "request": "launch",
             "cwd": "${workspaceFolder}/jsbgym",
             "program": "ppo_continuous_action.py",
-            "args": ["--env-id", "JSBSimEnv-v0", "--num-envs", "2"],
+            "args": ["--env-id", "AttitudeControlTaskEnv-v0", "--num-envs", "2"],
             "console": "integratedTerminal",
             "justMyCode": false,
         },

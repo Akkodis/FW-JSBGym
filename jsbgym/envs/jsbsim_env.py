@@ -1,11 +1,13 @@
 import gymnasium as gym
 import numpy as np
+from math import ceil
 
-from jsbgym.envs.tasks import AttitudeControlTask, Task
-from jsbgym.simulation.jsb_simulation import Simulation
 from typing import Dict, Type, Tuple
+
+from jsbgym.simulation.jsb_simulation import Simulation
 from jsbgym.visualizers.visualizer import PlotVisualizer, FlightGearVisualizer
 from jsbgym.utils import jsbsim_properties as prp
+from jsbgym.utils.jsbsim_properties import BoundedProperty
 
 
 class JSBSimEnv(gym.Env):
@@ -29,16 +31,9 @@ class JSBSimEnv(gym.Env):
     metadata: Dict[str, str] = {"render_modes": ["none", "plot", "plot_scale", "fgear", "fgear_plot", "fgear_plot_scale"]}
 
     def __init__(self,
-                 task: Type[Task] = AttitudeControlTask,
+                 jsbsim_config: dict,
                  render_mode: str=None,
-                 fdm_frequency: float=240.0, # 120Hz being the default frequency of the JSBSim FDM
-                 agent_frequency: float=60.0,
-                 episode_time_s: float=20.0,
-                 aircraft_id: str='x8',
-                 viz_time_factor: float=1.0,
-                 obs_is_matrix: bool=False,
-                 obs_history_size: int=5,
-                 flight_data_logfile: str = "data/gym_flight_data.csv") -> None:
+                 aircraft_id: str='x8') -> None:
 
         """
         Gymnasium JSBSim environment for reinforcement learning.
@@ -48,21 +43,19 @@ class JSBSimEnv(gym.Env):
             - `render_mode`: the mode to render the environment, can be one of the following: `["none", "plot", "plot_scale", "fgear", "fgear_plot", "fgear_plot_scale"]`
             - `fdm_frequency`: the frequency of the flight dynamics model (JSBSim) simulation
             - `agent_frequency`: the frequency of the agent (controller) at which it interacts with the environment
-            - `episode_time_s`: the duration of the episode in seconds
+            - `episode_length_s`: the duration of the episode in seconds
             - `aircraft_id`: Aircraft to simulate
             - `viz_time_factor`: the factor by which the simulation time is scaled for visualization, only taken into account if render mode is not "none"
        """
+        self.jsbsim_cfg: dict = jsbsim_config
 
         # simulation attribute, will be initialized in reset() with a call to Simulation()
         self.sim: Simulation = None
-        # task to perform, implemented as a wrapper, customizing action, observation, reward, etc. according to the task
-        self.task = task(fdm_freq=fdm_frequency,
-                              flight_data_logfile=flight_data_logfile,
-                              episode_time_s=episode_time_s,
-                              obs_is_matrix=obs_is_matrix,
-                              obs_history_size=obs_history_size)
-        self.fdm_frequency: float = fdm_frequency
-        self.sim_steps_after_agent_action: int = int(self.fdm_frequency // agent_frequency)
+
+        self.episode_length_s: float = self.jsbsim_cfg["episode_length_s"]
+        self.agent_frequency: float = self.jsbsim_cfg["agent_freq"]
+        self.fdm_frequency: float = self.jsbsim_cfg["fdm_freq"]
+        self.sim_steps_after_agent_action: int = int(self.fdm_frequency // self.agent_frequency)
         self.aircraft_id: str = aircraft_id
 
 
@@ -82,14 +75,13 @@ class JSBSimEnv(gym.Env):
         # set the visualization time factor (plot and/or flightgear visualization),default is None
         self.viz_time_factor: float = None
         if self.render_mode in self.metadata["render_modes"][1:]:
-            self.viz_time_factor: float = viz_time_factor
+            self.viz_time_factor: float = jsbsim_config["viz_time_factor"]
 
-        # get action and observation space from the task
-        self.action_space = self.task.get_action_space()
-        self.observation_space = self.task.get_observation_space()
+        max_episode_steps: int = ceil(self.episode_length_s * self.fdm_frequency)
+        self.steps_left: BoundedProperty = BoundedProperty("info/steps_left", "steps remaining in the current episode", 0, max_episode_steps)
 
 
-    def reset(self, seed: int=None, options: dict=None) -> Tuple[np.ndarray, dict]:
+    def reset(self, seed: int=None, options: dict=None) -> None:
         """
         Resets the state of the environment and returns an initial observation.
 
@@ -99,7 +91,6 @@ class JSBSimEnv(gym.Env):
         Returns:
             - `state`: the initial state of the environment after reset
         """
-
         if self.sim:
             # reintialize the simulation
             self.sim.fdm.reset_to_initial_conditions(0)
@@ -118,16 +109,8 @@ class JSBSimEnv(gym.Env):
         if seed is not None:
                 self.sim["simulation/randomseed"] = seed
 
-        # reset the task
-        obs: np.ndarray = self.task.reset_task(self.sim)
 
-        # launch the environment visualizers
-        self.render()
-
-        return obs, {}
-
-
-    def step(self, action: np.ndarray) -> Tuple[np.ndarray, float, bool, Dict]:
+    def step(self, action: np.ndarray) -> None:
         """
             Run one timestep of the environment's dynamics. When end of episode is reached, you are responsible for calling `reset()`
             to reset this environment's state.
@@ -138,14 +121,7 @@ class JSBSimEnv(gym.Env):
             Returns:
                 - The `obs` of the environment after the action, the `reward` obtained, whether the episode of terminated - `done`, and additional `info`
         """
-        # check if the action is valid
-        if action.shape != self.action_space.shape:
-            raise ValueError("Action shape is not valid.")
-
-        # convert the airspeed from kts to m/s
-        self.convert_airspeed_kts2mps()
-
-        return self.task.step_task(self.sim, action, self.sim_steps_after_agent_action)
+        pass
 
 
     def render(self) -> None:
@@ -154,7 +130,6 @@ class JSBSimEnv(gym.Env):
             The visualizers are launched only once, when the render method is called for the first time.
             This is because the visualizers are one launched as new processes, hence are independent from the main process.
         """
-
         # launch the visualizers according to the render mode
         if self.render_mode == 'none': pass
         if self.render_mode == 'plot_scale':
@@ -178,7 +153,7 @@ class JSBSimEnv(gym.Env):
                 self.plot_viz = PlotVisualizer(scale=True)
 
 
-    def convert_airspeed_kts2mps(self):
+    def convert_airspeed_kts2mps(self) -> None:
         """
             Converts the airspeed from kts to m/s
         """
