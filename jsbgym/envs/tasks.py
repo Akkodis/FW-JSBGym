@@ -41,10 +41,10 @@ class AttitudeControlTask(Task, ABC):
     DEFAULT_EPISODE_TIME_S = 60.0
 
     state_vars: Tuple[BoundedProperty, ...] = (
-        prp.airspeed_kts, # airspeed
+        prp.airspeed_mps, # airspeed
         prp.roll_rad, prp.pitch_rad, # attitude
         prp.p_radps, prp.q_radps, prp.r_radps, # angular rates
-        prp.target_airspeed_kts, prp.target_roll_rad, prp.target_pitch_rad, # targets
+        prp.target_airspeed_mps, prp.target_roll_rad, prp.target_pitch_rad, # targets
         prp.airspeed_err, prp.roll_err, prp.pitch_err # errors
     )
 
@@ -54,14 +54,14 @@ class AttitudeControlTask(Task, ABC):
     )
 
     target_state_vars: Tuple[BoundedProperty, ...] = (
-        prp.target_airspeed_kts, # target airspeed
+        prp.target_airspeed_mps, # target airspeed
         prp.target_roll_rad, prp.target_pitch_rad # target attitude
     )
 
     telemetry_vars: Tuple[BoundedProperty, ...] = (
         prp.lat_gc_deg, prp.lng_gc_deg, prp.altitude_sl_ft, # position
         prp.roll_rad, prp.pitch_rad, prp.heading_rad, # attitude
-        prp.p_radps, prp.q_radps, prp.r_radps, prp.airspeed_kts, # angular rates and airspeed
+        prp.p_radps, prp.q_radps, prp.r_radps, prp.airspeed_mps, # angular rates and airspeed
         prp.throttle_cmd, prp.elevator_cmd, prp.aileron_cmd, # control surface commands
     ) + target_state_vars # target state variables
 
@@ -284,7 +284,7 @@ class AttitudeControlTask(Task, ABC):
             Update the error properties of the aircraft, i.e. the difference between the target state and the current state.
         """
         # update error sim properties
-        sim[prp.airspeed_err] = sim[prp.target_airspeed_kts] - sim[prp.airspeed_kts]
+        sim[prp.airspeed_err] = sim[prp.target_airspeed_mps] - sim[prp.airspeed_mps]
         sim[prp.roll_err] = sim[prp.target_roll_rad] - sim[prp.roll_rad]
         sim[prp.pitch_err] = sim[prp.target_pitch_rad] - sim[prp.pitch_rad]
         
@@ -292,15 +292,15 @@ class AttitudeControlTask(Task, ABC):
         self.errors = self.Errors(*[sim[prop] for prop in self.error_vars])
 
 
-    def set_target_state(self, sim: Simulation, target_airspeed_kts: float, target_roll_rad: float, target_pitch_rad: float) -> None:
+    def set_target_state(self, sim: Simulation, target_airspeed_mps: float, target_roll_rad: float, target_pitch_rad: float) -> None:
         """
             Set the target state of the aircraft, i.e. the target state variables defined in the `target_state_vars` tuple.
         """
         # fill target state namedtuple with target state attributes
-        self.target = self.TargetState(str(target_airspeed_kts), str(target_roll_rad), str(target_pitch_rad))
+        self.target = self.TargetState(str(target_airspeed_mps), str(target_roll_rad), str(target_pitch_rad))
 
         # set target state sim properties
-        sim[prp.target_airspeed_kts] = target_airspeed_kts
+        sim[prp.target_airspeed_mps] = target_airspeed_mps
         sim[prp.target_roll_rad] = target_roll_rad
         sim[prp.target_pitch_rad] = target_pitch_rad
 
@@ -310,7 +310,7 @@ class AttitudeControlTask(Task, ABC):
             Reset the target state of the aircraft, i.e. the target state variables defined in the `target_state_vars` tuple, with initial conditions.
         """
         # reset task class attributes with initial conditions
-        self.set_target_state(sim, target_airspeed_kts=sim[prp.initial_airspeed_kts], 
+        self.set_target_state(sim, target_airspeed_mps=sim[prp.initial_airspeed_kts] * 0.514444, # converting kts to mps 
                               target_roll_rad=sim[prp.initial_roll_rad], 
                               target_pitch_rad=sim[prp.initial_pitch_rad])
 

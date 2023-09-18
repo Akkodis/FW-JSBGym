@@ -5,6 +5,7 @@ from jsbgym.envs.tasks import AttitudeControlTask, Task
 from jsbgym.simulation.jsb_simulation import Simulation
 from typing import Dict, Type, Tuple
 from jsbgym.visualizers.visualizer import PlotVisualizer, FlightGearVisualizer
+from jsbgym.utils import jsbsim_properties as prp
 
 
 class JSBSimEnv(gym.Env):
@@ -86,7 +87,6 @@ class JSBSimEnv(gym.Env):
         # get action and observation space from the task
         self.action_space = self.task.get_action_space()
         self.observation_space = self.task.get_observation_space()
-        print("obs space : ", self.observation_space)
 
 
     def reset(self, seed: int=None, options: dict=None) -> Tuple[np.ndarray, dict]:
@@ -109,6 +109,9 @@ class JSBSimEnv(gym.Env):
                                   aircraft_id=self.aircraft_id,
                                   viz_time_factor=self.viz_time_factor,
                                   enable_fgear_output=self.enable_fgear_output)
+
+        # convert the airspeed from kts to m/s
+        self.convert_airspeed_kts2mps()
 
         # reset the random number generator
         super().reset(seed=seed)
@@ -138,6 +141,9 @@ class JSBSimEnv(gym.Env):
         # check if the action is valid
         if action.shape != self.action_space.shape:
             raise ValueError("Action shape is not valid.")
+
+        # convert the airspeed from kts to m/s
+        self.convert_airspeed_kts2mps()
 
         return self.task.step_task(self.sim, action, self.sim_steps_after_agent_action)
 
@@ -172,3 +178,8 @@ class JSBSimEnv(gym.Env):
                 self.plot_viz = PlotVisualizer(scale=True)
 
 
+    def convert_airspeed_kts2mps(self):
+        """
+            Converts the airspeed from kts to m/s
+        """
+        self.sim[prp.airspeed_mps] = self.sim[prp.airspeed_kts] * 0.51444
