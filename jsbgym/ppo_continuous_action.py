@@ -38,6 +38,8 @@ def parse_args():
     # Algorithm specific arguments
     parser.add_argument("--env-id", type=str, default="MountainCarContinuous-v0",
         help="the id of the environment")
+    parser.add_argument("--config", type=str, default="config/bohn_ppo.yaml",
+        help="the config file of the environnement")
     parser.add_argument("--total-timesteps", type=int, default=1000000,
         help="total timesteps of the experiments")
     parser.add_argument("--learning-rate", type=float, default=3e-4,
@@ -80,9 +82,9 @@ def parse_args():
 def make_env(env_id, idx, capture_video, run_name, gamma):
     def thunk():
         if capture_video:
-            env = gym.make(env_id, flight_data_logfile="data/gym_flight_data.csv", obs_is_matrix=True, render_mode="rgb_array")
+            env = gym.make(env_id, config_file=args.config, render_mode="rgb_array")
         else:
-            env = gym.make(env_id, flight_data_logfile="data/gym_flight_data.csv", obs_is_matrix=True)
+            env = gym.make(env_id, config_file=args.config)
         # env = gym.wrappers.FlattenObservation(env)  # deal with dm_control's Dict observation space
         env = gym.wrappers.RecordEpisodeStatistics(env)
         if capture_video:
