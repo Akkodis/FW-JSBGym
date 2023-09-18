@@ -16,7 +16,7 @@ def animate(i, axis, args) -> None:
 
     lat = data[prp.lat_gc_deg.get_legal_name()]
     lon = data[prp.lng_gc_deg.get_legal_name()]
-    alt = data[prp.altitude_sl_ft.get_legal_name()]
+    alt = data[prp.altitude_sl_m.get_legal_name()]
 
     roll = data[prp.roll_rad.get_legal_name()]
     pitch = data[prp.pitch_rad.get_legal_name()]
@@ -26,13 +26,13 @@ def animate(i, axis, args) -> None:
     pitch_rate = data[prp.q_radps.get_legal_name()]
     yaw_rate = data[prp.r_radps.get_legal_name()]
 
-    airspeed = data[prp.airspeed_kts.get_legal_name()]
+    airspeed = data[prp.airspeed_mps.get_legal_name()]
 
     throttle_cmd = data[prp.throttle_cmd.get_legal_name()]
     elevator_cmd = data[prp.elevator_cmd.get_legal_name()]
     aileron_cmd = data[prp.aileron_cmd.get_legal_name()]
 
-    airspeed_ref = data[prp.target_airspeed_kts.get_legal_name()]
+    airspeed_ref = data[prp.target_airspeed_mps.get_legal_name()]
     roll_ref = data[prp.target_roll_rad.get_legal_name()]
     pitch_ref = data[prp.target_pitch_rad.get_legal_name()]
 
@@ -45,7 +45,7 @@ def animate(i, axis, args) -> None:
     tsteps = np.linspace(0, num_steps-1, num=num_steps)
     
     alt_plt ,= axis[0, 0].plot(tsteps, alt, label='altitude')
-    axis[0, 0].set_title("altitude control [ft]")
+    axis[0, 0].set_title("altitude control [m]")
     axis[0, 0].legend()
 
     course_plt, = axis[0, 1].plot(tsteps, heading, label='course')
@@ -74,7 +74,7 @@ def animate(i, axis, args) -> None:
 
     airspeed_plt, = axis[1, 2].plot(tsteps, airspeed, label='airspeed')
     airspeed_ref_plt, = axis[1, 2].plot(tsteps, airspeed_ref, label='airspeed_ref')
-    axis[1, 2].set_title('airspeed control [kts]')
+    axis[1, 2].set_title('airspeed control [m/s]')
     axis[1, 2].legend()
 
     aileron_cmd_plt, = axis[2, 0].plot(tsteps, aileron_cmd, label='aileron_cmd')
