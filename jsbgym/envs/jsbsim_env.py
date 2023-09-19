@@ -1,5 +1,6 @@
 import gymnasium as gym
 import numpy as np
+import os
 from math import ceil
 
 from typing import Dict, Type, Tuple
@@ -79,6 +80,9 @@ class JSBSimEnv(gym.Env):
 
         max_episode_steps: int = ceil(self.episode_length_s * self.fdm_frequency)
         self.steps_left: BoundedProperty = BoundedProperty("info/steps_left", "steps remaining in the current episode", 0, max_episode_steps)
+
+        if not os.path.exists('data'):
+            os.makedirs('data')
 
 
     def reset(self, seed: int=None, options: dict=None) -> None:
