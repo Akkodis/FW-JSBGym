@@ -174,6 +174,7 @@ if __name__ == "__main__":
     torch.backends.cudnn.deterministic = args.torch_deterministic
 
     device = torch.device("cuda" if torch.cuda.is_available() and args.cuda else "cpu")
+    print(f"Device: {device}")
 
     # env setup
     envs = gym.vector.SyncVectorEnv(
@@ -214,9 +215,6 @@ if __name__ == "__main__":
 
             # ALGO LOGIC: action logic
             with torch.no_grad():
-                if np.isnan(next_obs).any():
-                    print("NAN OBSERVATION")
-                    exit()
                 action, logprob, _, value = agent.get_action_and_value(next_obs)
                 values[step] = value.flatten()
             actions[step] = action
@@ -334,6 +332,8 @@ if __name__ == "__main__":
         writer.add_scalar("losses/explained_variance", explained_var, global_step)
         print("SPS:", int(global_step / (time.time() - start_time)))
         writer.add_scalar("charts/SPS", int(global_step / (time.time() - start_time)), global_step)
+
+    torch.save(agent.state_dict(), f"models/{run_name}.pt") 
 
     envs.close()
     writer.close()
