@@ -10,6 +10,7 @@ a.py
 jsbgym/fdm_descriptions/aircraft/*
 jsbgym/fdm_descriptions/engine/*
 runs/
+jsbgym/models/train/*
 
 # but except those folders and those files
 !jsbgym/fdm_descriptions/aircraft/x8/
