@@ -52,6 +52,7 @@ class AttitudeControlTaskEnv(JSBSimEnv):
         prp.roll_rad, prp.pitch_rad, prp.heading_rad, # attitude
         prp.p_radps, prp.q_radps, prp.r_radps, prp.airspeed_mps, # angular rates and airspeed
         prp.throttle_cmd, prp.elevator_cmd, prp.aileron_cmd, # control surface commands
+        prp.reward_total, prp.reward_airspeed, prp.reward_roll, prp.reward_pitch, prp.reward_actvar # rewards
     ) + target_state_vars # target state variables
 
     error_vars: Tuple[BoundedProperty, ...] = (
@@ -138,6 +139,9 @@ class AttitudeControlTaskEnv(JSBSimEnv):
         # reset observation and return the first observation of the episode
         self.observation_deque.clear()
         obs: np.ndarray = self.observe_state(first_obs=True)
+
+        # compute 1st step reward (only to populate the properties for appropriate logging), not used in the optim
+        self.reward() 
 
         self.render() # render the simulation
         return obs, {}
@@ -342,8 +346,8 @@ class AttitudeControlTaskEnv(JSBSimEnv):
         """
         r_w: dict = self.task_cfg["reward_weights"] # reward weights for each reward component
         r_roll = np.clip(abs(self.sim[prp.roll_err]) / r_w["roll"]["scaling"], r_w["roll"]["clip_min"], r_w["roll"]["clip_max"]) # roll reward component
-        r_pitch = np.clip(abs(self.sim[prp.roll_err]) / r_w["pitch"]["scaling"], r_w["pitch"]["clip_min"], r_w["pitch"]["clip_max"]) # pitch reward component
-        r_airspeed = np.clip(abs(self.sim[prp.roll_err]) / r_w["Va"]["scaling"], r_w["Va"]["clip_min"], r_w["Va"]["clip_max"]) # airspeed reward component
+        r_pitch = np.clip(abs(self.sim[prp.pitch_err]) / r_w["pitch"]["scaling"], r_w["pitch"]["clip_min"], r_w["pitch"]["clip_max"]) # pitch reward component
+        r_airspeed = np.clip(abs(self.sim[prp.airspeed_err]) / r_w["Va"]["scaling"], r_w["Va"]["clip_min"], r_w["Va"]["clip_max"]) # airspeed reward component
 
         # computing the cost attached to changing actuator setpoints to promote smooth non-oscillatory actuator behaviour
         diff: float = 0.0 # sum over all diffs between fcs commands of 2 consecutive timesteps
@@ -356,4 +360,15 @@ class AttitudeControlTaskEnv(JSBSimEnv):
                 diff += abs(self.action_hist[t][fcs] - self.action_hist[t-1][fcs]) # sum over all history of the command difference between t and t-1 for the same actuator
             r_actvar_raw += diff # sum those cmd diffs over all actuators
         r_actvar = np.clip(r_actvar_raw / r_w["act_var"]["scaling"], r_w["act_var"]["clip_min"], r_w["act_var"]["clip_max"]) # flight control surface reward component
-        return -(r_roll + r_pitch + r_airspeed + r_actvar) # return the negative sum of all reward components
+
+        # return the negative sum of all reward components
+        r_total = -(r_roll + r_pitch + r_airspeed + r_actvar) 
+
+        # populate properties
+        self.sim[prp.reward_roll] = r_roll
+        self.sim[prp.reward_pitch] = r_pitch
+        self.sim[prp.reward_airspeed] = r_airspeed
+        self.sim[prp.reward_actvar] = r_actvar
+        self.sim[prp.reward_total] = r_total
+
+        return r_total

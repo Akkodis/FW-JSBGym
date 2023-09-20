@@ -143,3 +143,10 @@ target_airspeed_kts = BoundedProperty("target/airspeed", "desired airspeed", flo
 target_airspeed_mps = BoundedProperty("target/airspeed", "desired airspeed", 0, 42)
 target_roll_rad = BoundedProperty("target/roll-rad", "desired roll angle [rad]", -math.pi, math.pi)
 target_pitch_rad = BoundedProperty("target/pitch-rad", "desired pitch angle [rad]", -math.pi, math.pi)
+
+# reward properties
+reward_total = BoundedProperty("reward/total", "total reward", float('-inf'), 0)
+reward_roll = BoundedProperty("reward/roll", "roll reward", float('-inf'), 0)
+reward_pitch = BoundedProperty("reward/pitch", "pitch reward", float('-inf'), 0)
+reward_airspeed = BoundedProperty("reward/airspeed", "airspeed reward", float('-inf'), 0)
+reward_actvar = BoundedProperty("reward/actvar", "action variation reward", float('-inf'), 0)
