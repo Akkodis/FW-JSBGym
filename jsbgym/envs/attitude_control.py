@@ -33,8 +33,8 @@ class AttitudeControlTaskEnv(JSBSimEnv):
         prp.airspeed_mps, # airspeed
         prp.roll_rad, prp.pitch_rad, # attitude
         prp.p_radps, prp.q_radps, prp.r_radps, # angular rates
-        prp.target_airspeed_mps, prp.target_roll_rad, prp.target_pitch_rad, # targets
-        prp.airspeed_err, prp.roll_err, prp.pitch_err # errors
+        prp.airspeed_err, prp.roll_err, prp.pitch_err, # errors
+        prp.elevator_avg, prp.aileron_avg, prp.throttle_avg, # average of past 5 fcs commands
     )
 
     action_vars: Tuple[BoundedProperty, ...] = (
@@ -84,6 +84,7 @@ class AttitudeControlTaskEnv(JSBSimEnv):
 
         # observation history size
         self.obs_history_size: int = self.task_cfg["obs_history_size"]
+        self.act_history_size: int = self.task_cfg["act_history_size"]
 
         # declaring state NamedTuple structure
         self.State: NamedTuple = namedtuple('State', [state_var.get_legal_name() for state_var in self.state_vars])
@@ -93,8 +94,8 @@ class AttitudeControlTaskEnv(JSBSimEnv):
         self.observation_deque: Deque[np.ndarray] = deque(maxlen=self.obs_history_size) # deque of 1D nparrays containing self.State
         self.observation: np.ndarray = None # observation of the agent in a numpy array format
 
-        # declaring action history. Deque with a maximum length of obs_history_size (action history size = observation history size)
-        self.action_hist: Deque[np.ndarray] = deque(maxlen=self.obs_history_size) # action type: np.ndarray
+        # declaring action history. Deque with a maximum length of act_history_size
+        self.action_hist: Deque[np.ndarray] = deque(maxlen=self.act_history_size) # action type: np.ndarray
 
         # declaring target state NamedTuple structure
         self.TargetState: NamedTuple = namedtuple('TargetState', [f"target_{t_state_var.get_legal_name()}" for t_state_var in self.target_state_vars])
@@ -134,6 +135,7 @@ class AttitudeControlTaskEnv(JSBSimEnv):
         self.reset_target_state() # reset task target state
         self.update_errors() # reset task errors
         self.update_action_history() # reset action history
+        self.update_action_avg() # reset action avg
         self.sim[self.steps_left] = self.steps_left.max # reset the number of steps left in the episode to the max
 
         # reset observation and return the first observation of the episode
@@ -141,7 +143,7 @@ class AttitudeControlTaskEnv(JSBSimEnv):
         obs: np.ndarray = self.observe_state(first_obs=True)
 
         # compute 1st step reward (only to populate the properties for appropriate logging), not used in the optim
-        self.reward() 
+        # self.reward() 
 
         self.render() # render the simulation
         return obs, {}
@@ -164,9 +166,12 @@ class AttitudeControlTaskEnv(JSBSimEnv):
             # convert the airspeed from kts to m/s at each sim step in the jsbsim properties
             self.convert_airspeed_kts2mps()
             # write the telemetry to a log csv file every fdm step (as opposed to every agent step -> to put out of this for loop)
-            self.flight_data_logging()
+            # self.flight_data_logging()
             # decrement the steps left
             self.sim[self.steps_left] -= 1
+
+        # update the action_avg
+        self.update_action_avg()
 
         # get the state
         obs: np.ndarray = self.observe_state()
@@ -175,38 +180,51 @@ class AttitudeControlTaskEnv(JSBSimEnv):
         self.update_errors()
 
         # get the reward
-        reward: float = self.reward()
+        self.reward: float = self.get_reward_bohn()
+
+        # check if the episode is terminated modifies the reward with extra penalty if necessary
+        terminated, crashed, self.reward,  = self.is_terminated(self.reward)
+        truncated, episode_end, out_of_bounds, self.reward = self.is_truncated(self.reward)
+
+
+        self.flight_data_logging()
 
         # info dict for debugging and misc infos
         info: Dict = {"steps_left": self.sim[self.steps_left],
-                      "reward": reward}
+                      "non_norm_obs": self.observation,
+                      "non_norm_reward": self.reward,
+                      "episode_end": episode_end,
+                      "out_of_bounds": out_of_bounds,
+                      "crashed": crashed}
 
-        return obs, reward, self.is_truncated(), self.is_terminated(), info
+        return obs, self.reward, truncated, terminated, info
 
 
-    def is_terminated(self) -> bool:
+    def is_terminated(self, reward) -> Tuple[bool, bool, float]:
         """
             Check if the episode is terminated, i.e. if the agent reaches the target state or crashes.
         """
         is_crashed: bool = self.sim[prp.altitude_sl_m] <= 0 # check collision with ground
+        if is_crashed:
+            reward -= 200 # penalize crash with -10 reward
 
-        is_target_reached: bool = False
-        np_err: np.ndarray = np.array(self.errors[:])
-        np_err_th: np.ndarray = np.array(self.err_success_th[:])
+        # is_target_reached: bool = False
+        # np_err: np.ndarray = np.array(self.errors[:])
+        # np_err_th: np.ndarray = np.array(self.err_success_th[:])
         # every timestep the agent has to reach the target state for 5 seconds, increment reached_tsteps
-        if np.all(np_err < np_err_th):
-            self.reached_tsteps += 1
-        else: # else reset reached_tsteps
-            self.reached_tsteps = 0
+        # if np.all(np_err < np_err_th):
+        #     self.reached_tsteps += 1
+        # else: # else reset reached_tsteps
+        #     self.reached_tsteps = 0
 
-        # if the agent has reached the target state for more than success_time seconds, return True
-        if self.reached_tsteps >= self.success_time_s * (1/self.sim.fdm_dt):
-            is_target_reached = True
+        # # if the agent has reached the target state for more than success_time seconds, return True
+        # if self.reached_tsteps >= self.success_time_s * (1/self.sim.fdm_dt):
+        #     is_target_reached = True
 
-        return is_crashed or is_target_reached
+        return is_crashed, is_crashed, reward
 
 
-    def is_truncated(self) -> bool:
+    def is_truncated(self, reward) -> Tuple[bool, bool, bool, float]:
         """
             Check if the episode is truncated, i.e. if the episode reaches the maximum number of steps.
 
@@ -214,8 +232,12 @@ class AttitudeControlTaskEnv(JSBSimEnv):
                 - `sim`: the simulation object containing the JSBSim FDM
         """
         episode_end: bool = self.sim[self.steps_left] <= 0 # if the episode is done, return True
-        obs_out_of_bounds: bool = self.observation not in self.observation_space # if the observation contains NaNs (due to JSBSim diverging), return True
-        return episode_end or obs_out_of_bounds
+        obs_out_of_bounds: bool = self.observation not in self.observation_space # if the observation contains out of bounds obs (due to JSBSim diverging), return True
+        if obs_out_of_bounds:
+            reward -= 200
+
+        # print((self.observation <= self.observation_space.high) & (self.observation >= self.observation_space.low))
+        return episode_end or obs_out_of_bounds, episode_end, obs_out_of_bounds, reward
 
 
     def update_action_history(self, action: np.ndarray=None) -> None:
@@ -302,6 +324,15 @@ class AttitudeControlTaskEnv(JSBSimEnv):
         self.errors = self.Errors(*[self.sim[prop] for prop in self.error_vars])
 
 
+    def update_action_avg(self) -> None:
+        """
+            Update the average of the past N commands (elevator, aileron, throttle)
+        """
+        self.sim[prp.elevator_avg] = np.mean(np.array(self.action_hist)[:, 0])
+        self.sim[prp.aileron_avg] = np.mean(np.array(self.action_hist)[:, 1])
+        self.sim[prp.throttle_avg] = np.mean(np.array(self.action_hist)[:, 2])
+
+
     def set_target_state(self, target_airspeed_mps: float, target_roll_rad: float, target_pitch_rad: float) -> None:
         """
             Set the target state of the aircraft, i.e. the target state variables defined in the `target_state_vars` tuple.
@@ -338,7 +369,7 @@ class AttitudeControlTaskEnv(JSBSimEnv):
             csv_writer.writerow(info)
 
 
-    def reward(self) -> float:
+    def get_reward(self) -> float:
         """
             Calculate the reward for the current step.\\
             Returns:
@@ -363,6 +394,30 @@ class AttitudeControlTaskEnv(JSBSimEnv):
 
         # return the negative sum of all reward components
         r_total = -(r_roll + r_pitch + r_airspeed + r_actvar) 
+
+        # populate properties
+        self.sim[prp.reward_roll] = r_roll
+        self.sim[prp.reward_pitch] = r_pitch
+        self.sim[prp.reward_airspeed] = r_airspeed
+        self.sim[prp.reward_actvar] = r_actvar
+        self.sim[prp.reward_total] = r_total
+
+        return r_total
+
+
+    def get_reward_bohn(self) -> float:
+        r_w: dict = self.task_cfg["reward_weights"] # reward weights for each reward component
+        r_roll = np.clip(abs(self.sim[prp.roll_err]) / r_w["roll"]["scaling"], r_w["roll"]["clip_min"], r_w["roll"].get("clip_max", None)) # roll reward component
+        r_pitch = np.clip(abs(self.sim[prp.pitch_err]) / r_w["pitch"]["scaling"], r_w["pitch"]["clip_min"], r_w["pitch"].get("clip_max", None)) # pitch reward component
+        r_airspeed = np.clip(abs(self.sim[prp.airspeed_err]) / r_w["Va"]["scaling"], r_w["Va"]["clip_min"], r_w["Va"].get("clip_max", None)) # airspeed reward component
+        
+        np_action_hist: np.ndarray = np.array(self.action_hist)
+        deltas: np.ndarray = np.diff(np_action_hist[-self.obs_history_size:], axis=0)
+        r_actvar_raw = np.sum(np.abs(deltas))
+        r_actvar = np.clip(r_actvar_raw / r_w["act_var"]["scaling"], r_w["act_var"]["clip_min"], r_w["act_var"].get("clip_max", None)) # flight control surface reward component
+
+        # return the negative sum of all reward components
+        r_total: float = -(r_roll + r_pitch + r_airspeed + r_actvar) 
 
         # populate properties
         self.sim[prp.reward_roll] = r_roll
