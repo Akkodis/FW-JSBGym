@@ -149,6 +149,7 @@ class Agent(nn.Module):
 if __name__ == "__main__":
     args = parse_args()
     run_name = f"{args.env_id}__{args.exp_name}__{args.seed}__{int(time.time())}"
+    run_name = f"ppo__{args.seed}__{int(time.time())}"
     if args.track:
         import wandb
 
@@ -174,7 +175,7 @@ if __name__ == "__main__":
     torch.backends.cudnn.deterministic = args.torch_deterministic
 
     device = torch.device("cuda" if torch.cuda.is_available() and args.cuda else "cpu")
-    print(f"Device: {device}")
+    print(f"**** Using Device: {device} ****")
 
     # env setup
     envs = gym.vector.SyncVectorEnv(
@@ -234,7 +235,8 @@ if __name__ == "__main__":
                 # Skip the envs that are not done
                 if info is None:
                     continue
-                print(f"global_step={global_step}, episodic_return={info['episode']['r']}")
+                print(f"global_step={global_step}, episodic_return={info['episode']['r']}, episodic_length={info['episode']['l']} \n" + \
+                      f"episode_end={info['final_info']['episode_end']}, out_of_bounds={info['final_info']['out_of_bounds']}, crashed={info['final_info']['crashed']}\n********")
                 writer.add_scalar("charts/episodic_return", info["episode"]["r"], global_step)
                 writer.add_scalar("charts/episodic_length", info["episode"]["l"], global_step)
 
@@ -333,7 +335,7 @@ if __name__ == "__main__":
         print("SPS:", int(global_step / (time.time() - start_time)))
         writer.add_scalar("charts/SPS", int(global_step / (time.time() - start_time)), global_step)
 
-    torch.save(agent.state_dict(), f"models/{run_name}.pt") 
+    torch.save(agent.state_dict(), f"models/train/{run_name}.pt") 
 
     envs.close()
     writer.close()
