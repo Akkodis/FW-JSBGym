@@ -81,6 +81,8 @@ class JSBSimEnv(gym.Env):
         max_episode_steps: int = ceil(self.episode_length_s * self.fdm_frequency)
         self.steps_left: BoundedProperty = BoundedProperty("info/steps_left", "steps remaining in the current episode", 0, max_episode_steps)
 
+        self.reward = None
+
         if not os.path.exists('data'):
             os.makedirs('data')
 
@@ -98,6 +100,7 @@ class JSBSimEnv(gym.Env):
         if self.sim:
             # reintialize the simulation
             self.sim.fdm.reset_to_initial_conditions(0)
+            self.sim.fdm.set_debug_level(0) # do not print debug messages on every reset()
         if self.sim is None:
             # initialize the simulation
             self.sim = Simulation(fdm_frequency =self.fdm_frequency,
