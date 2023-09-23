@@ -51,9 +51,9 @@ w_fps = BoundedProperty('velocities/w-fps', 'body frame z-axis velocity [ft/s]',
 v_north_fps = BoundedProperty('velocities/v-north-fps', 'velocity true north [ft/s]', float('-inf'), float('+inf'))
 v_east_fps = BoundedProperty('velocities/v-east-fps', 'velocity east [ft/s]', float('-inf'), float('+inf'))
 v_down_fps = BoundedProperty('velocities/v-down-fps', 'velocity downwards [ft/s]', float('-inf'), float('+inf'))
-p_radps = BoundedProperty('velocities/p-rad_sec', 'roll rate [rad/s]', -10, 10)
-q_radps = BoundedProperty('velocities/q-rad_sec', 'pitch rate [rad/s]', -10, 10)
-r_radps = BoundedProperty('velocities/r-rad_sec', 'yaw rate [rad/s]', -10, 10)
+p_radps = BoundedProperty('velocities/p-rad_sec', 'roll rate [rad/s]', -20, 20)
+q_radps = BoundedProperty('velocities/q-rad_sec', 'pitch rate [rad/s]', -20, 20)
+r_radps = BoundedProperty('velocities/r-rad_sec', 'yaw rate [rad/s]', -20, 20)
 altitude_rate_fps = Property('velocities/h-dot-fps', 'Rate of altitude change [ft/s]')
 airspeed_fps = BoundedProperty('velocities/vt-fps', 'True aircraft airspeed [ft/s]', float('-inf'), float('+inf'))
 airspeed_kts = BoundedProperty('velocities/vtrue-kts', 'True aircraft airspeed [kts]', float('-inf'), float('+inf'))
@@ -143,6 +143,11 @@ target_airspeed_kts = BoundedProperty("target/airspeed", "desired airspeed", flo
 target_airspeed_mps = BoundedProperty("target/airspeed", "desired airspeed", 0, 42)
 target_roll_rad = BoundedProperty("target/roll-rad", "desired roll angle [rad]", -math.pi, math.pi)
 target_pitch_rad = BoundedProperty("target/pitch-rad", "desired pitch angle [rad]", -math.pi, math.pi)
+
+# action avg over last n steps
+aileron_avg = BoundedProperty("fcs/aileron_avg", "aileron action average", aileron_cmd.min, aileron_cmd.max)
+elevator_avg = BoundedProperty("fcs/elevator_avg", "elevator action average", elevator_cmd.min, elevator_cmd.max)
+throttle_avg = BoundedProperty("fcs/throttle_avg", "throttle action average", throttle_cmd.min, throttle_cmd.max)
 
 # reward properties
 reward_total = BoundedProperty("reward/total", "total reward", float('-inf'), 0)
