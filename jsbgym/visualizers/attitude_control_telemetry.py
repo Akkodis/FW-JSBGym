@@ -36,6 +36,12 @@ def animate(i, axis, args) -> None:
     roll_ref = data[prp.target_roll_rad.get_legal_name()]
     pitch_ref = data[prp.target_pitch_rad.get_legal_name()]
 
+    r_total = data[prp.reward_total.get_legal_name()]
+    r_roll = data[prp.reward_roll.get_legal_name()]
+    r_pitch = data[prp.reward_pitch.get_legal_name()]
+    r_airspeed = data[prp.reward_airspeed.get_legal_name()]
+    r_actvar = data[prp.reward_actvar.get_legal_name()]
+
 
     for(dim_1) in axis:
         for(dim_2) in dim_1:
@@ -88,8 +94,15 @@ def animate(i, axis, args) -> None:
     yaw_rate_plt, = axis[2, 1].plot(tsteps, yaw_rate, label='yaw_rate')
     axis[2, 1].set_title('angular velocities [rad/s]')
     axis[2, 1].legend()
-
-    ax[2, 2].set_axis_off()
+    
+    r_total_plt, = axis[2, 2].plot(tsteps, r_total, label='r_total')
+    r_roll_plt, = axis[2, 2].plot(tsteps, r_roll, label='r_roll')
+    r_pitch_plt, = axis[2, 2].plot(tsteps, r_pitch, label='r_pitch')
+    r_airspeed_plt, = axis[2, 2].plot(tsteps, r_airspeed, label='r_airspeed')
+    r_actvar_plt, = axis[2, 2].plot(tsteps, r_actvar, label='r_actvar')
+    axis[2, 2].set_title('rewards')
+    axis[2, 2].legend()
+    # ax[2, 2].set_axis_off()
 
 
 # parse command line arguments
