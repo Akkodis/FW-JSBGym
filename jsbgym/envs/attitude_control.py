@@ -173,19 +173,18 @@ class AttitudeControlTaskEnv(JSBSimEnv):
         # update the action_avg
         self.update_action_avg()
 
-        # get the state
-        obs: np.ndarray = self.observe_state()
-
         # update the errors
         self.update_errors()
 
+        # get the state
+        obs: np.ndarray = self.observe_state()
+
         # get the reward
-        self.reward: float = self.get_reward_bohn()
+        self.reward: float = self.get_reward_bohn(action)
 
         # check if the episode is terminated modifies the reward with extra penalty if necessary
-        terminated, crashed, self.reward,  = self.is_terminated(self.reward)
-        truncated, episode_end, out_of_bounds, self.reward = self.is_truncated(self.reward)
-
+        terminated = self.is_terminated()
+        truncated, episode_end, out_of_bounds = self.is_truncated()
 
         self.flight_data_logging()
 
@@ -194,19 +193,21 @@ class AttitudeControlTaskEnv(JSBSimEnv):
                       "non_norm_obs": self.observation,
                       "non_norm_reward": self.reward,
                       "episode_end": episode_end,
-                      "out_of_bounds": out_of_bounds,
-                      "crashed": crashed}
+                      "out_of_bounds": out_of_bounds
+                    #   "crashed": crashed
+                    }
 
         return obs, self.reward, truncated, terminated, info
 
 
-    def is_terminated(self, reward) -> Tuple[bool, bool, float]:
+    def is_terminated(self) -> Tuple[bool]:
         """
             Check if the episode is terminated, i.e. if the agent reaches the target state or crashes.
+            Returns: False for now because no crash detection
         """
-        is_crashed: bool = self.sim[prp.altitude_sl_m] <= 0 # check collision with ground
-        if is_crashed:
-            reward -= 200 # penalize crash with -10 reward
+        # is_crashed: bool = self.sim[prp.altitude_sl_m] <= 0 # check collision with ground TODO: Remove
+        # if is_crashed:
+        #     reward -= 200 # penalize crash with -10 reward
 
         # is_target_reached: bool = False
         # np_err: np.ndarray = np.array(self.errors[:])
@@ -221,10 +222,10 @@ class AttitudeControlTaskEnv(JSBSimEnv):
         # if self.reached_tsteps >= self.success_time_s * (1/self.sim.fdm_dt):
         #     is_target_reached = True
 
-        return is_crashed, is_crashed, reward
+        return False
 
 
-    def is_truncated(self, reward) -> Tuple[bool, bool, bool, float]:
+    def is_truncated(self) -> Tuple[bool, bool, bool]:
         """
             Check if the episode is truncated, i.e. if the episode reaches the maximum number of steps.
 
@@ -233,11 +234,11 @@ class AttitudeControlTaskEnv(JSBSimEnv):
         """
         episode_end: bool = self.sim[self.steps_left] <= 0 # if the episode is done, return True
         obs_out_of_bounds: bool = self.observation not in self.observation_space # if the observation contains out of bounds obs (due to JSBSim diverging), return True
-        if obs_out_of_bounds:
-            reward -= 200
+        # if obs_out_of_bounds:
+        #     reward -= 200
 
         # print((self.observation <= self.observation_space.high) & (self.observation >= self.observation_space.low))
-        return episode_end or obs_out_of_bounds, episode_end, obs_out_of_bounds, reward
+        return episode_end or obs_out_of_bounds, episode_end, obs_out_of_bounds
 
 
     def update_action_history(self, action: np.ndarray=None) -> None:
@@ -405,25 +406,32 @@ class AttitudeControlTaskEnv(JSBSimEnv):
         return r_total
 
 
-    def get_reward_bohn(self) -> float:
+    def get_reward_bohn(self, action: np.ndarray) -> float:
         r_w: dict = self.task_cfg["reward_weights"] # reward weights for each reward component
         r_roll = np.clip(abs(self.sim[prp.roll_err]) / r_w["roll"]["scaling"], r_w["roll"]["clip_min"], r_w["roll"].get("clip_max", None)) # roll reward component
         r_pitch = np.clip(abs(self.sim[prp.pitch_err]) / r_w["pitch"]["scaling"], r_w["pitch"]["clip_min"], r_w["pitch"].get("clip_max", None)) # pitch reward component
         r_airspeed = np.clip(abs(self.sim[prp.airspeed_err]) / r_w["Va"]["scaling"], r_w["Va"]["clip_min"], r_w["Va"].get("clip_max", None)) # airspeed reward component
-        
+
+        r_act_low: np.ndarray = np.where(action < self.action_space.low, self.action_space.low - action, 0)
+        r_act_high: np.ndarray = np.where(action > self.action_space.high, action - self.action_space.high, 0)
+        r_act_bounds_raw: float = np.sum(np.abs(r_act_low) + np.sum(np.abs(r_act_high))) # doute sur le np.sum
+        r_act_bounds: float = np.clip(r_act_bounds_raw / r_w["act_bounds"]["scaling"], 0, r_w["act_bounds"].get("clip_max", None))
+
+
         np_action_hist: np.ndarray = np.array(self.action_hist)
         deltas: np.ndarray = np.diff(np_action_hist[-self.obs_history_size:], axis=0)
         r_actvar_raw = np.sum(np.abs(deltas))
         r_actvar = np.clip(r_actvar_raw / r_w["act_var"]["scaling"], r_w["act_var"]["clip_min"], r_w["act_var"].get("clip_max", None)) # flight control surface reward component
 
         # return the negative sum of all reward components
-        r_total: float = -(r_roll + r_pitch + r_airspeed + r_actvar) 
+        r_total: float = -(r_roll + r_pitch + r_airspeed + r_actvar + r_act_bounds) 
 
         # populate properties
         self.sim[prp.reward_roll] = r_roll
         self.sim[prp.reward_pitch] = r_pitch
         self.sim[prp.reward_airspeed] = r_airspeed
         self.sim[prp.reward_actvar] = r_actvar
+        self.sim[prp.reward_act_bounds] = r_act_bounds
         self.sim[prp.reward_total] = r_total
 
         return r_total

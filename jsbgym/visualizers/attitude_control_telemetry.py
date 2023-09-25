@@ -12,7 +12,8 @@ from jsbgym.utils import jsbsim_properties as prp
 
 def animate(i, axis, args) -> None:
     # data = pd.read_csv(f'{path.dirname(path.abspath(__file__))}/../data/flight_data.csv')
-    data = pd.read_csv(f'{path.dirname(path.abspath(__file__))}/../data/gym_flight_data.csv')
+    # data = pd.read_csv(f'{path.dirname(path.abspath(__file__))}/../data/gym_flight_data.csv')
+    data = pd.read_csv(f'{path.dirname(path.abspath(__file__))}/../data/test_gym_flight_data.csv')
 
     lat = data[prp.lat_gc_deg.get_legal_name()]
     lon = data[prp.lng_gc_deg.get_legal_name()]
@@ -108,6 +109,7 @@ def animate(i, axis, args) -> None:
 # parse command line arguments
 parser = ArgumentParser(description='Plotting Telemetry Data')
 parser.add_argument('--scale', action='store_true', help='True: keep aspect ratio, False: scale to fit data (for trajectory plot)')
+parser.add_argument('--csv', type=str, default='data/test_gym_flight_data.csv', help='True: keep aspect ratio, False: scale to fit data (for trajectory plot)')
 parser.add_argument('--fullscreen', action='store_true', help='True: fullscreen, False: windowed')
 args: Namespace = parser.parse_args()
 

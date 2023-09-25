@@ -1,15 +1,24 @@
+import argparse
 import gymnasium as gym
 import torch
 from jsbgym.trim.trim_point import TrimPoint
 import numpy as np
 import agents.ppo as ppo
 
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--config', type=str, required=True, help='config file')
+    parser.add_argument('--agent-model', type=str, required=True, help='agent model file name')
+    parser.add_argument('--scale', type=str, action='store', default='', help='scale plots')
+    args = parser.parse_args()
+    return args
+
 def make_env(env_id, idx, capture_video, run_name, gamma):
     def thunk():
         if capture_video:
-            env = gym.make(env_id, config_file='config/bohn_ppo.yaml', render_mode="rgb_array")
+            env = gym.make(env_id, config_file=args.config, render_mode="rgb_array")
         else:
-            env = gym.make(env_id, config_file='config/bohn_ppo.yaml', render_mode="fgear_plot")
+            env = gym.make(env_id, config_file=args.config, render_mode="plot")
         # env = gym.wrappers.FlattenObservation(env)  # deal with dm_control's Dict observation space
         env = gym.wrappers.RecordEpisodeStatistics(env)
         if capture_video:
@@ -25,28 +34,32 @@ def make_env(env_id, idx, capture_video, run_name, gamma):
 
     return thunk
 
+if __name__ == '__main__':
+    args = parse_args()
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"Using device: {device}")
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print(f"Using device: {device}")
+    # env setup
+    env = gym.vector.SyncVectorEnv(
+        [make_env('AttitudeControlTaskEnv-v0', 1, False, 'ppo_run_1', 0.99)]
+    )
 
-# env setup
-env = gym.vector.SyncVectorEnv(
-    [make_env('AttitudeControlTaskEnv-v0', 1, False, 'ppo_run_1', 0.99)]
-)
+    obs, _ = env.reset(seed=1)
+    trim_point: TrimPoint = TrimPoint(aircraft_id='x8')
 
-obs, _ = env.reset(seed=1)
-trim_point: TrimPoint = TrimPoint(aircraft_id='x8')
+    ppo_agent = ppo.Agent(envs=env)
+    ppo_agent.load_state_dict(torch.load(args.agent_model, map_location=device))
+    ppo_agent.eval()
+    episode_reward = 0
 
-ppo_agent = ppo.Agent(envs=env)
-ppo_agent.load_state_dict(torch.load('models/AttitudeControlTaskEnv-v0__ppo_continuous_action__1__1695119387.pt', map_location=device))
-ppo_agent.eval()
+    for _ in range(2000):
+        # action = env.action_space.sample()
+        # action = np.array([trim_point.elevator, trim_point.aileron, trim_point.throttle])
+        action = ppo_agent.get_action_and_value(torch.from_numpy(obs))[0].detach().numpy()
+        obs, reward, truncated, terminated, info = env.step(action)
+        if not(terminated or truncated):
+            episode_reward += info['non_norm_reward']
 
-for _ in range(1200):
-    # action = env.action_space.sample()
-    # action = np.array([trim_point.elevator, trim_point.aileron, trim_point.throttle])
-    action = ppo_agent.get_action_and_value(torch.from_numpy(obs))[0].detach().numpy()
-    obs, reward, truncated, terminated, info = env.step(action)
-    if terminated or truncated:
-        obs, _ = env.reset(seed=1)
+    print(f"Episode reward: {episode_reward}")
 
-env.close()
+    env.close()
