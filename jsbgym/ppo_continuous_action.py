@@ -3,6 +3,7 @@ import argparse
 import os
 import random
 import time
+from time import strftime, localtime
 from distutils.util import strtobool
 
 import gymnasium as gym
@@ -149,7 +150,8 @@ class Agent(nn.Module):
 if __name__ == "__main__":
     args = parse_args()
     # run_name = f"{args.env_id}__{args.exp_name}__{args.seed}__{int(time.time())}"
-    run_name = f"ppo__{args.exp_name}_{args.seed}_{int(time.time())}"
+    # run_name = f"ppo__{args.exp_name}_{args.seed}_{int(time.time())}"
+    run_name = f"ppo__{args.exp_name}_{args.seed}_{strftime('%d-%m_%H:%M:%S', localtime())}"
     if args.track:
         import wandb
 
