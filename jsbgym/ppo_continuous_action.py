@@ -152,6 +152,11 @@ if __name__ == "__main__":
     # run_name = f"{args.env_id}__{args.exp_name}__{args.seed}__{int(time.time())}"
     # run_name = f"ppo__{args.exp_name}_{args.seed}_{int(time.time())}"
     run_name = f"ppo__{args.exp_name}_{args.seed}_{strftime('%d-%m_%H:%M:%S', localtime())}"
+
+    save_path: str = "models/train/"
+    if not os.path.exists(save_path):
+        os.makedirs(save_path)
+
     if args.track:
 
         wandb.init(
@@ -341,7 +346,7 @@ if __name__ == "__main__":
         print("SPS:", int(global_step / (time.time() - start_time)))
         writer.add_scalar("charts/SPS", int(global_step / (time.time() - start_time)), global_step)
 
-    torch.save(agent.state_dict(), f"models/train/{run_name}.pt") 
+    torch.save(agent.state_dict(), f"{save_path}{run_name}.pt") 
 
     envs.close()
     writer.close()
