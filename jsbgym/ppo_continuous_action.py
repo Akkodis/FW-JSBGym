@@ -6,6 +6,7 @@ import time
 from time import strftime, localtime
 from distutils.util import strtobool
 
+import wandb
 import gymnasium as gym
 import jsbgym
 import numpy as np
@@ -29,7 +30,7 @@ def parse_args():
         help="if toggled, cuda will be enabled by default")
     parser.add_argument("--track", type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True,
         help="if toggled, this experiment will be tracked with Weights and Biases")
-    parser.add_argument("--wandb-project-name", type=str, default="cleanRL",
+    parser.add_argument("--wandb-project-name", type=str, default="ppo_uav",
         help="the wandb's project name")
     parser.add_argument("--wandb-entity", type=str, default=None,
         help="the entity (team) of wandb's project")
@@ -94,7 +95,6 @@ def make_env(env_id, idx, capture_video, run_name, gamma):
         env = gym.wrappers.ClipAction(env)
         env = gym.wrappers.NormalizeObservation(env)
         env = gym.wrappers.TransformObservation(env, lambda obs: np.clip(obs, -10, 10))
-        # env = gym.wrappers.TransformObservation(env, lambda obs: np.expand_dims(obs, axis=0))
         env = gym.wrappers.NormalizeReward(env, gamma=gamma)
         env = gym.wrappers.TransformReward(env, lambda reward: np.clip(reward, -10, 10))
         return env
@@ -153,7 +153,6 @@ if __name__ == "__main__":
     # run_name = f"ppo__{args.exp_name}_{args.seed}_{int(time.time())}"
     run_name = f"ppo__{args.exp_name}_{args.seed}_{strftime('%d-%m_%H:%M:%S', localtime())}"
     if args.track:
-        import wandb
 
         wandb.init(
             project=args.wandb_project_name,
@@ -164,6 +163,10 @@ if __name__ == "__main__":
             monitor_gym=True,
             save_code=True,
         )
+        wandb.define_metric("global_step")
+        wandb.define_metric("charts/*", step_metric="global_step")
+        wandb.define_metric("losses/*", step_metric="global_step")
+
     writer = SummaryWriter(f"runs/{run_name}")
     writer.add_text(
         "hyperparameters",
@@ -184,7 +187,6 @@ if __name__ == "__main__":
         [make_env(args.env_id, i, args.capture_video, run_name, args.gamma) for i in range(args.num_envs)]
     )
     assert isinstance(envs.single_action_space, gym.spaces.Box), "only continuous action space is supported"
-
     agent = Agent(envs).to(device)
     optimizer = optim.Adam(agent.parameters(), lr=args.learning_rate, eps=1e-5)
 
@@ -193,7 +195,6 @@ if __name__ == "__main__":
     actions = torch.zeros((args.num_steps, args.num_envs) + envs.single_action_space.shape).to(device)
     logprobs = torch.zeros((args.num_steps, args.num_envs)).to(device)
     rewards = torch.zeros((args.num_steps, args.num_envs)).to(device)
-    # dones = torch.zeros((args.num_steps, args.num_envs)).to(device)
     terminateds = torch.zeros((args.num_steps, args.num_envs)).to(device)
     truncateds = torch.zeros((args.num_steps, args.num_envs)).to(device)
     values = torch.zeros((args.num_steps, args.num_envs)).to(device)
@@ -204,7 +205,6 @@ if __name__ == "__main__":
     next_obs, _ = envs.reset(seed=args.seed)
     next_obs = torch.Tensor(next_obs).to(device)
     next_terminated = torch.zeros(args.num_envs).to(device)
-    # next_done = torch.zeros(args.num_envs).to(device)
     num_updates = args.total_timesteps // args.batch_size
 
     for update in range(1, num_updates + 1):
@@ -215,6 +215,7 @@ if __name__ == "__main__":
             optimizer.param_groups[0]["lr"] = lrnow
 
         for step in range(0, args.num_steps):
+            wandb.log({"global_step": global_step})
             global_step += 1 * args.num_envs
             obs[step] = next_obs
             terminateds[step] = next_terminated
@@ -229,7 +230,6 @@ if __name__ == "__main__":
             # TRY NOT TO MODIFY: execute the game and log data.
             next_obs, reward, terminated, truncated, infos = envs.step(action.cpu().numpy())
             truncateds[step] = torch.Tensor(truncated).to(device)
-            # done = np.logical_or(terminated, truncated)
             rewards[step] = torch.tensor(reward).to(device).view(-1)
             next_obs, next_terminated = torch.Tensor(next_obs).to(device), torch.Tensor(terminated).to(device)
 
