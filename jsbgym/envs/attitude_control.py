@@ -197,7 +197,7 @@ class AttitudeControlTaskEnv(JSBSimEnv):
                     #   "crashed": crashed
                     }
 
-        return obs, self.reward, truncated, terminated, info
+        return obs, self.reward, terminated, truncated, info
 
 
     def is_terminated(self) -> Tuple[bool]:

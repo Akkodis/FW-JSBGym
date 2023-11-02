@@ -42,7 +42,7 @@ class Simulation(object):
                 - `trim_point`: the trim point to start the simulation in
         """
         self.fdm = jsbsim.FGFDMExec('fdm_descriptions') # provide the path of the fdm_descriptions folder containing the aircraft, engine, etc. .xml files
-        self.fdm.set_debug_level(1)
+        self.fdm.set_debug_level(0) # don't print debug info from JSBSim to avoid cluttering the output
         self.aircraft_id: str = aircraft_id
         self.fdm_dt: float = 1 / fdm_frequency
         self.viz_dt: float = None

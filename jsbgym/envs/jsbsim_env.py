@@ -100,7 +100,6 @@ class JSBSimEnv(gym.Env):
         if self.sim:
             # reintialize the simulation
             self.sim.fdm.reset_to_initial_conditions(0)
-            self.sim.fdm.set_debug_level(0) # do not print debug messages on every reset()
         if self.sim is None:
             # initialize the simulation
             self.sim = Simulation(fdm_frequency =self.fdm_frequency,
