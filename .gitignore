@@ -1,17 +1,21 @@
 .idea/
-.vscode/
+# .vscode/
 __pycache__/
 data/
+wandb/
+*.egg-info/
 JSBoutX8.csv
 a.py
 
 # ignore those folders
-fdm_descriptions/aircraft/*
-fdm_descriptions/engine/*
+jsbgym/fdm_descriptions/aircraft/*
+jsbgym/fdm_descriptions/engine/*
+runs/
+jsbgym/models/train/*
 
 # but except those folders and those files
-!fdm_descriptions/aircraft/x8/
-!fdm_descriptions/aircraft/c172p/
-!fdm_descriptions/engine/electric800W.xml
-!fdm_descriptions/engine/eng_io320.xml
-!fdm_descriptions/engine/direct.xml
+!jsbgym/fdm_descriptions/aircraft/x8/
+!jsbgym/fdm_descriptions/aircraft/c172p/
+!jsbgym/fdm_descriptions/engine/electric800W.xml
+!jsbgym/fdm_descriptions/engine/eng_io320.xml
+!jsbgym/fdm_descriptions/engine/direct.xml
