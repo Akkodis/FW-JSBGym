@@ -319,6 +319,14 @@ if __name__ == "__main__":
                     v_loss = 0.5 * ((newvalue - b_returns[mb_inds]) ** 2).mean()
 
                 entropy_loss = entropy.mean()
+
+                # CAPS losses
+                ts_loss = torch.linalg.norm(b_logprobs[mb_inds] - b_logprobs[mb_inds+1]) # temporal smoothness loss
+
+                state_approx_law = Normal(b_obs[mb_inds], 0.01)
+                sampled_states = state_approx_law.sample()
+                ss_loss = torch.linalg.norm(b_logprobs[mb_inds] - sampled_states)
+
                 loss = pg_loss - args.ent_coef * entropy_loss + v_loss * args.vf_coef
 
                 optimizer.zero_grad()
