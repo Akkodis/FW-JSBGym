@@ -25,15 +25,18 @@ AttitudeControlTaskEnv:
         roll:
             scaling: 3.2
             clip_min: 0.0
-            clip_max: 0.3
+            # clip_max: 0.3
+            clip_max: 0.333
         pitch:
             scaling: 3.2
             clip_min: 0.0
-            clip_max: 0.3
+            # clip_max: 0.3
+            clip_max: 0.333
         Va:
             scaling: 25.0
             clip_min: 0.0
-            clip_max: 0.3
+            # clip_max: 0.3
+            clip_max: 0.333
         act_var: # action variation
             scaling: 60.0
             clip_min: 0.0
