@@ -431,7 +431,7 @@ class AttitudeControlTaskEnv(JSBSimEnv):
         self.sim[prp.reward_roll] = r_roll
         self.sim[prp.reward_pitch] = r_pitch
         self.sim[prp.reward_airspeed] = r_airspeed
-        # self.sim[prp.reward_actvar] = r_actvar
+        self.sim[prp.reward_actvar] = r_actvar
         self.sim[prp.reward_act_bounds] = r_act_bounds
         self.sim[prp.reward_total] = r_total
 
