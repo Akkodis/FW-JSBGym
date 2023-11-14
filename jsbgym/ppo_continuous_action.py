@@ -5,6 +5,8 @@ import random
 import time
 from time import strftime, localtime
 from distutils.util import strtobool
+from trim.trim_point import TrimPoint
+from utils.gym_utils import MyNormalizeObservation
 
 import wandb
 import gymnasium as gym
@@ -70,6 +72,12 @@ def parse_args():
         help="coefficient of the entropy")
     parser.add_argument("--vf-coef", type=float, default=0.5,
         help="coefficient of the value function")
+    parser.add_argument("--ts-coef", type=float, default=5e-2,
+        help="coefficient of the temporal smoothing loss function")
+    parser.add_argument("--ss-coef", type=float, default=1e-1,
+        help="coefficient of the spatial smoothing loss function")
+    parser.add_argument("--pa-coef", type=float, default=1e-4,
+        help="coefficient of the spatial smoothing loss function")
     parser.add_argument("--max-grad-norm", type=float, default=0.5,
         help="the maximum norm for the gradient clipping")
     parser.add_argument("--target-kl", type=float, default=None,
@@ -87,15 +95,14 @@ def make_env(env_id, idx, capture_video, run_name, gamma):
             env = gym.make(env_id, config_file=args.config, render_mode="rgb_array")
         else:
             env = gym.make(env_id, config_file=args.config)
-        # env = gym.wrappers.FlattenObservation(env)  # deal with dm_control's Dict observation space
         env = gym.wrappers.RecordEpisodeStatistics(env)
         if capture_video:
             if idx == 0:
                 env = gym.wrappers.RecordVideo(env, f"videos/{run_name}")
         env = gym.wrappers.ClipAction(env)
-        env = gym.wrappers.NormalizeObservation(env)
-        env = gym.wrappers.TransformObservation(env, lambda obs: np.clip(obs, -10, 10))
-        env = gym.wrappers.NormalizeReward(env, gamma=gamma)
+        env = MyNormalizeObservation(env)
+        env = gym.wrappers.TransformObservation(env, lambda obs: np.clip(obs, -10, 10)) # TODO : remove ?
+        env = gym.wrappers.NormalizeReward(env, gamma=gamma) # TODO : remove ?
         env = gym.wrappers.TransformReward(env, lambda reward: np.clip(reward, -10, 10))
         return env
 
@@ -136,6 +143,9 @@ class Agent(nn.Module):
     def get_value(self, x):
         return self.critic(self.conv(x))
 
+    def get_action_std(self):
+        return torch.exp(self.actor_logstd.expand_as(torch.zeros(1, np.prod(envs.single_action_space.shape))))
+
     def get_action_and_value(self, x, action=None):
         conv_out = self.conv(x)
         action_mean = self.actor_mean(conv_out)
@@ -144,14 +154,12 @@ class Agent(nn.Module):
         probs = Normal(action_mean, action_std)
         if action is None:
             action = probs.sample()
-        return action, probs.log_prob(action).sum(1), probs.entropy().sum(1), self.critic(conv_out)
+        return action, action_mean, probs.log_prob(action).sum(1), probs.entropy().sum(1), self.critic(conv_out)
 
 
 if __name__ == "__main__":
     args = parse_args()
-    # run_name = f"{args.env_id}__{args.exp_name}__{args.seed}__{int(time.time())}"
-    # run_name = f"ppo__{args.exp_name}_{args.seed}_{int(time.time())}"
-    run_name = f"ppo__{args.exp_name}_{args.seed}_{strftime('%d-%m_%H:%M:%S', localtime())}"
+    run_name = f"ppo_{args.exp_name}_{args.seed}_{strftime('%d-%m_%H:%M:%S', localtime())}"
 
     save_path: str = "models/train/"
     if not os.path.exists(save_path):
@@ -194,9 +202,12 @@ if __name__ == "__main__":
     assert isinstance(envs.single_action_space, gym.spaces.Box), "only continuous action space is supported"
     agent = Agent(envs).to(device)
     optimizer = optim.Adam(agent.parameters(), lr=args.learning_rate, eps=1e-5)
+    trim_point: TrimPoint = TrimPoint(aircraft_id='x8')
+    trim_acts = torch.tensor([trim_point.elevator, trim_point.aileron, trim_point.throttle]).to(device)
 
     # ALGO Logic: Storage setup
     obs = torch.zeros((args.num_steps, args.num_envs) + envs.single_observation_space.shape).to(device)
+    obs_t1 = torch.zeros((args.num_steps, args.num_envs) + envs.single_observation_space.shape).to(device)
     actions = torch.zeros((args.num_steps, args.num_envs) + envs.single_action_space.shape).to(device)
     logprobs = torch.zeros((args.num_steps, args.num_envs)).to(device)
     rewards = torch.zeros((args.num_steps, args.num_envs)).to(device)
@@ -220,14 +231,15 @@ if __name__ == "__main__":
             optimizer.param_groups[0]["lr"] = lrnow
 
         for step in range(0, args.num_steps):
-            wandb.log({"global_step": global_step})
+            if args.track:
+                wandb.log({"global_step": global_step})
             global_step += 1 * args.num_envs
             obs[step] = next_obs
             terminateds[step] = next_terminated
 
             # ALGO LOGIC: action logic
             with torch.no_grad():
-                action, logprob, _, value = agent.get_action_and_value(next_obs)
+                action, action_mean, logprob, _, value = agent.get_action_and_value(next_obs)
                 values[step] = value.flatten()
             actions[step] = action
             logprobs[step] = logprob
@@ -237,6 +249,14 @@ if __name__ == "__main__":
             truncateds[step] = torch.Tensor(truncated).to(device)
             rewards[step] = torch.tensor(reward).to(device).view(-1)
             next_obs, next_terminated = torch.Tensor(next_obs).to(device), torch.Tensor(terminated).to(device)
+
+            dones = np.logical_or(terminated, truncated)
+
+            for env_i, done in enumerate(dones):
+                if done:
+                    obs_t1[step][env_i] = obs[step][env_i]
+                else:
+                    obs_t1[step][env_i] = next_obs[env_i]
 
             # Only print when at least 1 env is done
             if "final_info" not in infos:
@@ -268,12 +288,13 @@ if __name__ == "__main__":
             returns = advantages + values
 
         # flatten the batch
-        b_obs = obs.reshape((-1,) + envs.single_observation_space.shape)
-        b_logprobs = logprobs.reshape(-1)
-        b_actions = actions.reshape((-1,) + envs.single_action_space.shape)
-        b_advantages = advantages.reshape(-1)
-        b_returns = returns.reshape(-1)
-        b_values = values.reshape(-1)
+        b_obs = obs.transpose(0,1).reshape((-1,) + envs.single_observation_space.shape)
+        b_obs_t1 = obs_t1.transpose(0, 1).reshape((-1,) + envs.single_observation_space.shape)
+        b_logprobs = logprobs.transpose(0, 1).reshape(-1)
+        b_actions = actions.transpose(0, 1).reshape((-1,) + envs.single_action_space.shape)
+        b_advantages = advantages.transpose(0, 1).reshape(-1)
+        b_returns = returns.transpose(0, 1).reshape(-1)
+        b_values = values.transpose(0, 1).reshape(-1)
 
         # Optimizing the policy and value network
         b_inds = np.arange(args.batch_size)
@@ -284,7 +305,7 @@ if __name__ == "__main__":
                 end = start + args.minibatch_size
                 mb_inds = b_inds[start:end]
 
-                _, newlogprob, entropy, newvalue = agent.get_action_and_value(b_obs[mb_inds], b_actions[mb_inds])
+                _, __, newlogprob, entropy, newvalue = agent.get_action_and_value(b_obs[mb_inds], b_actions[mb_inds])
                 logratio = newlogprob - b_logprobs[mb_inds]
                 ratio = logratio.exp()
 
@@ -321,13 +342,21 @@ if __name__ == "__main__":
                 entropy_loss = entropy.mean()
 
                 # CAPS losses
-                ts_loss = torch.linalg.norm(b_logprobs[mb_inds] - b_logprobs[mb_inds+1]) # temporal smoothness loss
+                # Temporal Smoothing
+                act_means = agent.get_action_and_value(b_obs[mb_inds])[1]
+                next_act_means = agent.get_action_and_value(b_obs_t1[mb_inds])[1]
+                ts_loss = torch.linalg.norm(act_means - next_act_means, ord=2)
 
-                state_approx_law = Normal(b_obs[mb_inds], 0.01)
-                sampled_states = state_approx_law.sample()
-                ss_loss = torch.linalg.norm(b_logprobs[mb_inds] - sampled_states)
+                # Spatial Smoothing
+                state_problaw = Normal(b_obs[mb_inds], 0.01)
+                state_sampled = state_problaw.sample()
+                act_means_bar = agent.get_action_and_value(state_sampled)[1]
+                ss_loss = torch.linalg.norm(act_means - act_means_bar, ord=2)
 
-                loss = pg_loss - args.ent_coef * entropy_loss + v_loss * args.vf_coef
+                # preactivation loss
+                pa_loss = torch.linalg.norm(act_means - trim_acts, ord=2)
+
+                loss = pg_loss - args.ent_coef * entropy_loss + v_loss * args.vf_coef + args.ts_coef * ts_loss + args.ss_coef * ss_loss + args.pa_coef * pa_loss
 
                 optimizer.zero_grad()
                 loss.backward()
@@ -341,20 +370,38 @@ if __name__ == "__main__":
         y_pred, y_true = b_values.cpu().numpy(), b_returns.cpu().numpy()
         var_y = np.var(y_true)
         explained_var = np.nan if var_y == 0 else 1 - np.var(y_true - y_pred) / var_y
+        action_std = agent.get_action_std()[0]
 
         # TRY NOT TO MODIFY: record rewards for plotting purposes
         writer.add_scalar("charts/learning_rate", optimizer.param_groups[0]["lr"], global_step)
         writer.add_scalar("losses/value_loss", v_loss.item(), global_step)
+        writer.add_scalar("losses/value_loss_term", args.vf_coef * v_loss.item(), global_step)
         writer.add_scalar("losses/policy_loss", pg_loss.item(), global_step)
+        writer.add_scalar("losses/ts", ts_loss.item(), global_step)
+        writer.add_scalar("losses/ts_term", args.ts_coef * ts_loss.item(), global_step)
+        writer.add_scalar("losses/ss", ss_loss.item(), global_step)
+        writer.add_scalar("losses/ss_term", args.ss_coef * ss_loss.item(), global_step)
+        writer.add_scalar("losses/pa", ss_loss.item(), global_step)
+        writer.add_scalar("losses/pa_term", args.pa_coef * pa_loss.item(), global_step)
         writer.add_scalar("losses/entropy", entropy_loss.item(), global_step)
+        writer.add_scalar("losses/entropy_term", args.ent_coef * entropy_loss.item(), global_step)
         writer.add_scalar("losses/old_approx_kl", old_approx_kl.item(), global_step)
         writer.add_scalar("losses/approx_kl", approx_kl.item(), global_step)
         writer.add_scalar("losses/clipfrac", np.mean(clipfracs), global_step)
         writer.add_scalar("losses/explained_variance", explained_var, global_step)
+        writer.add_scalar("losses/total_loss", loss.item(), global_step)
+        writer.add_scalar("action_std/de", action_std[0], global_step)
+        writer.add_scalar("action_std/da", action_std[1], global_step)
+        writer.add_scalar("action_std/dt", action_std[2], global_step)
         print("SPS:", int(global_step / (time.time() - start_time)))
         writer.add_scalar("charts/SPS", int(global_step / (time.time() - start_time)), global_step)
 
-    torch.save(agent.state_dict(), f"{save_path}{run_name}.pt") 
+    # save the trained model = agent + observation normalization parameters + seed
+    train_dict = {}
+    train_dict["norm_obs_rms"] = {"mean": envs.envs[0].get_obs_rms().mean, "var": envs.envs[0].get_obs_rms().var}
+    train_dict["seed"] = args.seed
+    train_dict["agent"] = agent.state_dict()
+    torch.save(train_dict, f"{save_path}{run_name}.pt") 
 
     envs.close()
     writer.close()
