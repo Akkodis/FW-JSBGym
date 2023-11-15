@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import sys
+from time import sleep
 from os import path
 sys.path.append(f'{path.dirname(path.abspath(__file__))}/..')
 import matplotlib.pyplot as plt
@@ -57,7 +58,8 @@ def animate(i, axis, args) -> None:
     axis[0, 1].set_title("Heading (psi) control [rad]")
     axis[0, 1].legend()
 
-    if args.scale:
+    if args.scale and data.index.size > 0:
+        # wait for the telemetry file to be filled with some data so that the plotter doesn't crash when computing scale bounds
         axis[0, 2].set_zlim(alt.iat[-1]-200, alt.iat[-1]+200)
         max_bound2D: float = max(lat.max(), lon.max())
         min_bound2D: float = min(lat.min(), lon.min())
