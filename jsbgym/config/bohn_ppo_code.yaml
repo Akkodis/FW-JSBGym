@@ -9,7 +9,7 @@ JSBSimEnv:
 
 # task specific child class config: AttitudeControlTaskEnv
 AttitudeControlTaskEnv:
-    flight_data_logfile: "data/eval_gym_flight_data.csv"
+    telemetry_file: "telemetry/eval_telemetry.csv"
     obs_is_matrix: True
     obs_history_size: 5
     act_history_size: 5
@@ -25,18 +25,15 @@ AttitudeControlTaskEnv:
         roll:
             scaling: 3.2
             clip_min: 0.0
-            # clip_max: 0.3
-            clip_max: 0.333
+            clip_max: 0.3
         pitch:
             scaling: 3.2
             clip_min: 0.0
-            # clip_max: 0.3
-            clip_max: 0.333
+            clip_max: 0.3
         Va:
             scaling: 25.0
             clip_min: 0.0
-            # clip_max: 0.3
-            clip_max: 0.333
+            clip_max: 0.3
         act_var: # action variation
             scaling: 60.0
             clip_min: 0.0

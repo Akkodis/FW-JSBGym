@@ -83,8 +83,8 @@ class JSBSimEnv(gym.Env):
 
         self.reward = None
 
-        if not os.path.exists('data'):
-            os.makedirs('data')
+        if not os.path.exists('telemetry'):
+            os.makedirs('telemetry')
 
 
     def reset(self, seed: int=None, options: dict=None) -> None:

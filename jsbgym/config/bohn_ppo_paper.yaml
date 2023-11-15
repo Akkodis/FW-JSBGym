@@ -9,7 +9,7 @@ JSBSimEnv:
 
 # task specific child class config: AttitudeControlTaskEnv
 AttitudeControlTaskEnv:
-    flight_data_logfile: "data/gym_flight_data.csv"
+    telemetry_file: "telemetry/eval_telemetry.csv"
     obs_is_matrix: True
     obs_history_size: 5
     act_history_size: 5

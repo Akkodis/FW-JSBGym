@@ -11,9 +11,7 @@ from jsbgym.utils import jsbsim_properties as prp
 
 
 def animate(i, axis, args) -> None:
-    # data = pd.read_csv(f'{path.dirname(path.abspath(__file__))}/../data/flight_data.csv')
-    # data = pd.read_csv(f'{path.dirname(path.abspath(__file__))}/../data/gym_flight_data.csv')
-    data = pd.read_csv(f'{path.dirname(path.abspath(__file__))}/../data/eval_gym_flight_data.csv')
+    data = pd.read_csv(f'{path.dirname(path.abspath(__file__))}/../telemetry/eval_telemetry.csv')
 
     lat = data[prp.lat_gc_deg.get_legal_name()]
     lon = data[prp.lng_gc_deg.get_legal_name()]

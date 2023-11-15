@@ -2,6 +2,11 @@ import gymnasium as gym
 import numpy as np
 
 class MyNormalizeObservation(gym.wrappers.NormalizeObservation):
+    """
+        Custom observation normalization wrapper for gym environments.
+        Allows to get and set the observation normalization parameters so we can use the same
+        ones for training and evaluation of the agent.
+    """
     def __init__(self, env: gym.Env, eval: bool = False, epsilon: float = 1e-8):
         super().__init__(env, epsilon)
         self.eval = eval
@@ -14,6 +19,6 @@ class MyNormalizeObservation(gym.wrappers.NormalizeObservation):
         self.obs_rms.var = var
 
     def normalize(self, obs):
-        if not self.eval:
+        if not self.eval: # if training, update the obs rms statistics
             self.obs_rms.update(obs)
         return (obs - self.obs_rms.mean) / np.sqrt(self.obs_rms.var + self.epsilon)

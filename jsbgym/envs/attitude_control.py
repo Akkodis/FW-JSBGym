@@ -25,7 +25,7 @@ class AttitudeControlTaskEnv(JSBSimEnv):
             - `aircraft_id`: Aircraft to simulate
             - `obs_history_size`: the size of the observation history, i.e. the number of previous states to be observed by the agent
             - `observation`: Deque of State NamedTuple objects, representing the observation of the agent
-            - `flight_data_logfile`: the name of the file containing the flight data to be logged
+            - `telemetry_file`: the name of the file containing the flight data to be logged
             - `telemetry_fieldnames`: Tuple of strings, representing the fieldnames of the flight data to be logged for csv logging
 
     """
@@ -68,7 +68,7 @@ class AttitudeControlTaskEnv(JSBSimEnv):
             Args:
                 - `fdm_freq`: jsbsim FDM frequency
                 - `obs_history_size`: the size of the observation history, i.e. the number of previous states to be observed by the agent
-                - `flight_data_logfile`: the name of the file containing the flight data to be logged
+                - `telemetry_file`: the name of the file containing the flight data to be logged
         """
         # load config file
         with open(config_file, "r") as file:
@@ -78,8 +78,7 @@ class AttitudeControlTaskEnv(JSBSimEnv):
 
         self.task_cfg: dict = cfg_all["AttitudeControlTaskEnv"]
 
-        self.flight_data_logfile: str = self.task_cfg["flight_data_logfile"]
-
+        self.telemetry_file: str = self.task_cfg["telemetry_file"]
         self.obs_is_matrix = self.task_cfg["obs_is_matrix"]
 
         # observation history size
@@ -114,7 +113,7 @@ class AttitudeControlTaskEnv(JSBSimEnv):
 
         # create and set up csv logging file with flight telemetry
         self.telemetry_fieldnames: Tuple[str, ...] = tuple([prop.get_legal_name() for prop in self.telemetry_vars])
-        with open(self.flight_data_logfile, 'w') as csvfile:
+        with open(self.telemetry_file, 'w') as csvfile:
             csv_writer = csv.DictWriter(csvfile, fieldnames=self.telemetry_fieldnames)
             csv_writer.writeheader()
 
@@ -142,15 +141,14 @@ class AttitudeControlTaskEnv(JSBSimEnv):
         self.observation_deque.clear()
         obs: np.ndarray = self.observe_state(first_obs=True)
 
-        # compute 1st step reward (only to populate the properties for appropriate logging), not used in the optim
-        # self.reward() 
-
         self.render() # render the simulation
         return obs, {}
 
 
     def step(self, action: np.ndarray) -> Tuple[np.ndarray, float, bool, bool, dict]:
-
+        """
+            Steps the task forward.
+        """
         # check if the action is valid
         if action.shape != self.action_space.shape:
             raise ValueError("Action shape is not valid.")
@@ -166,7 +164,7 @@ class AttitudeControlTaskEnv(JSBSimEnv):
             # convert the airspeed from kts to m/s at each sim step in the jsbsim properties
             self.convert_airspeed_kts2mps()
             # write the telemetry to a log csv file every fdm step (as opposed to every agent step -> to put out of this for loop)
-            # self.flight_data_logging()
+            # self.telemetry_logging()
             # decrement the steps left
             self.sim[self.steps_left] -= 1
 
@@ -177,16 +175,18 @@ class AttitudeControlTaskEnv(JSBSimEnv):
         self.update_errors()
 
         # get the state
-        obs: np.ndarray = self.observe_state()
+        self.observation = self.observe_state()
 
         # get the reward
-        self.reward: float = self.get_reward_bohn(action)
+        self.reward: float = self.get_reward(action)
 
         # check if the episode is terminated modifies the reward with extra penalty if necessary
         terminated = self.is_terminated()
         truncated, episode_end, out_of_bounds = self.is_truncated()
 
-        self.flight_data_logging()
+        # write telemetry to a csv file every agent step
+        if self.render_mode in self.metadata["render_modes"][1:]:
+            self.telemetry_logging()
 
         # info dict for debugging and misc infos
         info: Dict = {"steps_left": self.sim[self.steps_left],
@@ -194,50 +194,28 @@ class AttitudeControlTaskEnv(JSBSimEnv):
                       "non_norm_reward": self.reward,
                       "episode_end": episode_end,
                       "out_of_bounds": out_of_bounds
-                    #   "crashed": crashed
                     }
 
-        return obs, self.reward, terminated, truncated, info
+        return self.observation, self.reward, terminated, truncated, info
 
 
     def is_terminated(self) -> Tuple[bool]:
         """
-            Check if the episode is terminated, i.e. if the agent reaches the target state or crashes.
-            Returns: False for now because no crash detection
+            Check if the episode is terminated. In the current MDP formulation, there's no terminal state.
         """
-        # is_crashed: bool = self.sim[prp.altitude_sl_m] <= 0 # check collision with ground TODO: Remove
-        # if is_crashed:
-        #     reward -= 200 # penalize crash with -10 reward
-
-        # is_target_reached: bool = False
-        # np_err: np.ndarray = np.array(self.errors[:])
-        # np_err_th: np.ndarray = np.array(self.err_success_th[:])
-        # every timestep the agent has to reach the target state for 5 seconds, increment reached_tsteps
-        # if np.all(np_err < np_err_th):
-        #     self.reached_tsteps += 1
-        # else: # else reset reached_tsteps
-        #     self.reached_tsteps = 0
-
-        # # if the agent has reached the target state for more than success_time seconds, return True
-        # if self.reached_tsteps >= self.success_time_s * (1/self.sim.fdm_dt):
-        #     is_target_reached = True
-
         return False
 
 
     def is_truncated(self) -> Tuple[bool, bool, bool]:
         """
-            Check if the episode is truncated, i.e. if the episode reaches the maximum number of steps.
-
+            Check if the episode is truncated, i.e. if the episode reaches the maximum number of steps or
+            if the observation contains out of bounds obs (due to JSBSim diverging).
             Args:
                 - `sim`: the simulation object containing the JSBSim FDM
         """
         episode_end: bool = self.sim[self.steps_left] <= 0 # if the episode is done, return True
         obs_out_of_bounds: bool = self.observation not in self.observation_space # if the observation contains out of bounds obs (due to JSBSim diverging), return True
-        # if obs_out_of_bounds:
-        #     reward -= 200
 
-        # print((self.observation <= self.observation_space.high) & (self.observation >= self.observation_space.low))
         return episode_end or obs_out_of_bounds, episode_end, obs_out_of_bounds
 
 
@@ -306,10 +284,10 @@ class AttitudeControlTaskEnv(JSBSimEnv):
 
         # return observation as a numpy array and add one channel dim for CNN policy
         if self.obs_is_matrix:
-            self.observation: np.ndarray = np.expand_dims(np.array(self.observation_deque), axis=0).astype(np.float32)
+            obs: np.ndarray = np.expand_dims(np.array(self.observation_deque), axis=0).astype(np.float32)
         else:
-            self.observation: np.ndarray = np.array(self.observation_deque).astype(np.float32)
-        return self.observation
+            obs: np.ndarray = np.array(self.observation_deque).astype(np.float32)
+        return obs
 
 
     def update_errors(self) -> None:
@@ -357,12 +335,12 @@ class AttitudeControlTaskEnv(JSBSimEnv):
                               target_pitch_rad=self.sim[prp.initial_pitch_rad])
 
 
-    def flight_data_logging(self) -> None:
+    def telemetry_logging(self) -> None:
         """
-            Log flight data to csv.
+            Log flight data to telemetry csv.
         """
         # write flight data to csv
-        with open(self.flight_data_logfile, 'a') as csv_file:
+        with open(self.telemetry_file, 'a') as csv_file:
             csv_writer: csv.DictWriter = csv.DictWriter(csv_file, fieldnames=self.telemetry_fieldnames)
             info: dict[str, float] = {}
             for fieldname, prop in zip(self.telemetry_fieldnames, self.telemetry_vars):
@@ -370,43 +348,45 @@ class AttitudeControlTaskEnv(JSBSimEnv):
             csv_writer.writerow(info)
 
 
-    def get_reward(self) -> float:
+    def get_reward(self, action: np.ndarray) -> float:
         """
-            Calculate the reward for the current step.\\
-            Returns:
-                - reward scalar: float
+            Reward function
+            Based on the bohn PPO paper reward func, but without the actvar component (taken care by CAPS loss)
         """
         r_w: dict = self.task_cfg["reward_weights"] # reward weights for each reward component
-        r_roll = np.clip(abs(self.sim[prp.roll_err]) / r_w["roll"]["scaling"], r_w["roll"]["clip_min"], r_w["roll"]["clip_max"]) # roll reward component
-        r_pitch = np.clip(abs(self.sim[prp.pitch_err]) / r_w["pitch"]["scaling"], r_w["pitch"]["clip_min"], r_w["pitch"]["clip_max"]) # pitch reward component
-        r_airspeed = np.clip(abs(self.sim[prp.airspeed_err]) / r_w["Va"]["scaling"], r_w["Va"]["clip_min"], r_w["Va"]["clip_max"]) # airspeed reward component
+        r_roll = np.clip(abs(self.sim[prp.roll_err]) / r_w["roll"]["scaling"], r_w["roll"]["clip_min"], r_w["roll"].get("clip_max", None)) # roll reward component
+        r_pitch = np.clip(abs(self.sim[prp.pitch_err]) / r_w["pitch"]["scaling"], r_w["pitch"]["clip_min"], r_w["pitch"].get("clip_max", None)) # pitch reward component
+        r_airspeed = np.clip(abs(self.sim[prp.airspeed_err]) / r_w["Va"]["scaling"], r_w["Va"]["clip_min"], r_w["Va"].get("clip_max", None)) # airspeed reward component
 
-        # computing the cost attached to changing actuator setpoints to promote smooth non-oscillatory actuator behaviour
-        diff: float = 0.0 # sum over all diffs between fcs commands of 2 consecutive timesteps
-        r_actvar_raw: float = 0.0 # unclipped, unscaled fcs reward component
-        # print(self.action_hist)
-        # print(self.action_hist[2][1])
-        # print(self.action_hist[-1][1])
-        for fcs in range(len(self.action_vars)): # iterate through different fcs : [elevator: 0, aileron: 1, throttle: 2]
-            for t in reversed(range(1, self.action_hist.maxlen)): # iterate through different timesteps backwards (avoid the t=0 case, for t-1=-1)
-                diff += abs(self.action_hist[t][fcs] - self.action_hist[t-1][fcs]) # sum over all history of the command difference between t and t-1 for the same actuator
-            r_actvar_raw += diff # sum those cmd diffs over all actuators
-        r_actvar = np.clip(r_actvar_raw / r_w["act_var"]["scaling"], r_w["act_var"]["clip_min"], r_w["act_var"]["clip_max"]) # flight control surface reward component
+        r_act_low: np.ndarray = np.where(action < self.action_space.low, self.action_space.low - action, 0)
+        r_act_high: np.ndarray = np.where(action > self.action_space.high, action - self.action_space.high, 0)
+        r_act_bounds_raw: float = np.sum(np.abs(r_act_low) + np.sum(np.abs(r_act_high))) # doute sur le np.sum
+        r_act_bounds: float = np.clip(r_act_bounds_raw / r_w["act_bounds"]["scaling"], 0, r_w["act_bounds"].get("clip_max", None))
+        
+        # computing actvar reward component just for visualization purposes (not used in the final reward summation)
+        np_action_hist: np.ndarray = np.array(self.action_hist)
+        deltas: np.ndarray = np.diff(np_action_hist[-self.obs_history_size:], axis=0)
+        r_actvar_raw = np.sum(np.abs(deltas))
+        r_actvar = np.clip(r_actvar_raw / r_w["act_var"]["scaling"], r_w["act_var"]["clip_min"], r_w["act_var"].get("clip_max", None)) # flight control surface reward component
 
         # return the negative sum of all reward components
-        r_total = -(r_roll + r_pitch + r_airspeed + r_actvar) 
+        r_total: float = -(r_roll + r_pitch + r_airspeed + r_act_bounds)
 
         # populate properties
         self.sim[prp.reward_roll] = r_roll
         self.sim[prp.reward_pitch] = r_pitch
         self.sim[prp.reward_airspeed] = r_airspeed
         self.sim[prp.reward_actvar] = r_actvar
+        self.sim[prp.reward_act_bounds] = r_act_bounds
         self.sim[prp.reward_total] = r_total
 
         return r_total
 
 
     def get_reward_bohn(self, action: np.ndarray) -> float:
+        """
+            Original reward function from the bohn PPO paper (results in lots of action oscillations / variation)
+        """
         r_w: dict = self.task_cfg["reward_weights"] # reward weights for each reward component
         r_roll = np.clip(abs(self.sim[prp.roll_err]) / r_w["roll"]["scaling"], r_w["roll"]["clip_min"], r_w["roll"].get("clip_max", None)) # roll reward component
         r_pitch = np.clip(abs(self.sim[prp.pitch_err]) / r_w["pitch"]["scaling"], r_w["pitch"]["clip_min"], r_w["pitch"].get("clip_max", None)) # pitch reward component
@@ -424,8 +404,7 @@ class AttitudeControlTaskEnv(JSBSimEnv):
         r_actvar = np.clip(r_actvar_raw / r_w["act_var"]["scaling"], r_w["act_var"]["clip_min"], r_w["act_var"].get("clip_max", None)) # flight control surface reward component
 
         # return the negative sum of all reward components
-        # r_total: float = -(r_roll + r_pitch + r_airspeed + r_actvar + r_act_bounds) 
-        r_total: float = -(r_roll + r_pitch + r_airspeed + r_act_bounds) 
+        r_total: float = -(r_roll + r_pitch + r_airspeed + r_actvar + r_act_bounds) 
 
         # populate properties
         self.sim[prp.reward_roll] = r_roll

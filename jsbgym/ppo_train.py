@@ -6,11 +6,10 @@ import time
 from time import strftime, localtime
 from distutils.util import strtobool
 from trim.trim_point import TrimPoint
-from utils.gym_utils import MyNormalizeObservation
+from agents import ppo
 
 import wandb
 import gymnasium as gym
-import jsbgym
 import numpy as np
 import torch
 import torch.nn as nn
@@ -42,9 +41,9 @@ def parse_args():
     # Algorithm specific arguments
     parser.add_argument("--env-id", type=str, default="AttitudeControlTaskEnv-v0",
         help="the id of the environment")
-    parser.add_argument("--config", type=str, default="config/bohn_ppo.yaml",
+    parser.add_argument("--config", type=str, default="config/ppo_caps.yaml",
         help="the config file of the environnement")
-    parser.add_argument("--total-timesteps", type=int, default=1500000,
+    parser.add_argument("--total-timesteps", type=float, default=1.5e6,
         help="total timesteps of the experiments")
     parser.add_argument("--learning-rate", type=float, default=3e-4,
         help="the learning rate of the optimizer")
@@ -89,76 +88,9 @@ def parse_args():
     return args
 
 
-def make_env(env_id, idx, capture_video, run_name, gamma):
-    def thunk():
-        if capture_video:
-            env = gym.make(env_id, config_file=args.config, render_mode="rgb_array")
-        else:
-            env = gym.make(env_id, config_file=args.config)
-        env = gym.wrappers.RecordEpisodeStatistics(env)
-        if capture_video:
-            if idx == 0:
-                env = gym.wrappers.RecordVideo(env, f"videos/{run_name}")
-        env = gym.wrappers.ClipAction(env)
-        env = MyNormalizeObservation(env)
-        env = gym.wrappers.TransformObservation(env, lambda obs: np.clip(obs, -10, 10)) # TODO : remove ?
-        env = gym.wrappers.NormalizeReward(env, gamma=gamma) # TODO : remove ?
-        env = gym.wrappers.TransformReward(env, lambda reward: np.clip(reward, -10, 10))
-        return env
-
-    return thunk
-
-
-def layer_init(layer, std=np.sqrt(2), bias_const=0.0):
-    torch.nn.init.orthogonal_(layer.weight, std)
-    torch.nn.init.constant_(layer.bias, bias_const)
-    return layer
-
-
-class Agent(nn.Module):
-    def __init__(self, envs):
-        super().__init__()
-        self.conv = nn.Sequential(
-            layer_init(nn.Conv2d(in_channels=1, out_channels=3, kernel_size=(5,1), stride=1)), # input ?x5x12x1, output ?x1x12x3
-            nn.Tanh(),
-            nn.Flatten()
-        )
-        self.critic = nn.Sequential(
-            nn.Tanh(),
-            layer_init(nn.Linear(12*3, 64)), # 12 is the number of features extracted by 1 conv * num of conv filters
-            nn.Tanh(),
-            layer_init(nn.Linear(64, 64)),
-            nn.Tanh(),
-            layer_init(nn.Linear(64, 1), std=1.0),
-        )
-        self.actor_mean = nn.Sequential(
-            layer_init(nn.Linear(12*3, 64)),
-            nn.Tanh(),
-            layer_init(nn.Linear(64, 64)),
-            nn.Tanh(),
-            layer_init(nn.Linear(64, np.prod(envs.single_action_space.shape)), std=0.01),
-        )
-        self.actor_logstd = nn.Parameter(torch.zeros(1, np.prod(envs.single_action_space.shape)))
-
-    def get_value(self, x):
-        return self.critic(self.conv(x))
-
-    def get_action_std(self):
-        return torch.exp(self.actor_logstd.expand_as(torch.zeros(1, np.prod(envs.single_action_space.shape))))
-
-    def get_action_and_value(self, x, action=None):
-        conv_out = self.conv(x)
-        action_mean = self.actor_mean(conv_out)
-        action_logstd = self.actor_logstd.expand_as(action_mean)
-        action_std = torch.exp(action_logstd)
-        probs = Normal(action_mean, action_std)
-        if action is None:
-            action = probs.sample()
-        return action, action_mean, probs.log_prob(action).sum(1), probs.entropy().sum(1), self.critic(conv_out)
-
-
 if __name__ == "__main__":
     args = parse_args()
+    args.total_timesteps = int(args.total_timesteps)
     run_name = f"ppo_{args.exp_name}_{args.seed}_{strftime('%d-%m_%H:%M:%S', localtime())}"
 
     save_path: str = "models/train/"
@@ -166,7 +98,6 @@ if __name__ == "__main__":
         os.makedirs(save_path)
 
     if args.track:
-
         wandb.init(
             project=args.wandb_project_name,
             entity=args.wandb_entity,
@@ -197,10 +128,10 @@ if __name__ == "__main__":
 
     # env setup
     envs = gym.vector.SyncVectorEnv(
-        [make_env(args.env_id, i, args.capture_video, run_name, args.gamma) for i in range(args.num_envs)]
+        [ppo.make_env(args.env_id, args.config, "none", args.gamma, eval=False, idx=i) for i in range(args.num_envs)]
     )
     assert isinstance(envs.single_action_space, gym.spaces.Box), "only continuous action space is supported"
-    agent = Agent(envs).to(device)
+    agent = ppo.Agent(envs).to(device)
     optimizer = optim.Adam(agent.parameters(), lr=args.learning_rate, eps=1e-5)
     trim_point: TrimPoint = TrimPoint(aircraft_id='x8')
     trim_acts = torch.tensor([trim_point.elevator, trim_point.aileron, trim_point.throttle]).to(device)
