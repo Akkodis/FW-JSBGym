@@ -113,9 +113,10 @@ class AttitudeControlTaskEnv(JSBSimEnv):
 
         # create and set up csv logging file with flight telemetry
         self.telemetry_fieldnames: Tuple[str, ...] = tuple([prop.get_legal_name() for prop in self.telemetry_vars])
-        with open(self.telemetry_file, 'w') as csvfile:
-            csv_writer = csv.DictWriter(csvfile, fieldnames=self.telemetry_fieldnames)
-            csv_writer.writeheader()
+        if self.render_mode in self.metadata["render_modes"][1:]:
+            with open(self.telemetry_file, 'w') as csvfile:
+                csv_writer = csv.DictWriter(csvfile, fieldnames=self.telemetry_fieldnames)
+                csv_writer.writeheader()
 
         # set action and observation space from the task
         self.action_space = self.get_action_space()
