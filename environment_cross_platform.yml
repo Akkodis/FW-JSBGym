@@ -3,74 +3,75 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - wcwidth
-  - bzip2
-  - openssl
-  - pexpect
-  - zeromq
-  - _openmp_mutex
-  - backcall
-  - python-dateutil
-  - libnsl
-  - comm
-  - typing-extensions
-  - python=3.11
-  - ld_impl_linux-64
-  - backports
-  - ipython
-  - xz
-  - nest-asyncio
   - matplotlib
-  - pandas
-  - stack_data
-  - pygments
-  - setuptools
-  - python_abi
-  - pip
-  - parso
-  - decorator
-  - debugpy
-  - packaging
-  - tk
-  - traitlets
-  - matplotlib-inline
-  - libffi
-  - _libgcc_mutex
-  - libuuid
-  - readline
-  - platformdirs
-  - ptyprocess
-  - libgcc-ng
-  - pickleshare
   - entrypoints
-  - ncurses
-  - ipykernel
-  - executing
   - libsodium
-  - libstdcxx-ng
-  - pyzmq
-  - wheel
-  - psutil
-  - libgomp
-  - typing_extensions
-  - jupyter_core
-  - ca-certificates
   - libsqlite
-  - asttokens
-  - six
-  - tornado
-  - prompt-toolkit
-  - libzlib
-  - backports.functools_lru_cache
-  - jsbsim
   - jedi
-  - pure_eval
+  - libzlib
+  - ncurses
+  - python=3.11
+  - openssl
+  - typing_extensions
+  - wcwidth
+  - ptyprocess
+  - ipython
+  - _libgcc_mutex
+  - pygments
+  - zeromq
+  - bzip2
+  - jsbsim
+  - asttokens
+  - debugpy
+  - ld_impl_linux-64
+  - ipykernel
+  - libnsl
+  - jupyter_core
+  - pickleshare
+  - executing
   - jupyter_client
+  - nest-asyncio
+  - pexpect
+  - typing-extensions
+  - xz
+  - backports
+  - python-dateutil
+  - tornado
+  - packaging
+  - prompt-toolkit
+  - ca-certificates
+  - backcall
+  - platformdirs
+  - pandas
+  - libuuid
+  - libgomp
+  - pure_eval
+  - decorator
+  - matplotlib-inline
+  - python_abi
+  - pyzmq
+  - readline
+  - tk
+  - _openmp_mutex
+  - wheel
+  - setuptools
+  - psutil
+  - pip
+  - libstdcxx-ng
+  - comm
+  - libgcc-ng
+  - parso
+  - backports.functools_lru_cache
+  - stack_data
+  - traitlets
+  - six
+  - libffi
+  - gymnasium
   - scipy
-  - numpy
   - control
   - slycot
-  - yaml
   - pyyaml
   - simple-pid
-prefix: /d/dolivare/Apps/miniconda3/envs/jsbrl
+  - pytorch
+  - tensorboard
+prefix: /home/david/misc_software/miniconda3/envs/jsbrl

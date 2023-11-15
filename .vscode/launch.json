@@ -1,0 +1,42 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "gym_test",
+            "type": "python",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/jsbgym",
+            "program": "gym_test.py",
+            "args": ["--config", "config/bohn_ppo_code.yaml",
+                    "--train-model", "models/train/ppo_bohn_caps_paloss_nodetach_norm_coef_3_11_81473_13-11_20:02:38.pt",
+                    "--render-mode", "plot"],
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            // "args": ["--trim"]
+        },
+       {
+            "name": "ppo_debug",
+            "type": "python",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/jsbgym",
+            "program": "ppo_continuous_action.py",
+            "args": ["--exp-name", "debug_exp", "--num-envs", "2",
+                    "--config", "config/bohn_ppo_code.yaml"],
+                    // "--config", "config/bohn_ppo_code.yaml"],
+            "console": "integratedTerminal",
+            "justMyCode": false,
+        },
+        {
+            "name": "a.py",
+            "type": "python",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/jsbgym",
+            "program": "a.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+        }
+    ]
+}
