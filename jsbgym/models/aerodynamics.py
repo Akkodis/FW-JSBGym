@@ -117,7 +117,7 @@ class AeroModel(object):
                         self.b / (2 * self.Va_trim))
         self.a_roll2: float = 1 / 2 * self.rho * self.Va_trim ** 2 * self.S * self.b * self.Cpda
 
-        self.aileron_limit: float = 30.0 * (math.pi / 180)  # aileron actuator max deflection : deg to rad
+        self.aileron_limit: float = 1.04 # combined aileron actuator max deflection : rad
         self.roll_max: float = 45.0 * (math.pi / 180)  # roll max angle : deg to rad
         self.roll_err_max: float = self.roll_max * 2  # max expected error, roll_max * 2 : rad
         self.roll_damping: float = 1.5  # ask if needed to plot the step responses for various damping ratios in something

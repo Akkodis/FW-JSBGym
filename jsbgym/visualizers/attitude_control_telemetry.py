@@ -72,15 +72,18 @@ def animate(i, axis, args) -> None:
     # plt.tight_layout()
 
     pitch_plt, = axis[1, 0].plot(tsteps, pitch, label='pitch')
+    pitch_ref_plt, = axis[1, 0].plot(tsteps, pitch_ref, color='r', linestyle='--', label='pitch_ref')
     axis[1, 0].set_title('pitch control [rad]')
     axis[1, 0].legend()
 
     roll_plt, = axis[1, 1].plot(tsteps, roll, label='roll')
+    # roll_ref_plt, = axis[1, 0].plot(tsteps, roll_ref, color='r', linestyle='--', label='roll_ref')
+    roll_ref_plt, = axis[1, 1].plot(tsteps, roll_ref, color='r', linestyle='--', label='roll_ref')
     axis[1, 1].set_title('roll control [rad]')
     axis[1, 1].legend()
 
     airspeed_plt, = axis[1, 2].plot(tsteps, airspeed, label='airspeed')
-    airspeed_ref_plt, = axis[1, 2].plot(tsteps, airspeed_ref, label='airspeed_ref')
+    airspeed_ref_plt, = axis[1, 2].plot(tsteps, airspeed_ref, color='r', linestyle='--', label='airspeed_ref')
     axis[1, 2].set_title('airspeed control [m/s]')
     axis[1, 2].legend()
 

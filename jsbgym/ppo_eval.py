@@ -18,6 +18,8 @@ def parse_args():
     parser.add_argument('--render-mode', type=str, 
         choices=['plot_scale', 'plot', 'fgear', 'fgear_plot', 'fgear_plot_scale'],
         help='render mode')
+    parser.add_argument('--turb', action='store_true', help='add turbulence')
+    parser.add_argument('--wind', action='store_true', help='add wind')
     args = parser.parse_args()
     return args
 
@@ -42,9 +44,18 @@ if __name__ == '__main__':
     envs = gym.vector.SyncVectorEnv(
         [ppo.make_env(args.env_id, args.config, args.render_mode, 0.99, eval=True)]
     )
+    unwrapped_env = envs.envs[0].unwrapped
 
     obs, _ = envs.reset(seed=seed)
     obs = torch.Tensor(obs).to(device)
+    if args.turb:
+        unwrapped_env.sim['atmosphere/turb-type'] = 3
+        unwrapped_env.sim['atmosphere/turbulence/milspec/windspeed_at_20ft_AGL-fps'] = 75
+        unwrapped_env.sim["atmosphere/turbulence/milspec/severity"] = 6
+
+    if args.wind:
+        unwrapped_env.sim["atmosphere/wind-north-fps"] = 16.26 * 3.281 # mps to fps
+        unwrapped_env.sim["atmosphere/wind-east-fps"] = 16.26 * 3.281 # mps to fps
 
     # setting the observation normalization parameters
     envs.envs[0].set_obs_rms(train_dict['norm_obs_rms']['mean'], train_dict['norm_obs_rms']['var'])

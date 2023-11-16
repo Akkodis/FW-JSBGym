@@ -5,17 +5,17 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "gym_test",
+            "name": "ppo_eval",
             "type": "python",
             "request": "launch",
             "cwd": "${workspaceFolder}/jsbgym",
-            "program": "gym_test.py",
-            "args": ["--config", "config/bohn_ppo_code.yaml",
-                    "--train-model", "models/train/ppo_bohn_caps_paloss_nodetach_norm_coef_3_11_81473_13-11_20:02:38.pt",
-                    "--render-mode", "plot"],
+            "program": "ppo_eval.py",
+            "args": ["--config", "config/ppo_caps.yaml",
+                    "--train-model", "models/train/ppo_no_actbounds_4_52628_15-11_18:11:12.pt",
+                    "--render-mode", "plot_scale",
+                    "--turb"],
             "console": "integratedTerminal",
             "justMyCode": true,
-            // "args": ["--trim"]
         },
        {
             "name": "ppo_debug",
