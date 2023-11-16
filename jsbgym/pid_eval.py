@@ -16,6 +16,7 @@ def parse_args():
     parser.add_argument('--render-mode', type=str, 
         choices=['plot_scale', 'plot', 'fgear', 'fgear_plot', 'fgear_plot_scale'],
         help='render mode')
+    parser.add_argument('--rand-targets', action='store_true', help='set targets randomly')
     parser.add_argument('--turb', action='store_true', help='add turbulence')
     parser.add_argument('--wind', action='store_true', help='add wind')
     args = parser.parse_args()
@@ -73,23 +74,24 @@ if __name__ == '__main__':
         dt=env.sim.fdm_dt, trim=trim_point,
         limit=x8.throttle_limit, is_throttle=True
     )
+    
+    # set default target values
+    roll_ref: float = 0.0
+    pitch_ref: float = 0.0
+    airspeed_ref: float = trim_point.Va_ms
 
-    # target values
     for step in range(2500):
-        # every 500 steps, change the target values randomly
-        if step % 500 == 0:
-            # roll_ref: float = np.random.randint(0, 60) * (np.pi / 180)
-            # pitch_ref: float = np.random.randint(0, 60) * (np.pi / 180)
-            # airspeed_ref: float = np.random.randint(10, 25)
-            roll_ref: float = 0.0
-            pitch_ref: float = 0.0
-            airspeed_ref: float = trim_point.Va_ms
-            env.set_target_state(airspeed_ref, roll_ref, pitch_ref)
+        # set random target values
+        if args.rand_targets and step % 500 == 0:
+            roll_ref: float = np.random.randint(-30, 30) * (np.pi / 180)
+            pitch_ref: float = np.random.randint(-45, 45) * (np.pi / 180)
+            airspeed_ref: float = np.random.randint(10, 25)
 
-            # apply target values
-            roll_pid.set_reference(roll_ref)
-            pitch_pid.set_reference(pitch_ref)
-            airspeed_pid.set_reference(airspeed_ref)
+        # apply target values
+        env.set_target_state(airspeed_ref, roll_ref, pitch_ref)
+        roll_pid.set_reference(roll_ref)
+        pitch_pid.set_reference(pitch_ref)
+        airspeed_pid.set_reference(airspeed_ref)
 
         throttle_cmd, airspeed_err = airspeed_pid.update(state=Va, saturate=True)
         elevator_cmd, pitch_err = pitch_pid.update(state=pitch, state_dot=pitch_rate, saturate=True, normalize=True)
