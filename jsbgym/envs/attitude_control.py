@@ -371,7 +371,7 @@ class AttitudeControlTaskEnv(JSBSimEnv):
         r_actvar = np.clip(r_actvar_raw / r_w["act_var"]["scaling"], r_w["act_var"]["clip_min"], r_w["act_var"].get("clip_max", None)) # flight control surface reward component
 
         # return the negative sum of all reward components
-        r_total: float = -(r_roll + r_pitch + r_airspeed + r_act_bounds)
+        r_total: float = -(r_roll + r_pitch + r_airspeed)
 
         # populate properties
         self.sim[prp.reward_roll] = r_roll
