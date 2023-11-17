@@ -60,12 +60,12 @@ def animate(i, axis, args) -> None:
 
     if args.scale and data.index.size > 0:
         # wait for the telemetry file to be filled with some data so that the plotter doesn't crash when computing scale bounds
-        axis[0, 2].set_zlim(alt.iat[-1]-200, alt.iat[-1]+200)
+        axis[0, 2].set_zlim(alt.min() - 50, alt.max() + 50)
         max_bound2D: float = max(lat.max(), lon.max())
         min_bound2D: float = min(lat.min(), lon.min())
         bound2D: float = max(abs(max_bound2D), abs(min_bound2D))
-        axis[0, 2].set_xlim(-bound2D, bound2D)
-        axis[0, 2].set_ylim(-bound2D, bound2D)
+        axis[0, 2].set_xlim(lon.min(), lon.max())
+        axis[0, 2].set_ylim(lat.min(), lat.max())
 
     traj_plt, = axis[0, 2].plot(lon, lat, alt, label='Aircraft Trajectory')
     axis[0, 2].legend()
@@ -103,7 +103,7 @@ def animate(i, axis, args) -> None:
     r_roll_plt, = axis[2, 2].plot(tsteps, r_roll, label='r_roll')
     r_pitch_plt, = axis[2, 2].plot(tsteps, r_pitch, label='r_pitch')
     r_airspeed_plt, = axis[2, 2].plot(tsteps, r_airspeed, label='r_airspeed')
-    r_actvar_plt, = axis[2, 2].plot(tsteps, r_actvar, label='r_actvar')
+    # r_actvar_plt, = axis[2, 2].plot(tsteps, r_actvar, label='r_actvar')
     axis[2, 2].set_title('rewards')
     axis[2, 2].legend()
     # ax[2, 2].set_axis_off()
