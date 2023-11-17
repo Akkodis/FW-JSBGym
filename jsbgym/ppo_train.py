@@ -81,6 +81,11 @@ def parse_args():
         help="the maximum norm for the gradient clipping")
     parser.add_argument("--target-kl", type=float, default=None,
         help="the target KL divergence threshold")
+
+    # training sim specific arguments
+    parser.add_argument('--rand-targets', action='store_true', help='set targets randomly')
+    parser.add_argument('--turb', action='store_true', help='add turbulence')
+    parser.add_argument('--wind', action='store_true', help='add wind')
     args = parser.parse_args()
     args.batch_size = int(args.num_envs * args.num_steps)
     args.minibatch_size = int(args.batch_size // args.num_minibatches)
@@ -130,6 +135,8 @@ if __name__ == "__main__":
     envs = gym.vector.SyncVectorEnv(
         [ppo.make_env(args.env_id, args.config, "none", args.gamma, eval=False, idx=i) for i in range(args.num_envs)]
     )
+    unwrapped_envs = [envs.envs[i].unwrapped for i in range(args.num_envs)]
+
     assert isinstance(envs.single_action_space, gym.spaces.Box), "only continuous action space is supported"
     agent = ppo.Agent(envs).to(device)
     optimizer = optim.Adam(agent.parameters(), lr=args.learning_rate, eps=1e-5)
@@ -154,6 +161,17 @@ if __name__ == "__main__":
     next_terminated = torch.zeros(args.num_envs).to(device)
     num_updates = args.total_timesteps // args.batch_size
 
+    # set the simulation parameters
+    for i in range(args.num_envs):
+        if args.turb:
+            unwrapped_envs[i].sim['atmosphere/turb-type'] = 3
+            unwrapped_envs[i].sim['atmosphere/turbulence/milspec/windspeed_at_20ft_AGL-fps'] = 75
+            unwrapped_envs[i].sim["atmosphere/turbulence/milspec/severity"] = 6
+
+        if args.wind:
+            unwrapped_envs[i].sim["atmosphere/wind-north-fps"] = 16.26 * 3.281 # mps to fps
+            unwrapped_envs[i].sim["atmosphere/wind-east-fps"] = 16.26 * 3.281 # mps to fps
+
     for update in range(1, num_updates + 1):
         # Annealing the rate if instructed to do so.
         if args.anneal_lr:
@@ -167,6 +185,14 @@ if __name__ == "__main__":
             global_step += 1 * args.num_envs
             obs[step] = next_obs
             terminateds[step] = next_terminated
+
+            for i in range(args.num_envs):
+                if args.rand_targets and unwrapped_envs[i].sim[unwrapped_envs[i].steps_left] % 500 == 0:
+                    # print("setting random targets @ step: ", unwrapped_envs[i].sim[unwrapped_envs[i].steps_left])
+                    roll_ref: float = np.random.randint(-45, 45) * (np.pi / 180)
+                    pitch_ref: float = np.random.randint(-15, 15) * (np.pi / 180)
+                    airspeed_ref: float = np.random.randint(10, 25)
+                    unwrapped_envs[i].set_target_state(airspeed_ref, roll_ref, pitch_ref)
 
             # ALGO LOGIC: action logic
             with torch.no_grad():

@@ -5,6 +5,7 @@ import torch
 import numpy as np
 
 from agents import ppo
+from trim.trim_point import TrimPoint
 
 
 def parse_args():
@@ -18,6 +19,7 @@ def parse_args():
     parser.add_argument('--render-mode', type=str, 
         choices=['plot_scale', 'plot', 'fgear', 'fgear_plot', 'fgear_plot_scale'],
         help='render mode')
+    parser.add_argument('--rand-targets', action='store_true', help='set targets randomly')
     parser.add_argument('--turb', action='store_true', help='add turbulence')
     parser.add_argument('--wind', action='store_true', help='add wind')
     args = parser.parse_args()
@@ -36,7 +38,7 @@ if __name__ == '__main__':
 
     # seeding
     random.seed(seed)
-    np.random.seed(seed)
+    # np.random.seed(seed)
     torch.manual_seed(seed)
     torch.backends.cudnn.deterministic = True
 
@@ -45,6 +47,7 @@ if __name__ == '__main__':
         [ppo.make_env(args.env_id, args.config, args.render_mode, 0.99, eval=True)]
     )
     unwrapped_env = envs.envs[0].unwrapped
+    trim_point = TrimPoint('x8')
 
     obs, _ = envs.reset(seed=seed)
     obs = torch.Tensor(obs).to(device)
@@ -66,7 +69,18 @@ if __name__ == '__main__':
     ppo_agent.eval()
     episode_reward = 0
 
-    for _ in range(2500):
+    # set default target values
+    roll_ref: float = 0.0
+    pitch_ref: float = 0.0
+    airspeed_ref: float = trim_point.Va_ms
+
+    for step in range(2500):
+        if args.rand_targets and step % 500 == 0:
+            roll_ref = np.random.randint(-45, 45) * (np.pi / 180)
+            pitch_ref = np.random.randint(-15, 15) * (np.pi / 180)
+            airspeed_ref = np.random.randint(trim_point.Va_ms - 2, trim_point.Va_ms + 2)
+
+        unwrapped_env.set_target_state(airspeed_ref, roll_ref, pitch_ref)
         action = ppo_agent.get_action_and_value(obs)[1].detach().cpu().numpy()
         obs, reward, truncated, terminated, infos = envs.step(action)
         obs = torch.Tensor(obs).to(device)

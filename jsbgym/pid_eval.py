@@ -22,6 +22,7 @@ def parse_args():
     args = parser.parse_args()
     return args
 
+
 def rearrange_obs(obs: np.ndarray) -> tuple[float, float, float, float, float]:
     Va = obs[0][4][0]
     roll = obs[0][4][1]
@@ -74,7 +75,7 @@ if __name__ == '__main__':
         dt=env.sim.fdm_dt, trim=trim_point,
         limit=x8.throttle_limit, is_throttle=True
     )
-    
+
     # set default target values
     roll_ref: float = 0.0
     pitch_ref: float = 0.0
@@ -83,9 +84,9 @@ if __name__ == '__main__':
     for step in range(2500):
         # set random target values
         if args.rand_targets and step % 500 == 0:
-            roll_ref: float = np.random.randint(-30, 30) * (np.pi / 180)
-            pitch_ref: float = np.random.randint(-45, 45) * (np.pi / 180)
-            airspeed_ref: float = np.random.randint(10, 25)
+            roll_ref = np.random.randint(-45, 45) * (np.pi / 180)
+            pitch_ref = np.random.randint(-15, 15) * (np.pi / 180)
+            airspeed_ref = np.random.randint(trim_point.Va_ms - 2, trim_point.Va_ms + 2)
 
         # apply target values
         env.set_target_state(airspeed_ref, roll_ref, pitch_ref)
@@ -100,9 +101,6 @@ if __name__ == '__main__':
         action = np.array([elevator_cmd, aileron_cmd, throttle_cmd])
         obs, reward, truncated, terminated, info = env.step(action)
         Va, roll, pitch, roll_rate, pitch_rate = rearrange_obs(obs)
-
-
-
 
         done = np.logical_or(truncated, terminated)
         if done:

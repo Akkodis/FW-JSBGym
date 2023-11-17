@@ -22,7 +22,7 @@
             "type": "python",
             "request": "launch",
             "cwd": "${workspaceFolder}/jsbgym",
-            "program": "ppo_continuous_action.py",
+            "program": "ppo_train.py",
             "args": ["--exp-name", "debug_exp", "--num-envs", "2",
                     "--config", "config/bohn_ppo_code.yaml"],
                     // "--config", "config/bohn_ppo_code.yaml"],
