@@ -113,10 +113,7 @@ class AttitudeControlTaskEnv(JSBSimEnv):
 
         # create and set up csv logging file with flight telemetry
         self.telemetry_fieldnames: Tuple[str, ...] = tuple([prop.get_legal_name() for prop in self.telemetry_vars])
-        if self.render_mode in self.metadata["render_modes"][1:]:
-            with open(self.telemetry_file, 'w') as csvfile:
-                csv_writer = csv.DictWriter(csvfile, fieldnames=self.telemetry_fieldnames)
-                csv_writer.writeheader()
+
 
         # set action and observation space from the task
         self.action_space = self.get_action_space()
@@ -131,6 +128,7 @@ class AttitudeControlTaskEnv(JSBSimEnv):
                 - `sim`: the simulation object containing the JSBSim FDM
         """
         super().reset(seed=seed)
+        if options is not None: self.render_mode = options["render_mode"]
 
         self.reset_target_state() # reset task target state
         self.update_errors() # reset task errors
@@ -416,3 +414,11 @@ class AttitudeControlTaskEnv(JSBSimEnv):
         self.sim[prp.reward_total] = r_total
 
         return r_total
+
+    def telemetry_setup(self, telemetry_file: str = None) -> None:
+        if telemetry_file is not None: 
+            self.telemetry_file = telemetry_file
+        if self.render_mode in self.metadata["render_modes"][1:]:
+            with open(self.telemetry_file, 'w') as csvfile:
+                csv_writer = csv.DictWriter(csvfile, fieldnames=self.telemetry_fieldnames)
+                csv_writer.writeheader()

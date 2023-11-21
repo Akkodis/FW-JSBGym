@@ -29,7 +29,7 @@ class JSBSimEnv(gym.Env):
             - `action_space`: the action space of the environment
             - `observation_space`: the observation space of the environment
     """
-    metadata: Dict[str, str] = {"render_modes": ["none", "plot", "plot_scale", "fgear", "fgear_plot", "fgear_plot_scale"]}
+    metadata: Dict[str, str] = {"render_modes": ["none", "log", "plot", "plot_scale", "fgear", "fgear_plot", "fgear_plot_scale"]}
 
     def __init__(self,
                  jsbsim_config: dict,
@@ -70,12 +70,12 @@ class JSBSimEnv(gym.Env):
 
         # enable FlightGear output for JSBSim <-> FGear communcation if render mode is fgear, fgear_plot, flear_plot_scale
         self.enable_fgear_output: bool = False
-        if self.render_mode in self.metadata["render_modes"][3:]:
+        if self.render_mode in self.metadata["render_modes"][4:]:
             self.enable_fgear_output = True
 
         # set the visualization time factor (plot and/or flightgear visualization),default is None
         self.viz_time_factor: float = None
-        if self.render_mode in self.metadata["render_modes"][1:]:
+        if self.render_mode in self.metadata["render_modes"][2:]:
             self.viz_time_factor: float = jsbsim_config["viz_time_factor"]
 
         max_episode_steps: int = ceil(self.episode_length_s * self.fdm_frequency)

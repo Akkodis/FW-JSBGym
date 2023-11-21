@@ -10,6 +10,7 @@ from agents import ppo
 
 import wandb
 import gymnasium as gym
+import pandas as pd
 import numpy as np
 import torch
 import torch.nn as nn
@@ -37,6 +38,7 @@ def parse_args():
         help="the entity (team) of wandb's project")
     parser.add_argument("--capture-video", type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True,
         help="whether to capture videos of the agent performances (check out `videos` folder)")
+    parser.add_argument("--no-eval", action='store_true', default=False, help="do not evaluate the agent at the end of training")
 
     # Algorithm specific arguments
     parser.add_argument("--env-id", type=str, default="AttitudeControlTaskEnv-v0",
@@ -189,9 +191,9 @@ if __name__ == "__main__":
             for i in range(args.num_envs):
                 if args.rand_targets and unwrapped_envs[i].sim[unwrapped_envs[i].steps_left] % 500 == 0:
                     # print("setting random targets @ step: ", unwrapped_envs[i].sim[unwrapped_envs[i].steps_left])
-                    roll_ref: float = np.random.randint(-45, 45) * (np.pi / 180)
-                    pitch_ref: float = np.random.randint(-15, 15) * (np.pi / 180)
-                    airspeed_ref: float = np.random.randint(10, 25)
+                    roll_ref: float = np.random.uniform(-45, 45) * (np.pi / 180)
+                    pitch_ref: float = np.random.uniform(-15, 15) * (np.pi / 180)
+                    airspeed_ref = np.random.uniform(trim_point.Va_ms - 2, trim_point.Va_ms + 2)
                     unwrapped_envs[i].set_target_state(airspeed_ref, roll_ref, pitch_ref)
 
             # ALGO LOGIC: action logic
@@ -360,5 +362,32 @@ if __name__ == "__main__":
     train_dict["agent"] = agent.state_dict()
     torch.save(train_dict, f"{save_path}{run_name}.pt") 
 
-    envs.close()
+    # Evaluate the agent
+    if not args.no_eval:
+        e_env = envs.envs[0]
+        e_env.eval = True
+        telemetry_file = f"telemetry/{run_name}.csv"
+        e_obs, _ = e_env.reset(options={"render_mode": "log"})
+        e_env.unwrapped.telemetry_setup(telemetry_file)
+        e_obs = torch.Tensor(e_obs).unsqueeze(0).to(device)
+        for step in range(2500):
+            if step % 500 == 0:
+                roll_ref = np.random.uniform(-45, 45) * (np.pi / 180)
+                pitch_ref = np.random.uniform(-15, 15) * (np.pi / 180)
+                airspeed_ref = np.random.uniform(trim_point.Va_ms - 2, trim_point.Va_ms + 2)
+
+            e_env.unwrapped.set_target_state(airspeed_ref, roll_ref, pitch_ref)
+            action = agent.get_action_and_value(e_obs)[1][0].detach().cpu().numpy()
+            e_obs, reward, truncated, terminated, info = e_env.step(action)
+            e_obs = torch.Tensor(e_obs).unsqueeze(0).to(device)
+
+            done = np.logical_or(truncated, terminated)
+            if done:
+                print(f"Episode reward: {info['episode']['r']}")
+                break
+
+        telemetry_df = pd.read_csv(telemetry_file)
+        telemetry_table = wandb.Table(dataframe=telemetry_df)
+        wandb.log({"telemetry": telemetry_table})
+
     writer.close()
