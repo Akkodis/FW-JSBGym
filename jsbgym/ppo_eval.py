@@ -76,9 +76,9 @@ if __name__ == '__main__':
 
     for step in range(2500):
         if args.rand_targets and step % 500 == 0:
-            roll_ref = np.random.randint(-45, 45) * (np.pi / 180)
-            pitch_ref = np.random.randint(-15, 15) * (np.pi / 180)
-            airspeed_ref = np.random.randint(trim_point.Va_ms - 2, trim_point.Va_ms + 2)
+            roll_ref = np.random.uniform(-45, 45) * (np.pi / 180)
+            pitch_ref = np.random.uniform(-15, 15) * (np.pi / 180)
+            airspeed_ref = np.random.uniform(trim_point.Va_ms - 2, trim_point.Va_ms + 2)
 
         unwrapped_env.set_target_state(airspeed_ref, roll_ref, pitch_ref)
         action = ppo_agent.get_action_and_value(obs)[1].detach().cpu().numpy()
