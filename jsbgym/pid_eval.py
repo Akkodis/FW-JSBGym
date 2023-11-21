@@ -16,6 +16,8 @@ def parse_args():
     parser.add_argument('--render-mode', type=str, 
         choices=['plot_scale', 'plot', 'fgear', 'fgear_plot', 'fgear_plot_scale'],
         help='render mode')
+    parser.add_argument("--tele-file", type=str, default="telemetry/pid_eval_telemetry.csv", 
+        help="telemetry csv file")
     parser.add_argument('--rand-targets', action='store_true', help='set targets randomly')
     parser.add_argument('--turb', action='store_true', help='add turbulence')
     parser.add_argument('--wind', action='store_true', help='add wind')
@@ -35,7 +37,8 @@ def rearrange_obs(obs: np.ndarray) -> tuple[float, float, float, float, float]:
 if __name__ == '__main__':
     args = parse_args()
 
-    env = gym.make(args.env_id, config_file=args.config, render_mode=args.render_mode)
+    env = gym.make(args.env_id, config_file=args.config, render_mode=args.render_mode,
+                    telemetry_file=args.tele_file)
     env = gym.wrappers.RecordEpisodeStatistics(env)
     obs, _ = env.reset()
     Va, roll, pitch, roll_rate, pitch_rate = rearrange_obs(obs)

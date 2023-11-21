@@ -63,7 +63,7 @@ class AttitudeControlTaskEnv(JSBSimEnv):
     TargetState: Type[NamedTuple]
     Errors: Type[NamedTuple]
 
-    def __init__(self, config_file: str, render_mode: str=None) -> None:
+    def __init__(self, config_file: str, telemetry_file: str, render_mode: str=None) -> None:
         """
             Args:
                 - `fdm_freq`: jsbsim FDM frequency
@@ -74,11 +74,14 @@ class AttitudeControlTaskEnv(JSBSimEnv):
         with open(config_file, "r") as file:
             cfg_all: dict = yaml.safe_load(file)
 
-        super().__init__(cfg_all["JSBSimEnv"], render_mode, 'x8')
+        # Send telemetry configuration to mother class constructor
+        self.telemetry_fieldnames: Tuple[str, ...] = tuple([prop.get_legal_name() for prop in self.telemetry_vars])
+        telemetry_cfg = (telemetry_file, self.telemetry_fieldnames)
+
+        super().__init__(cfg_all["JSBSimEnv"], telemetry_cfg, render_mode)
 
         self.task_cfg: dict = cfg_all["AttitudeControlTaskEnv"]
 
-        self.telemetry_file: str = self.task_cfg["telemetry_file"]
         self.obs_is_matrix = self.task_cfg["obs_is_matrix"]
 
         # observation history size
@@ -111,8 +114,6 @@ class AttitudeControlTaskEnv(JSBSimEnv):
         self.success_time_s: float = self.task_cfg["success_time_s"] # time in seconds the agent has to reach the target state to be considered successful
         self.reached_tsteps: int = 0 # number of timesteps the agent has reached the target state
 
-        # create and set up csv logging file with flight telemetry
-        self.telemetry_fieldnames: Tuple[str, ...] = tuple([prop.get_legal_name() for prop in self.telemetry_vars])
 
 
         # set action and observation space from the task
@@ -414,11 +415,3 @@ class AttitudeControlTaskEnv(JSBSimEnv):
         self.sim[prp.reward_total] = r_total
 
         return r_total
-
-    def telemetry_setup(self, telemetry_file: str = None) -> None:
-        if telemetry_file is not None: 
-            self.telemetry_file = telemetry_file
-        if self.render_mode in self.metadata["render_modes"][1:]:
-            with open(self.telemetry_file, 'w') as csvfile:
-                csv_writer = csv.DictWriter(csvfile, fieldnames=self.telemetry_fieldnames)
-                csv_writer.writeheader()

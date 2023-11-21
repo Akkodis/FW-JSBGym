@@ -19,6 +19,8 @@ def parse_args():
     parser.add_argument('--render-mode', type=str, 
         choices=['plot_scale', 'plot', 'fgear', 'fgear_plot', 'fgear_plot_scale'],
         help='render mode')
+    parser.add_argument("--tele-file", type=str, default="telemetry/ppo_eval_telemetry.csv", 
+        help="telemetry csv file")
     parser.add_argument('--rand-targets', action='store_true', help='set targets randomly')
     parser.add_argument('--turb', action='store_true', help='add turbulence')
     parser.add_argument('--wind', action='store_true', help='add wind')
@@ -44,7 +46,7 @@ if __name__ == '__main__':
 
     # env setup
     envs = gym.vector.SyncVectorEnv(
-        [ppo.make_env(args.env_id, args.config, args.render_mode, 0.99, eval=True)]
+        [ppo.make_env(args.env_id, args.config, args.render_mode, args.tele_file, eval=True)]
     )
     unwrapped_env = envs.envs[0].unwrapped
     trim_point = TrimPoint('x8')

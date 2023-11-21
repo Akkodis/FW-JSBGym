@@ -135,7 +135,7 @@ if __name__ == "__main__":
 
     # env setup
     envs = gym.vector.SyncVectorEnv(
-        [ppo.make_env(args.env_id, args.config, "none", args.gamma, eval=False, idx=i) for i in range(args.num_envs)]
+        [ppo.make_env(args.env_id, args.config, "none", None, eval=False, gamma=args.gamma) for i in range(args.num_envs)]
     )
     unwrapped_envs = [envs.envs[i].unwrapped for i in range(args.num_envs)]
 

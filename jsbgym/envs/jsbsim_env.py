@@ -1,9 +1,10 @@
 import gymnasium as gym
 import numpy as np
 import os
+import csv
 from math import ceil
 
-from typing import Dict, Type, Tuple
+from typing import Dict
 
 from jsbgym.simulation.jsb_simulation import Simulation
 from jsbgym.visualizers.visualizer import PlotVisualizer, FlightGearVisualizer
@@ -33,6 +34,7 @@ class JSBSimEnv(gym.Env):
 
     def __init__(self,
                  jsbsim_config: dict,
+                 telemetry_cfg: tuple,
                  render_mode: str=None,
                  aircraft_id: str='x8') -> None:
 
@@ -58,6 +60,8 @@ class JSBSimEnv(gym.Env):
         self.fdm_frequency: float = self.jsbsim_cfg["fdm_freq"]
         self.sim_steps_after_agent_action: int = int(self.fdm_frequency // self.agent_frequency)
         self.aircraft_id: str = aircraft_id
+        self.telemetry_file: str = telemetry_cfg[0]
+        self.telemetry_fieldnames: tuple = telemetry_cfg[1]
 
 
         # visualizers, one for matplotlib and one for FlightGear
@@ -85,7 +89,7 @@ class JSBSimEnv(gym.Env):
 
         if not os.path.exists('telemetry'):
             os.makedirs('telemetry')
-
+        self.telemetry_setup(self.telemetry_file)
 
     def reset(self, seed: int=None, options: dict=None) -> None:
         """
@@ -140,10 +144,10 @@ class JSBSimEnv(gym.Env):
         if self.render_mode == 'none': pass
         if self.render_mode == 'plot_scale':
             if not self.plot_viz:
-                self.plot_viz = PlotVisualizer(scale=True)
+                self.plot_viz = PlotVisualizer(True, self.telemetry_file)
         if self.render_mode == 'plot':
             if not self.plot_viz:
-                self.plot_viz = PlotVisualizer(scale=False)
+                self.plot_viz = PlotVisualizer(False, self.telemetry_file)
         if self.render_mode == 'fgear':
             if not self.fgear_viz:
                 self.fgear_viz = FlightGearVisualizer(self.sim)
@@ -164,3 +168,12 @@ class JSBSimEnv(gym.Env):
             Converts the airspeed from kts to m/s
         """
         self.sim[prp.airspeed_mps] = self.sim[prp.airspeed_kts] * 0.51444
+
+
+    def telemetry_setup(self, telemetry_file: str) -> None:
+        if telemetry_file is not None: 
+            self.telemetry_file = telemetry_file
+        if self.render_mode in self.metadata["render_modes"][1:]:
+            with open(self.telemetry_file, 'w') as csvfile:
+                csv_writer = csv.DictWriter(csvfile, fieldnames=self.telemetry_fieldnames)
+                csv_writer.writeheader()

@@ -4,12 +4,13 @@ from jsbgym.simulation.jsb_simulation import Simulation
 
 
 class PlotVisualizer(object):
-    def __init__(self, scale: bool) -> None:
+    def __init__(self, scale: bool, telemetry_file: str) -> None:
         cmd: str = ""
         if scale:
-            cmd: str = "python visualizers/attitude_control_telemetry.py --scale"
+            cmd = f"python visualizers/attitude_control_telemetry.py --tele-file {telemetry_file} --scale"
         else:
-            cmd: str = "python visualizers/attitude_control_telemetry.py"
+            cmd = f"python visualizers/attitude_control_telemetry.py --tele-file {telemetry_file}"
+        print(telemetry_file)
         self.process: subprocess.Popen = subprocess.Popen(cmd, 
                                                           shell=True,
                                                           stdout=subprocess.PIPE,

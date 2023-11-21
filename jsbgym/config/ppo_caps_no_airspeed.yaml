@@ -8,13 +8,12 @@ JSBSimEnv:
     viz_time_factor: 1.0
 
 # task specific child class config: AttitudeControlTaskEnv
-AttitudeControlTaskEnv:
+AttControlNoAirspeed:
     obs_is_matrix: True
     obs_history_size: 5
     act_history_size: 5
 
     error_success_tholds: # error thresholds for success
-        Va: 0.1 # m/s
         pitch: 0.1 # rad
         roll: 0.1 # rad
 
@@ -29,16 +28,3 @@ AttitudeControlTaskEnv:
             scaling: 3.2
             clip_min: 0.0
             clip_max: 0.333
-        Va:
-            scaling: 25.0
-            clip_min: 0.0
-            clip_max: 0.333
-
-        # those weights are not used in the final reward computation
-        # only for logging in the plots to give a metric on action smoothness
-        act_var: # action variation
-            scaling: 60.0
-            clip_min: 0.0
-            # clip_max: 0.1
-        act_bounds:
-            scaling: 1.0

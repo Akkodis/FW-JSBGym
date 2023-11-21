@@ -6,9 +6,10 @@ from torch.distributions.normal import Normal
 from jsbgym.utils.gym_utils import MyNormalizeObservation
 
 
-def make_env(env_id, config, render_mode, gamma, eval=False, run_name='', idx=0):
+def make_env(env_id, config, render_mode, telemetry_file=None, eval=False, gamma=0.99, run_name='', idx=0):
     def thunk():
-        env = gym.make(env_id, config_file=config, render_mode=render_mode)
+        env = gym.make(env_id, config_file=config, telemetry_file=telemetry_file,
+                        render_mode=render_mode)
         env = gym.wrappers.RecordEpisodeStatistics(env)
         env = gym.wrappers.ClipAction(env)
         env = MyNormalizeObservation(env, eval=eval)
