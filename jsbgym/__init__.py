@@ -11,3 +11,9 @@ gymnasium.register(
     entry_point='jsbgym.envs.attitude_control:AttitudeControlTaskEnv',
     autoreset=True
 )
+
+gymnasium.register(
+    id='AttControlNoAirspeed-v0',
+    entry_point='jsbgym.envs.attitude_control_noairspeed:AttControlNoAirspeed',
+    autoreset=True
+)

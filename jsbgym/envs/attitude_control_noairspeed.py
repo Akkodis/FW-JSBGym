@@ -4,13 +4,14 @@ import csv
 import yaml
 
 from jsbgym.envs.jsbsim_env import JSBSimEnv
+from jsbgym.trim.trim_point import TrimPoint
 from typing import Type, NamedTuple, Tuple, Deque, Dict
 from jsbgym.utils import jsbsim_properties as prp
 from jsbgym.utils.jsbsim_properties import BoundedProperty
 from collections import namedtuple, deque
 
 
-class AttitudeControlTaskEnv(JSBSimEnv):
+class AttControlNoAirspeed(JSBSimEnv):
     """
         gym.Env wrapper task. Made for attitude control as described in Deep Reinforcement Learning Attitude Control of Fixed-Wing UAVs Using Proximal Policy Optimization by Bohn et al.
 
@@ -34,17 +35,15 @@ class AttitudeControlTaskEnv(JSBSimEnv):
         prp.airspeed_mps, # airspeed
         prp.roll_rad, prp.pitch_rad, # attitude
         prp.p_radps, prp.q_radps, prp.r_radps, # angular rates
-        prp.airspeed_err, prp.roll_err, prp.pitch_err, # errors
-        prp.elevator_avg, prp.aileron_avg, prp.throttle_avg, # average of past 5 fcs commands
+        prp.roll_err, prp.pitch_err, # errors
+        prp.aileron_avg, prp.elevator_avg # average of past 5 fcs commands
     )
 
     action_vars: Tuple[BoundedProperty, ...] = (
-        prp.elevator_cmd, prp.aileron_cmd, # control surface commands normalized [-1, 1]
-        prp.throttle_cmd # throttle command normalized [0, 1]
+        prp.aileron_cmd, prp.elevator_cmd
     )
 
     target_state_vars: Tuple[BoundedProperty, ...] = (
-        prp.target_airspeed_mps, # target airspeed
         prp.target_roll_rad, prp.target_pitch_rad # target attitude
     )
 
@@ -53,11 +52,12 @@ class AttitudeControlTaskEnv(JSBSimEnv):
         prp.roll_rad, prp.pitch_rad, prp.heading_rad, # attitude
         prp.p_radps, prp.q_radps, prp.r_radps, prp.airspeed_mps, # angular rates and airspeed
         prp.throttle_cmd, prp.elevator_cmd, prp.aileron_cmd, # control surface commands
-        prp.reward_total, prp.reward_airspeed, prp.reward_roll, prp.reward_pitch, prp.reward_actvar # rewards
-    ) + target_state_vars # target state variables
+        prp.reward_total, prp.reward_roll, prp.reward_pitch # rewards
+    ) + target_state_vars
+
 
     error_vars: Tuple[BoundedProperty, ...] = (
-        prp.airspeed_err, prp.roll_err, prp.pitch_err # errors
+        prp.roll_err, prp.pitch_err # errors
     )
 
     State: Type[NamedTuple]
@@ -80,7 +80,7 @@ class AttitudeControlTaskEnv(JSBSimEnv):
 
         super().__init__(cfg_all["JSBSimEnv"], telemetry_cfg, render_mode)
 
-        self.task_cfg: dict = cfg_all["AttitudeControlTaskEnv"]
+        self.task_cfg: dict = cfg_all["AttControlNoAirspeed"]
 
         self.obs_is_matrix = self.task_cfg["obs_is_matrix"]
 
@@ -106,10 +106,6 @@ class AttitudeControlTaskEnv(JSBSimEnv):
         # declaring error NamedTuple structure
         self.Errors: NamedTuple = namedtuple('Errors', [f"{error_var.get_legal_name()}_err" for error_var in self.error_vars])
         self.errors: self.Errors = None
-
-        self.ErrorSuccessTholds: NamedTuple = namedtuple('ErrorThresholds', [f"{error_var.get_legal_name()}_err_threshold" for error_var in self.error_vars])
-        err_th_cfg: dict = self.task_cfg["error_success_tholds"]
-        self.err_success_th = self.ErrorSuccessTholds(err_th_cfg["Va"], err_th_cfg["pitch"], err_th_cfg["roll"]) # error thresholds for airspeed, roll and pitch
 
         self.success_time_s: float = self.task_cfg["success_time_s"] # time in seconds the agent has to reach the target state to be considered successful
         self.reached_tsteps: int = 0 # number of timesteps the agent has reached the target state
@@ -154,6 +150,8 @@ class AttitudeControlTaskEnv(JSBSimEnv):
         # apply the action to the simulation
         for prop, command in zip(self.action_vars, action):
             self.sim[prop] = command
+        # apply constant trim command to throttle
+        self.sim[prp.throttle_cmd] = TrimPoint().throttle
         self.update_action_history(action) # update the action history
 
         # run the simulation for sim_steps_after_agent_action steps
@@ -223,7 +221,7 @@ class AttitudeControlTaskEnv(JSBSimEnv):
             If it's the first action, the action history is initialized to `obs_history_size` * `action`.
         """
         # if it's the first action -> action is None: fill action history with [0, 0, 0]
-        init_action: np.ndarray = np.array([0, 0, 0])
+        init_action: np.ndarray = np.array([0, 0])
         if action is None:
             for _ in range(self.obs_history_size):
                 self.action_hist.append(init_action)
@@ -296,7 +294,7 @@ class AttitudeControlTaskEnv(JSBSimEnv):
         # for error_var, target_state_var, state_var in zip(self.error_vars, self.target_state_vars, self.state_vars):
         #     self.sim[error_var] = self.sim[target_state_var] - self.sim[state_var]
 
-        self.sim[prp.airspeed_err] = self.sim[prp.target_airspeed_mps] - self.sim[prp.airspeed_mps]
+        # self.sim[prp.airspeed_err] = self.sim[prp.target_airspeed_mps] - self.sim[prp.airspeed_mps]
         self.sim[prp.roll_err] = self.sim[prp.target_roll_rad] - self.sim[prp.roll_rad]
         self.sim[prp.pitch_err] = self.sim[prp.target_pitch_rad] - self.sim[prp.pitch_rad]
         
@@ -308,23 +306,23 @@ class AttitudeControlTaskEnv(JSBSimEnv):
         """
             Update the average of the past N commands (elevator, aileron, throttle)
         """
-        # for act_i, action_avg in enumerate(self.state_vars[:-3]):
+        # for act_i, action_avg in enumerate(self.state_vars[:-2]):
         #     self.sim[action_avg] = np.mean(np.array(self.action_hist)[:, act_i])
 
-        self.sim[prp.elevator_avg] = np.mean(np.array(self.action_hist)[:, 0])
-        self.sim[prp.aileron_avg] = np.mean(np.array(self.action_hist)[:, 1])
-        self.sim[prp.throttle_avg] = np.mean(np.array(self.action_hist)[:, 2])
+        act_hist = np.array(self.action_hist)
+        self.sim[prp.aileron_avg] = np.mean(np.array(self.action_hist)[:, 0])
+        self.sim[prp.elevator_avg] = np.mean(np.array(self.action_hist)[:, 1])
 
 
-    def set_target_state(self, target_airspeed_mps: float, target_roll_rad: float, target_pitch_rad: float) -> None:
+    def set_target_state(self, target_roll_rad: float, target_pitch_rad: float) -> None:
         """
             Set the target state of the aircraft, i.e. the target state variables defined in the `target_state_vars` tuple.
         """
         # fill target state namedtuple with target state attributes
-        self.target = self.TargetState(str(target_airspeed_mps), str(target_roll_rad), str(target_pitch_rad))
+        self.target = self.TargetState(str(target_roll_rad), str(target_pitch_rad))
 
         # set target state sim properties
-        self.sim[prp.target_airspeed_mps] = target_airspeed_mps
+        # self.sim[prp.target_airspeed_mps] = target_airspeed_mps
         self.sim[prp.target_roll_rad] = target_roll_rad
         self.sim[prp.target_pitch_rad] = target_pitch_rad
 
@@ -334,8 +332,7 @@ class AttitudeControlTaskEnv(JSBSimEnv):
             Reset the target state of the aircraft, i.e. the target state variables defined in the `target_state_vars` tuple, with initial conditions.
         """
         # reset task class attributes with initial conditions
-        self.set_target_state(target_airspeed_mps=self.sim[prp.initial_airspeed_kts] * 0.514444, # converting kts to mps 
-                              target_roll_rad=self.sim[prp.initial_roll_rad], 
+        self.set_target_state(target_roll_rad=self.sim[prp.initial_roll_rad], 
                               target_pitch_rad=self.sim[prp.initial_pitch_rad])
 
 
@@ -360,28 +357,13 @@ class AttitudeControlTaskEnv(JSBSimEnv):
         r_w: dict = self.task_cfg["reward_weights"] # reward weights for each reward component
         r_roll = np.clip(abs(self.sim[prp.roll_err]) / r_w["roll"]["scaling"], r_w["roll"]["clip_min"], r_w["roll"].get("clip_max", None)) # roll reward component
         r_pitch = np.clip(abs(self.sim[prp.pitch_err]) / r_w["pitch"]["scaling"], r_w["pitch"]["clip_min"], r_w["pitch"].get("clip_max", None)) # pitch reward component
-        r_airspeed = np.clip(abs(self.sim[prp.airspeed_err]) / r_w["Va"]["scaling"], r_w["Va"]["clip_min"], r_w["Va"].get("clip_max", None)) # airspeed reward component
-
-        r_act_low: np.ndarray = np.where(action < self.action_space.low, self.action_space.low - action, 0)
-        r_act_high: np.ndarray = np.where(action > self.action_space.high, action - self.action_space.high, 0)
-        r_act_bounds_raw: float = np.sum(np.abs(r_act_low) + np.sum(np.abs(r_act_high))) # doute sur le np.sum
-        r_act_bounds: float = np.clip(r_act_bounds_raw / r_w["act_bounds"]["scaling"], 0, r_w["act_bounds"].get("clip_max", None))
-        
-        # computing actvar reward component just for visualization purposes (not used in the final reward summation)
-        np_action_hist: np.ndarray = np.array(self.action_hist)
-        deltas: np.ndarray = np.diff(np_action_hist[-self.obs_history_size:], axis=0)
-        r_actvar_raw = np.sum(np.abs(deltas))
-        r_actvar = np.clip(r_actvar_raw / r_w["act_var"]["scaling"], r_w["act_var"]["clip_min"], r_w["act_var"].get("clip_max", None)) # flight control surface reward component
 
         # return the negative sum of all reward components
-        r_total: float = -(r_roll + r_pitch + r_airspeed)
+        r_total: float = -(r_roll + r_pitch)
 
         # populate properties
         self.sim[prp.reward_roll] = r_roll
         self.sim[prp.reward_pitch] = r_pitch
-        self.sim[prp.reward_airspeed] = r_airspeed
-        self.sim[prp.reward_actvar] = r_actvar
-        self.sim[prp.reward_act_bounds] = r_act_bounds
         self.sim[prp.reward_total] = r_total
 
         return r_total
