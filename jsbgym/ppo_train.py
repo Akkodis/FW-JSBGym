@@ -143,7 +143,8 @@ if __name__ == "__main__":
     agent = ppo.Agent(envs).to(device)
     optimizer = optim.Adam(agent.parameters(), lr=args.learning_rate, eps=1e-5)
     trim_point: TrimPoint = TrimPoint(aircraft_id='x8')
-    trim_acts = torch.tensor([trim_point.elevator, trim_point.aileron, trim_point.throttle]).to(device)
+    # trim_acts = torch.tensor([trim_point.elevator, trim_point.aileron, trim_point.throttle]).to(device)
+    trim_acts = torch.tensor([trim_point.elevator, trim_point.aileron]).to(device)
 
     # ALGO Logic: Storage setup
     obs = torch.zeros((args.num_steps, args.num_envs) + envs.single_observation_space.shape).to(device)
@@ -193,8 +194,9 @@ if __name__ == "__main__":
                     # print("setting random targets @ step: ", unwrapped_envs[i].sim[unwrapped_envs[i].steps_left])
                     roll_ref: float = np.random.uniform(-45, 45) * (np.pi / 180)
                     pitch_ref: float = np.random.uniform(-15, 15) * (np.pi / 180)
-                    airspeed_ref = np.random.uniform(trim_point.Va_ms - 2, trim_point.Va_ms + 2)
-                    unwrapped_envs[i].set_target_state(airspeed_ref, roll_ref, pitch_ref)
+                    # airspeed_ref = np.random.uniform(trim_point.Va_ms - 2, trim_point.Va_ms + 2)
+                    # unwrapped_envs[i].set_target_state(airspeed_ref, roll_ref, pitch_ref)
+                    unwrapped_envs[i].set_target_state(roll_ref, pitch_ref)
 
             # ALGO LOGIC: action logic
             with torch.no_grad():
@@ -351,7 +353,7 @@ if __name__ == "__main__":
         writer.add_scalar("losses/total_loss", loss.item(), global_step)
         writer.add_scalar("action_std/de", action_std[0], global_step)
         writer.add_scalar("action_std/da", action_std[1], global_step)
-        writer.add_scalar("action_std/dt", action_std[2], global_step)
+        # writer.add_scalar("action_std/dt", action_std[2], global_step)
         print("SPS:", int(global_step / (time.time() - start_time)))
         writer.add_scalar("charts/SPS", int(global_step / (time.time() - start_time)), global_step)
 
@@ -362,7 +364,30 @@ if __name__ == "__main__":
     train_dict["agent"] = agent.state_dict()
     torch.save(train_dict, f"{save_path}{run_name}.pt") 
 
-    # Evaluate the agent
+    # # Evaluate the agent
+    # if not args.no_eval:
+    #     e_env = envs.envs[0]
+    #     e_env.eval = True
+    #     telemetry_file = f"telemetry/{run_name}.csv"
+    #     e_obs, _ = e_env.reset(options={"render_mode": "log"})
+    #     e_env.unwrapped.telemetry_setup(telemetry_file)
+    #     e_obs = torch.Tensor(e_obs).unsqueeze(0).to(device)
+    #     for step in range(2500):
+    #         if step % 500 == 0:
+    #             roll_ref = np.random.uniform(-45, 45) * (np.pi / 180)
+    #             pitch_ref = np.random.uniform(-15, 15) * (np.pi / 180)
+    #             airspeed_ref = np.random.uniform(trim_point.Va_ms - 2, trim_point.Va_ms + 2)
+
+    #         e_env.unwrapped.set_target_state(airspeed_ref, roll_ref, pitch_ref)
+    #         action = agent.get_action_and_value(e_obs)[1][0].detach().cpu().numpy()
+    #         e_obs, reward, truncated, terminated, info = e_env.step(action)
+    #         e_obs = torch.Tensor(e_obs).unsqueeze(0).to(device)
+
+    #         done = np.logical_or(truncated, terminated)
+    #         if done:
+    #             print(f"Episode reward: {info['episode']['r']}")
+    #             break
+
     if not args.no_eval:
         e_env = envs.envs[0]
         e_env.eval = True
@@ -374,9 +399,8 @@ if __name__ == "__main__":
             if step % 500 == 0:
                 roll_ref = np.random.uniform(-45, 45) * (np.pi / 180)
                 pitch_ref = np.random.uniform(-15, 15) * (np.pi / 180)
-                airspeed_ref = np.random.uniform(trim_point.Va_ms - 2, trim_point.Va_ms + 2)
 
-            e_env.unwrapped.set_target_state(airspeed_ref, roll_ref, pitch_ref)
+            e_env.unwrapped.set_target_state(roll_ref, pitch_ref)
             action = agent.get_action_and_value(e_obs)[1][0].detach().cpu().numpy()
             e_obs, reward, truncated, terminated, info = e_env.step(action)
             e_obs = torch.Tensor(e_obs).unsqueeze(0).to(device)
@@ -385,7 +409,6 @@ if __name__ == "__main__":
             if done:
                 print(f"Episode reward: {info['episode']['r']}")
                 break
-
         telemetry_df = pd.read_csv(telemetry_file)
         telemetry_table = wandb.Table(dataframe=telemetry_df)
         wandb.log({"telemetry": telemetry_table})

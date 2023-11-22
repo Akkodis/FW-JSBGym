@@ -7,7 +7,7 @@ JSBSimEnv:
     episode_length_s: 20.0
     viz_time_factor: 1.0
 
-# task specific child class config: AttitudeControlTaskEnv
+# task specific child class config: AttControlNoAirspeed
 AttControlNoAirspeed:
     obs_is_matrix: True
     obs_history_size: 5
@@ -23,8 +23,8 @@ AttControlNoAirspeed:
         roll:
             scaling: 3.2
             clip_min: 0.0
-            clip_max: 0.333
+            clip_max: 0.5
         pitch:
             scaling: 3.2
             clip_min: 0.0
-            clip_max: 0.333
+            clip_max: 0.5
