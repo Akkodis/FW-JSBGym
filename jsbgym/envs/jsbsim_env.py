@@ -155,12 +155,12 @@ class JSBSimEnv(gym.Env):
             if not self.fgear_viz:
                 self.fgear_viz = FlightGearVisualizer(self.sim)
             if not self.plot_viz:
-                self.plot_viz = PlotVisualizer(scale=False)
+                self.plot_viz = PlotVisualizer(False, self.telemetry_file)
         if self.render_mode == 'fgear_plot_scale':
             if not self.fgear_viz:
                 self.fgear_viz = FlightGearVisualizer(self.sim)
             if not self.plot_viz:
-                self.plot_viz = PlotVisualizer(scale=True)
+                self.plot_viz = PlotVisualizer(True, self.telemetry_file)
 
 
     def convert_airspeed_kts2mps(self) -> None:
