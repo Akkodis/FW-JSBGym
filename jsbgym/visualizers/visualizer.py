@@ -30,7 +30,7 @@ class FlightGearVisualizer(object):
     SERVER = ''
     PORT = 5550
     PROTOCOL = 'udp'
-    LOADED_MESSAGE = "Primer reset to 0"
+    LOADED_MESSAGE = "PNG lib warning : Malformed iTXt chunk"
     TIME = 'noon'
     AIRCRAFT_FG_ID = 'c172p'
 
@@ -47,7 +47,7 @@ class FlightGearVisualizer(object):
         # cmd for running flightgear(.AppImage version 2020.3.17) from terminal.
         # We ignore the aircraft_id to load the c172p viz, since x8 doesn't exist in fgear
         cmd: str = f'exec $HOME/Apps/FlightGear-2020.3.17/FlightGear-2020.3.17-x86_64.AppImage --fdm=null \
-        --native-fdm=socket,in,60,,5550,udp --aircraft=c172p --timeofday=noon --disable-ai-traffic --disable-real-weather-fetch'
+        --native-fdm=socket,in,60,,5550,udp --aircraft={aircraft_fgear_id} --timeofday=noon --disable-ai-traffic --disable-real-weather-fetch'
 
         flightgear_process = subprocess.Popen(cmd,
                                               shell=True,
