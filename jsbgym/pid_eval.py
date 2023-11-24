@@ -11,7 +11,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=str, default="config/ppo_caps.yaml",
         help="the config file of the environnement")
-    parser.add_argument("--env-id", type=str, default="AttitudeControlTaskEnv-v0", 
+    parser.add_argument("--env-id", type=str, default="AttitudeControlTask-v0", 
         help="the id of the environment")
     parser.add_argument('--render-mode', type=str, 
         choices=['plot_scale', 'plot', 'fgear', 'fgear_plot', 'fgear_plot_scale'],
@@ -26,9 +26,9 @@ def parse_args():
 
 
 def rearrange_obs(obs: np.ndarray) -> tuple[float, float, float, float, float]:
-    Va = obs[0][4][0]
-    roll = obs[0][4][1]
-    pitch = obs[0][4][2]
+    roll = obs[0][4][0]
+    pitch = obs[0][4][1]
+    Va = obs[0][4][2]
     roll_rate = obs[0][4][3]
     pitch_rate = obs[0][4][4]
     return Va, roll, pitch, roll_rate, pitch_rate
@@ -36,6 +36,12 @@ def rearrange_obs(obs: np.ndarray) -> tuple[float, float, float, float, float]:
 
 if __name__ == '__main__':
     args = parse_args()
+    if args.env_id == "AttitudeControlTask-v0":
+        args.config = "config/ppo_caps.yaml"
+    elif args.env_id == "AttitudeControlNoVaTask-v0":
+        args.config = "config/ppo_caps_no_va.yaml"
+
+    print(args.config)
 
     env = gym.make(args.env_id, config_file=args.config, render_mode=args.render_mode,
                     telemetry_file=args.tele_file)
@@ -70,6 +76,7 @@ if __name__ == '__main__':
     kd_pitch: float = -0.1
     pitch_pid = PID(kp=kp_pitch, ki=ki_pitch, kd=kd_pitch,
                     dt=env.sim.fdm_dt, limit=x8.aileron_limit)
+
     kp_airspeed: float = 0.5
     ki_airspeed: float = 0.1
     kd_airspeed: float = 0.0
@@ -92,7 +99,8 @@ if __name__ == '__main__':
             airspeed_ref = np.random.uniform(trim_point.Va_ms - 2, trim_point.Va_ms + 2)
 
         # apply target values
-        env.set_target_state(airspeed_ref, roll_ref, pitch_ref)
+        env.set_target_state(roll_ref, pitch_ref, airspeed_ref)
+        # env.set_target_state(roll_ref, pitch_ref)
         roll_pid.set_reference(roll_ref)
         pitch_pid.set_reference(pitch_ref)
         airspeed_pid.set_reference(airspeed_ref)
@@ -101,7 +109,8 @@ if __name__ == '__main__':
         elevator_cmd, pitch_err = pitch_pid.update(state=pitch, state_dot=pitch_rate, saturate=True, normalize=True)
         aileron_cmd, roll_err = roll_pid.update(state=roll, state_dot=roll_rate, saturate=True, normalize=True)
 
-        action = np.array([elevator_cmd, aileron_cmd, throttle_cmd])
+        action = np.array([aileron_cmd, elevator_cmd, throttle_cmd])
+        # action = np.array([aileron_cmd, elevator_cmd])
         obs, reward, truncated, terminated, info = env.step(action)
         Va, roll, pitch, roll_rate, pitch_rate = rearrange_obs(obs)
 

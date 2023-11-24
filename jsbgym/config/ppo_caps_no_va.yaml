@@ -1,4 +1,4 @@
-# config for PPO training of Attitude Control Task as done in the Bohn et al. code
+# config for PPO training of Attitude Control Task without airspeed control
 
 # parent class JSBSimEnv config
 JSBSimEnv:
@@ -7,7 +7,7 @@ JSBSimEnv:
     episode_length_s: 20.0
     viz_time_factor: 1.0
 
-# task specific child class config: AttControlNoAirspeed
+# task specific child class config: AttitudeControlTask
 AttitudeControlTask:
     obs_is_matrix: True
     obs_history_size: 5

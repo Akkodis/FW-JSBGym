@@ -1,4 +1,5 @@
-# config for PPO training of Attitude Control Task as done in the Bohn et al. code
+# config for PPO training of Attitude Control Task inspired from Bohn et al. PPO paper
+# and the CAPS paper (cited in htie follow up paper)
 
 # parent class JSBSimEnv config
 JSBSimEnv:
@@ -7,7 +8,7 @@ JSBSimEnv:
     episode_length_s: 20.0
     viz_time_factor: 1.0
 
-# task specific child class config: AttitudeControlTaskEnv
+# task specific child class config: AttitudeControlTask
 AttitudeControlTask:
     obs_is_matrix: True
     obs_history_size: 5

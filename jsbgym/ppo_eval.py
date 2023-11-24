@@ -12,7 +12,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=str, default="config/ppo_caps.yaml",
         help="the config file of the environnement")
-    parser.add_argument("--env-id", type=str, default="AttitudeControlTaskEnv-v0", 
+    parser.add_argument("--env-id", type=str, default="AttitudeControlTask-v0", 
         help="the id of the environment")
     parser.add_argument('--train-model', type=str, required=True, 
         help='agent model file name')
@@ -30,6 +30,10 @@ def parse_args():
 
 if __name__ == '__main__':
     args = parse_args()
+    if args.env_id == "AttitudeControlTask-v0":
+        args.config = "config/ppo_caps.yaml"
+    elif args.env_id == "AttitudeControlNoVaTask-v0":
+        args.config = "config/ppo_caps_no_va.yaml"
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
