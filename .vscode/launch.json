@@ -32,6 +32,17 @@
             "justMyCode": false,
         },
         {
+            "name": "telemetry_plot",
+            "type": "python",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/jsbgym",
+            "program": "visualizers/attitude_control_telemetry.py",
+            "args": ["--tele-file", "telemetry/test.csv",
+                    "--scale"],
+            "console": "integratedTerminal",
+            "justMyCode": true,
+        },
+        {
             "name": "a.py",
             "type": "python",
             "request": "launch",

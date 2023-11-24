@@ -4,7 +4,9 @@ import os
 import csv
 from math import ceil
 
-from typing import Dict
+from typing import Dict, Tuple, NamedTuple
+from collections import namedtuple
+from abc import ABC, abstractmethod
 
 from jsbgym.simulation.jsb_simulation import Simulation
 from jsbgym.visualizers.visualizer import PlotVisualizer, FlightGearVisualizer
@@ -12,16 +14,20 @@ from jsbgym.utils import jsbsim_properties as prp
 from jsbgym.utils.jsbsim_properties import BoundedProperty
 
 
-class JSBSimEnv(gym.Env):
-    """
+class JSBSimEnv(gym.Env, ABC):
+    """"
         Gymnasium JSBSim environment for reinforcement learning.
+        Abstract class. Must be subclassed to implement a task.
         Attr:
             - `metadata`: metadata of the environment, contains the render modes
             - `sim`: the simulation object containing the JSBSim FDM
-            - `task`: the task to perform, implemented as a wrapper, customizing action, observation, reward, etc. according to the task
+            - `episode_length_s`: the duration of the episode in seconds
+            - `agent_frequency`: the frequency of the agent (controller) at which it interacts with the environment
             - `fdm_frequency`: the frequency of the flight dynamics model (JSBSim) simulation
             - `sim_steps_after_agent_action`: the number of simulation steps to run after the agent action
             - `aircraft_id`: Aircraft to simulate
+            - `telemetry_file`: the path to the telemetry file
+            - `telemetry_fieldnames`: the fieldnames of the telemetry file
             - `viz_time_factor`: the factor by which the simulation time is scaled for visualization, only taken into account if render mode is not "none"
             - `plot_viz`: the plot visualizer
             - `fgear_viz`: the FlightGear visualizer
@@ -29,12 +35,17 @@ class JSBSimEnv(gym.Env):
             - `enable_fgear_output`: whether to enable FlightGear output for JSBSim <-> FGear communcation
             - `action_space`: the action space of the environment
             - `observation_space`: the observation space of the environment
+            - `**_prps`: the state, action, target, telemetry and error properties of the environment to be set in task child classes
+            - `state`: namedtuple containing the state of the environment, initialized and updated from task child classes
+            - `target`: namedtuple containing the target state of the environment, initialized and updated from task child classes
+            - `errors`: namedtuple containing the errors of the environment, initialized and updated from task child classes
+            - `reward`: the reward of the environment, updated from task child classes
     """
     metadata: Dict[str, str] = {"render_modes": ["none", "log", "plot", "plot_scale", "fgear", "fgear_plot", "fgear_plot_scale"]}
 
     def __init__(self,
                  jsbsim_config: dict,
-                 telemetry_cfg: tuple,
+                 telemetry_file: str,
                  render_mode: str=None,
                  aircraft_id: str='x8') -> None:
 
@@ -42,7 +53,6 @@ class JSBSimEnv(gym.Env):
         Gymnasium JSBSim environment for reinforcement learning.
 
         Args: 
-            - `task_type`: the task to perform, implemented as a wrapper, customizing action, observation, reward, etc. according to the task
             - `render_mode`: the mode to render the environment, can be one of the following: `["none", "plot", "plot_scale", "fgear", "fgear_plot", "fgear_plot_scale"]`
             - `fdm_frequency`: the frequency of the flight dynamics model (JSBSim) simulation
             - `agent_frequency`: the frequency of the agent (controller) at which it interacts with the environment
@@ -50,19 +60,20 @@ class JSBSimEnv(gym.Env):
             - `aircraft_id`: Aircraft to simulate
             - `viz_time_factor`: the factor by which the simulation time is scaled for visualization, only taken into account if render mode is not "none"
        """
+        # jsbsim level configuration
         self.jsbsim_cfg: dict = jsbsim_config
 
         # simulation attribute, will be initialized in reset() with a call to Simulation()
         self.sim: Simulation = None
 
+        # setting up simulation parameters
         self.episode_length_s: float = self.jsbsim_cfg["episode_length_s"]
         self.agent_frequency: float = self.jsbsim_cfg["agent_freq"]
         self.fdm_frequency: float = self.jsbsim_cfg["fdm_freq"]
         self.sim_steps_after_agent_action: int = int(self.fdm_frequency // self.agent_frequency)
         self.aircraft_id: str = aircraft_id
-        self.telemetry_file: str = telemetry_cfg[0]
-        self.telemetry_fieldnames: tuple = telemetry_cfg[1]
-
+        self.telemetry_file: str = telemetry_file
+        self.telemetry_fieldnames: tuple = ()
 
         # visualizers, one for matplotlib and one for FlightGear
         self.plot_viz: PlotVisualizer = None
@@ -85,11 +96,45 @@ class JSBSimEnv(gym.Env):
         max_episode_steps: int = ceil(self.episode_length_s * self.fdm_frequency)
         self.steps_left: BoundedProperty = BoundedProperty("info/steps_left", "steps remaining in the current episode", 0, max_episode_steps)
 
-        self.reward = None
+        ## Generic attributes for an env. Will be set in the task child class.
+        # observation of the agent in a numpy array format
+        self.observation: np.ndarray = None 
 
-        if not os.path.exists('telemetry'):
-            os.makedirs('telemetry')
-        self.telemetry_setup(self.telemetry_file)
+        # Tuples containing all the relevant properties of the env
+        self.state_prps: Tuple[BoundedProperty, ...] = ()
+        self.action_prps: Tuple[BoundedProperty, ...] = ()
+        self.target_prps: Tuple[BoundedProperty, ...] = ()
+        self.telemetry_prps: Tuple[BoundedProperty, ...] = ()
+        self.error_prps: Tuple[BoundedProperty, ...] = ()
+
+        ## Named tuples containing relevant variables of the env
+        # declaring state NamedTuple structure
+        self.State: NamedTuple = None
+        self.state: self.State = None
+
+        self.TargetState: NamedTuple = None
+        self.target: self.TargetState = None
+
+        # declaring error NamedTuple structure
+        self.Errors: NamedTuple = None
+        self.errors: self.Errors = None
+
+        self.reward: float = None
+
+
+    def initialize(self) -> None:
+        # initialize state NamedTuple structure
+        self.State: NamedTuple = namedtuple('State', [state_prp.get_legal_name() for state_prp in self.state_prps])
+
+        # initialize target state NamedTuple structure
+        self.TargetState: NamedTuple = namedtuple('TargetState', [f"target_{t_state_prp.get_legal_name()}" for t_state_prp in self.target_prps])
+
+        # initialize error NamedTuple structure
+        self.Errors: NamedTuple = namedtuple('Errors', [f"{error_prp.get_legal_name()}_err" for error_prp in self.error_prps])
+
+        # initialize telemetry fieldnames
+        self.telemetry_fieldnames: Tuple[str, ...] = tuple([tele_prp.get_legal_name() for tele_prp in self.telemetry_prps]) 
+
 
     def reset(self, seed: int=None, options: dict=None) -> None:
         """
@@ -119,7 +164,7 @@ class JSBSimEnv(gym.Env):
         if seed is not None:
                 self.sim["simulation/randomseed"] = seed
 
-
+    @abstractmethod
     def step(self, action: np.ndarray) -> None:
         """
             Run one timestep of the environment's dynamics. When end of episode is reached, you are responsible for calling `reset()`
@@ -131,7 +176,7 @@ class JSBSimEnv(gym.Env):
             Returns:
                 - The `obs` of the environment after the action, the `reward` obtained, whether the episode of terminated - `done`, and additional `info`
         """
-        pass
+        raise NotImplementedError
 
 
     def render(self) -> None:
@@ -163,6 +208,47 @@ class JSBSimEnv(gym.Env):
                 self.plot_viz = PlotVisualizer(True, self.telemetry_file)
 
 
+    def get_observation_space(self) -> gym.spaces.Box:
+        """
+            Get the observation space of the env.
+        """
+        # defining observation space based on pre-chosen state variables
+        state_lows: np.ndarray = np.array([state_var.min for state_var in self.state_prps], dtype=np.float32)
+        state_highs: np.ndarray = np.array([state_var.max for state_var in self.state_prps], dtype=np.float32)
+        observation_space = gym.spaces.Box(low=np.array(state_lows), high=np.array(state_highs), dtype=np.float32)
+        return observation_space
+
+
+    def get_action_space(self) -> gym.spaces.Box:
+        """
+            Get the action space of the env.
+        """
+        # define action space
+        action_lows: np.ndarray = np.array([action_var.min for action_var in self.action_prps], dtype=np.float32)
+        action_highs: np.ndarray = np.array([action_var.max for action_var in self.action_prps], dtype=np.float32)
+        action_space = gym.spaces.Box(low=action_lows, high=action_highs, dtype=np.float32)
+        return action_space
+
+
+    def observe_state(self) -> None:
+        """
+            Observe the state of the aircraft and update the state properties.
+        """
+        # update state sim properties
+        for state_var in self.state_prps:
+            self.sim[state_var] = self.sim[state_var]
+
+        # fill state namedtuple with state variable values from the sim properties
+        self.state = self.State(*[self.sim[prop] for prop in self.state_prps])
+
+    @abstractmethod
+    def get_reward(self):
+        """
+            Reward function
+        """
+        raise NotImplementedError
+
+
     def convert_airspeed_kts2mps(self) -> None:
         """
             Converts the airspeed from kts to m/s
@@ -170,7 +256,26 @@ class JSBSimEnv(gym.Env):
         self.sim[prp.airspeed_mps] = self.sim[prp.airspeed_kts] * 0.51444
 
 
+    def telemetry_logging(self) -> None:
+        """
+            Log flight data to telemetry csv.
+        """
+        # write flight data to csv
+        with open(self.telemetry_file, 'a') as csv_file:
+            csv_writer: csv.DictWriter = csv.DictWriter(csv_file, fieldnames=self.telemetry_fieldnames)
+            info: dict[str, float] = {}
+            for fieldname, prop in zip(self.telemetry_fieldnames, self.telemetry_prps):
+                info[fieldname] = self.sim[prop]
+            csv_writer.writerow(info)
+
+
     def telemetry_setup(self, telemetry_file: str) -> None:
+        """
+            Setup the telemetry file and fieldnames.
+        """
+        if not os.path.exists('telemetry'):
+            os.makedirs('telemetry')
+
         if telemetry_file is not None: 
             self.telemetry_file = telemetry_file
         if self.render_mode in self.metadata["render_modes"][1:]:

@@ -7,13 +7,13 @@ gymnasium.register(
 )
 
 gymnasium.register(
-    id='AttitudeControlTaskEnv-v0',
-    entry_point='jsbgym.envs.attitude_control:AttitudeControlTaskEnv',
+    id='AttitudeControlTask-v0',
+    entry_point='jsbgym.envs.tasks.attitude_control:AttitudeControlTask',
     autoreset=True
 )
 
 gymnasium.register(
-    id='AttControlNoAirspeed-v0',
-    entry_point='jsbgym.envs.attitude_control_noairspeed:AttControlNoAirspeed',
+    id='AttitudeControlNoVaTask-v0',
+    entry_point='jsbgym.envs.tasks.attitude_control_no_va:AttitudeControlNoVaTask',
     autoreset=True
 )

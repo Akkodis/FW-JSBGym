@@ -48,7 +48,8 @@ class FlightGearVisualizer(object):
         # cmd for running flightgear(.AppImage version 2020.3.17) from terminal.
         # We ignore the aircraft_id to load the c172p viz, since x8 doesn't exist in fgear
         cmd: str = f'exec $HOME/Apps/FlightGear-2020.3.17/FlightGear-2020.3.17-x86_64.AppImage --fdm=null \
-        --native-fdm=socket,in,60,,5550,udp --aircraft={aircraft_fgear_id} --timeofday=noon --disable-ai-traffic --disable-real-weather-fetch'
+        --native-fdm={self.TYPE},{self.DIRECTION},{self.RATE},{self.SERVER},{self.PORT},{self.PROTOCOL} \
+        --aircraft={aircraft_fgear_id} --timeofday={self.TIME} --disable-ai-traffic --disable-real-weather-fetch'
 
         flightgear_process = subprocess.Popen(cmd,
                                               shell=True,

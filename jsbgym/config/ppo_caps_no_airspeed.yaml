@@ -8,16 +8,10 @@ JSBSimEnv:
     viz_time_factor: 1.0
 
 # task specific child class config: AttControlNoAirspeed
-AttControlNoAirspeed:
+AttitudeControlTask:
     obs_is_matrix: True
     obs_history_size: 5
     act_history_size: 5
-
-    error_success_tholds: # error thresholds for success
-        pitch: 0.1 # rad
-        roll: 0.1 # rad
-
-    success_time_s: 5.0
 
     reward_weights:
         roll:
