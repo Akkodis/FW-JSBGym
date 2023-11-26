@@ -41,7 +41,7 @@ def parse_args():
     parser.add_argument("--no-eval", action='store_true', default=False, help="do not evaluate the agent at the end of training")
 
     # Algorithm specific arguments
-    parser.add_argument("--env-id", type=str, default="AttitudeControlTask-v0",
+    parser.add_argument("--env-id", type=str, default="AttitudeControl-v0",
         help="the id of the environment")
     parser.add_argument("--config", type=str, default="config/ppo_caps.yaml",
         help="the config file of the environnement")
@@ -99,9 +99,9 @@ if __name__ == "__main__":
     args = parse_args()
     args.total_timesteps = int(args.total_timesteps)
 
-    if args.env_id == "AttitudeControlTask-v0":
+    if args.env_id == "AttitudeControl-v0":
         args.config = "config/ppo_caps.yaml"
-    elif args.env_id == "AttitudeControlNoVaTask-v0":
+    elif args.env_id == "AttitudeControlNoVa-v0":
         args.config = "config/ppo_caps_no_va.yaml"
 
     run_name = f"ppo_{args.exp_name}_{args.seed}_{strftime('%d-%m_%H:%M:%S', localtime())}"
@@ -149,9 +149,9 @@ if __name__ == "__main__":
     agent = ppo.Agent(envs).to(device)
     optimizer = optim.Adam(agent.parameters(), lr=args.learning_rate, eps=1e-5)
     trim_point: TrimPoint = TrimPoint(aircraft_id='x8')
-    if args.env_id == "AttitudeControlTask-v0":
+    if args.env_id == "AttitudeControl-v0":
         trim_acts = torch.tensor([trim_point.elevator, trim_point.aileron, trim_point.throttle]).to(device)
-    elif args.env_id == "AttitudeControlNoVaTask-v0":
+    elif args.env_id == "AttitudeControlNoVa-v0":
         trim_acts = torch.tensor([trim_point.elevator, trim_point.aileron]).to(device)
 
     # ALGO Logic: Storage setup
@@ -203,9 +203,9 @@ if __name__ == "__main__":
                     roll_ref = np.random.uniform(-45, 45) * (np.pi / 180)
                     pitch_ref = np.random.uniform(-15, 15) * (np.pi / 180)
                     airspeed_ref = np.random.uniform(trim_point.Va_ms - 2, trim_point.Va_ms + 2)
-                    if args.env_id == "AttitudeControlTask-v0":
+                    if args.env_id == "AttitudeControl-v0":
                         unwrapped_envs[i].set_target_state(roll_ref, pitch_ref, airspeed_ref)
-                    elif args.env_id == "AttitudeControlNoVaTask-v0":
+                    elif args.env_id == "AttitudeControlNoVa-v0":
                         unwrapped_envs[i].set_target_state(roll_ref, pitch_ref)
 
             # ALGO LOGIC: action logic
@@ -361,9 +361,10 @@ if __name__ == "__main__":
         writer.add_scalar("losses/clipfrac", np.mean(clipfracs), global_step)
         writer.add_scalar("losses/explained_variance", explained_var, global_step)
         writer.add_scalar("losses/total_loss", loss.item(), global_step)
-        writer.add_scalar("action_std/de", action_std[0], global_step)
-        writer.add_scalar("action_std/da", action_std[1], global_step)
-        # writer.add_scalar("action_std/dt", action_std[2], global_step)
+        writer.add_scalar("action_std/da", action_std[0], global_step)
+        writer.add_scalar("action_std/de", action_std[1], global_step)
+        if args.env_id == "AttitudeControl-v0":
+            writer.add_scalar("action_std/dt", action_std[2], global_step)
         print("SPS:", int(global_step / (time.time() - start_time)))
         writer.add_scalar("charts/SPS", int(global_step / (time.time() - start_time)), global_step)
 
@@ -388,9 +389,9 @@ if __name__ == "__main__":
                 pitch_ref = np.random.uniform(-15, 15) * (np.pi / 180)
                 airspeed_ref = np.random.uniform(trim_point.Va_ms - 2, trim_point.Va_ms + 2)
 
-            if args.env_id == "AttitudeControlTask-v0":
+            if args.env_id == "AttitudeControl-v0":
                 e_env.unwrapped.set_target_state(roll_ref, pitch_ref, airspeed_ref)
-            elif args.env_id == "AttitudeControlNoVaTask-v0":
+            elif args.env_id == "AttitudeControlNoVa-v0":
                 e_env.unwrapped.set_target_state(roll_ref, pitch_ref)
 
             action = agent.get_action_and_value(e_obs)[1][0].detach().cpu().numpy()

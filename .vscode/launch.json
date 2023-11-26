@@ -25,7 +25,7 @@
             "program": "ppo_train.py",
             "args": ["--exp-name", "debug_exp", "--num-envs", "2",
                 "--total-timesteps", "6000", "--track", 
-                "--env-id", "AttitudeControlNoVaTask-v0",
+                "--env-id", "AttitudeControlNoVa-v0",
                 // "--config", "config/ppo_caps_no_va.yaml",
                 // "--config", "config/ppo_caps.yaml",
                 ],
