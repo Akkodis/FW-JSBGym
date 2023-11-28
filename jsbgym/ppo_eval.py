@@ -12,7 +12,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=str, default="config/ppo_caps.yaml",
         help="the config file of the environnement")
-    parser.add_argument("--env-id", type=str, default="AttitudeControlTask-v0", 
+    parser.add_argument("--env-id", type=str, default="AttitudeControl-v0", 
         help="the id of the environment")
     parser.add_argument('--train-model', type=str, required=True, 
         help='agent model file name')
@@ -30,9 +30,9 @@ def parse_args():
 
 if __name__ == '__main__':
     args = parse_args()
-    if args.env_id == "AttitudeControlTask-v0":
+    if args.env_id == "AttitudeControl-v0":
         args.config = "config/ppo_caps.yaml"
-    elif args.env_id == "AttitudeControlNoVaTask-v0":
+    elif args.env_id == "AttitudeControlNoVa-v0":
         args.config = "config/ppo_caps_no_va.yaml"
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -85,8 +85,11 @@ if __name__ == '__main__':
             roll_ref = np.random.uniform(-45, 45) * (np.pi / 180)
             pitch_ref = np.random.uniform(-15, 15) * (np.pi / 180)
             airspeed_ref = np.random.uniform(trim_point.Va_ms - 2, trim_point.Va_ms + 2)
+        if args.env_id == "AttitudeControl-v0":
+            unwrapped_env.set_target_state(roll_ref, pitch_ref, airspeed_ref)
+        elif args.env_id == "AttitudeControlNoVa-v0":
+            unwrapped_env.set_target_state(roll_ref, pitch_ref)
 
-        unwrapped_env.set_target_state(airspeed_ref, roll_ref, pitch_ref)
         action = ppo_agent.get_action_and_value(obs)[1].detach().cpu().numpy()
         obs, reward, truncated, terminated, infos = envs.step(action)
         obs = torch.Tensor(obs).to(device)
