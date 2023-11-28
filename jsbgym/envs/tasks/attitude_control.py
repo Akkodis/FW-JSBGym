@@ -126,8 +126,7 @@ class AttitudeControlTask(JSBSimEnv):
             raise ValueError("Action shape is not valid.")
 
         # apply the action to the simulation
-        for prop, command in zip(self.action_prps, action):
-            self.sim[prop] = command
+        self.apply_action(action)
         self.update_action_history(action) # update the action history
 
         # run the simulation for sim_steps_after_agent_action steps
@@ -170,6 +169,10 @@ class AttitudeControlTask(JSBSimEnv):
 
         return self.observation, self.reward, terminated, truncated, info
 
+    def apply_action(self, action: np.ndarray) -> None:
+        # apply the action to the simulation
+        for prop, command in zip(self.action_prps, action):
+            self.sim[prop] = command
 
     def is_terminated(self) -> Tuple[bool]:
         """

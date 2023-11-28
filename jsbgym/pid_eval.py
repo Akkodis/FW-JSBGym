@@ -36,9 +36,9 @@ def rearrange_obs(obs: np.ndarray) -> tuple[float, float, float, float, float]:
 
 if __name__ == '__main__':
     args = parse_args()
-    if args.env_id == "AttitudeControlTask-v0":
+    if args.env_id == "AttitudeControl-v0":
         args.config = "config/ppo_caps.yaml"
-    elif args.env_id == "AttitudeControlNoVaTask-v0":
+    elif args.env_id == "AttitudeControlNoVa-v0":
         args.config = "config/ppo_caps_no_va.yaml"
 
     print(args.config)
@@ -99,18 +99,22 @@ if __name__ == '__main__':
             airspeed_ref = np.random.uniform(trim_point.Va_ms - 2, trim_point.Va_ms + 2)
 
         # apply target values
-        env.set_target_state(roll_ref, pitch_ref, airspeed_ref)
-        # env.set_target_state(roll_ref, pitch_ref)
         roll_pid.set_reference(roll_ref)
         pitch_pid.set_reference(pitch_ref)
-        airspeed_pid.set_reference(airspeed_ref)
+        if args.env_id == "AttitudeControl-v0":
+            env.set_target_state(roll_ref, pitch_ref, airspeed_ref)
+            airspeed_pid.set_reference(airspeed_ref)
+            throttle_cmd, airspeed_err = airspeed_pid.update(state=Va, saturate=True)
+        elif args.env_id == "AttitudeControlNoVa-v0":
+            env.set_target_state(roll_ref, pitch_ref)
 
-        throttle_cmd, airspeed_err = airspeed_pid.update(state=Va, saturate=True)
         elevator_cmd, pitch_err = pitch_pid.update(state=pitch, state_dot=pitch_rate, saturate=True, normalize=True)
         aileron_cmd, roll_err = roll_pid.update(state=roll, state_dot=roll_rate, saturate=True, normalize=True)
 
-        action = np.array([aileron_cmd, elevator_cmd, throttle_cmd])
-        # action = np.array([aileron_cmd, elevator_cmd])
+        if args.env_id == "AttitudeControl-v0":
+            action = np.array([aileron_cmd, elevator_cmd, throttle_cmd])
+        elif args.env_id == "AttitudeControlNoVa-v0":
+            action = np.array([aileron_cmd, elevator_cmd])
         obs, reward, truncated, terminated, info = env.step(action)
         Va, roll, pitch, roll_rate, pitch_rate = rearrange_obs(obs)
 

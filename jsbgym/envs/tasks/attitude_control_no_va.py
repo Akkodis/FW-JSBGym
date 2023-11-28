@@ -4,6 +4,7 @@ from typing import Tuple
 from jsbgym.envs.tasks.attitude_control import AttitudeControlTask
 from jsbgym.utils import jsbsim_properties as prp
 from jsbgym.utils.jsbsim_properties import BoundedProperty
+from jsbgym.trim.trim_point import TrimPoint
 
 
 class AttitudeControlNoVaTask(AttitudeControlTask):
@@ -61,6 +62,13 @@ class AttitudeControlNoVaTask(AttitudeControlTask):
 
         self.initialize()
         self.telemetry_setup(self.telemetry_file)
+
+
+    def apply_action(self, action: np.ndarray) -> None:
+        # apply the action to the simulation
+        for prop, command in zip(self.action_prps, action):
+            self.sim[prop] = command
+        self.sim[prp.throttle_cmd] = TrimPoint().throttle # set throttle to trim point throttle
 
 
     def update_errors(self) -> None:
