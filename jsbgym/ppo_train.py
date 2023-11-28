@@ -83,11 +83,13 @@ def parse_args():
         help="the maximum norm for the gradient clipping")
     parser.add_argument("--target-kl", type=float, default=None,
         help="the target KL divergence threshold")
+    parser.add_argument('--save-best',type=lambda x: bool(strtobool(x)), default=True, nargs="?", const=True,
+                         help='save only the best models')
 
     # training sim specific arguments
-    parser.add_argument('--rand-targets', action='store_true', help='set targets randomly')
-    parser.add_argument('--turb', action='store_true', help='add turbulence')
-    parser.add_argument('--wind', action='store_true', help='add wind')
+    parser.add_argument('--rand-targets',type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True, help='set targets randomly')
+    parser.add_argument('--turb', type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True, help='add turbulence')
+    parser.add_argument('--wind', type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True, help='add wind')
     args = parser.parse_args()
     args.batch_size = int(args.num_envs * args.num_steps)
     args.minibatch_size = int(args.batch_size // args.num_minibatches)
@@ -240,6 +242,8 @@ if __name__ == "__main__":
                 print(f"global_step={global_step}, episodic_return={info['episode']['r']}, episodic_length={info['episode']['l']} \n" + \
                       f"episode_end={info['final_info']['episode_end']}, out_of_bounds={info['final_info']['out_of_bounds']}\n********")
                 writer.add_scalar("charts/episodic_return", info["episode"]["r"], global_step)
+                r_per_step = info["episode"]["r"]/info["episode"]["l"]
+                writer.add_scalar("charts/reward_per_step", r_per_step, global_step)
                 writer.add_scalar("charts/episodic_length", info["episode"]["l"], global_step)
 
         # bootstrap value if not done
@@ -368,12 +372,6 @@ if __name__ == "__main__":
         print("SPS:", int(global_step / (time.time() - start_time)))
         writer.add_scalar("charts/SPS", int(global_step / (time.time() - start_time)), global_step)
 
-    # save the trained model = agent + observation normalization parameters + seed
-    train_dict = {}
-    train_dict["norm_obs_rms"] = {"mean": envs.envs[0].get_obs_rms().mean, "var": envs.envs[0].get_obs_rms().var}
-    train_dict["seed"] = args.seed
-    train_dict["agent"] = agent.state_dict()
-    torch.save(train_dict, f"{save_path}{run_name}.pt") 
 
     # Evaluate the agent
     if not args.no_eval:
@@ -401,6 +399,24 @@ if __name__ == "__main__":
 
             if done:
                 print(f"Episode reward: {info['episode']['r']}")
+                r_per_step = info["episode"]["r"]/info["episode"]["l"]
+                # Save the best agents depending on the env
+                if args.save_best:
+                    if (args.env_id == "AttitudeControl-v0" and r_per_step > -0.20) or \
+                       (args.env_id == "AttitudeControlNoVa-v0" and r_per_step > -0.06):
+                        print("saving best agent...")
+                        train_dict = {}
+                        train_dict["norm_obs_rms"] = {"mean": envs.envs[0].get_obs_rms().mean, "var": envs.envs[0].get_obs_rms().var}
+                        train_dict["seed"] = args.seed
+                        train_dict["agent"] = agent.state_dict()
+                        torch.save(train_dict, f"{save_path}{run_name}.pt")
+                else:
+                    print("saving agent...")
+                    train_dict = {}
+                    train_dict["norm_obs_rms"] = {"mean": envs.envs[0].get_obs_rms().mean, "var": envs.envs[0].get_obs_rms().var}
+                    train_dict["seed"] = args.seed
+                    train_dict["agent"] = agent.state_dict()
+                    torch.save(train_dict, f"{save_path}{run_name}.pt")
                 break
 
         telemetry_df = pd.read_csv(telemetry_file)
