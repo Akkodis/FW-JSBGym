@@ -152,9 +152,9 @@ if __name__ == "__main__":
     optimizer = optim.Adam(agent.parameters(), lr=args.learning_rate, eps=1e-5)
     trim_point: TrimPoint = TrimPoint(aircraft_id='x8')
     if args.env_id == "AttitudeControl-v0":
-        trim_acts = torch.tensor([trim_point.elevator, trim_point.aileron, trim_point.throttle]).to(device)
+        trim_acts = torch.tensor([trim_point.aileron, trim_point.elevator, trim_point.throttle]).to(device)
     elif args.env_id == "AttitudeControlNoVa-v0":
-        trim_acts = torch.tensor([trim_point.elevator, trim_point.aileron]).to(device)
+        trim_acts = torch.tensor([trim_point.aileron, trim_point.elevator]).to(device)
 
     # ALGO Logic: Storage setup
     obs = torch.zeros((args.num_steps, args.num_envs) + envs.single_observation_space.shape).to(device)
