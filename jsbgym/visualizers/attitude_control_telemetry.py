@@ -54,10 +54,12 @@ def animate(i, axis, args) -> None:
     axis[0, 0].plot(tsteps, alt, label='altitude' if not np.isnan(np.sum(alt)) else '')
     axis[0, 0].set_title("altitude control [m]")
     axis[0, 0].legend()
+    axis[0, 0].grid()
 
     axis[0, 1].plot(tsteps, heading, label='course' if not np.isnan(np.sum(heading)) else '')
     axis[0, 1].set_title("Heading (psi) control [rad]")
     axis[0, 1].legend()
+    axis[0, 1].grid()
 
     # wait for the telemetry file to be filled with some data so that the plotter doesn't crash when computing scale bounds
     if args.scale and df.index.size > 0:
@@ -72,29 +74,34 @@ def animate(i, axis, args) -> None:
     axis[1, 0].plot(tsteps, pitch_ref, color='r', linestyle='--', label='pitch_ref' if not np.isnan(np.sum(pitch_ref)) else '')
     axis[1, 0].set_title('pitch control [rad]')
     axis[1, 0].legend()
+    axis[1, 0].grid()
 
     axis[1, 1].plot(tsteps, roll, label='roll' if not np.isnan(np.sum(roll)) else '')
     axis[1, 1].plot(tsteps, roll_ref, color='r', linestyle='--', label='roll_ref' if not np.isnan(np.sum(roll_ref)) else '')
     axis[1, 1].set_title('roll control [rad]')
     axis[1, 1].legend()
+    axis[1, 1].grid()
 
     axis[1, 2].plot(tsteps, airspeed, label='airspeed' if not np.isnan(np.sum(airspeed)) else '')
     axis[1, 2].plot(tsteps, airspeed_ref, color='r', linestyle='--', label='airspeed_ref' if not np.isnan(np.sum(airspeed_ref)) else '')
     axis[1, 2].set_title('airspeed control [m/s]')
     axis[1, 2].legend()
+    axis[1, 2].grid()
 
     axis[2, 0].plot(tsteps, aileron_cmd, label='aileron_cmd' if not np.isnan(np.sum(aileron_cmd)) else '')
     axis[2, 0].plot(tsteps, elevator_cmd, label='elevator_cmd' if not np.isnan(np.sum(elevator_cmd)) else '')
     axis[2, 0].plot(tsteps, throttle_cmd, label='throttle_cmd' if not np.isnan(np.sum(throttle_cmd)) else '')
     axis[2, 0].set_title('commands')
     axis[2, 0].legend()
+    axis[2, 0].grid()
 
     axis[2, 1].plot(tsteps, roll_rate, label='roll_rate' if not np.isnan(np.sum(roll_rate)) else '')
     axis[2, 1].plot(tsteps, pitch_rate, label='pitch_rate' if not np.isnan(np.sum(pitch_rate)) else '')
     axis[2, 1].plot(tsteps, yaw_rate, label='yaw_rate' if not np.isnan(np.sum(yaw_rate)) else '')
     axis[2, 1].set_title('angular velocities [rad/s]')
     axis[2, 1].legend()
-    
+    axis[2, 1].grid()
+
     axis[2, 2].plot(tsteps, r_total, label='r_total' if not np.isnan(np.sum(r_total)) else '')
     axis[2, 2].plot(tsteps, r_roll, label='r_roll' if not np.isnan(np.sum(r_roll)) else '')
     axis[2, 2].plot(tsteps, r_pitch, label='r_pitch' if not np.isnan(np.sum(r_pitch)) else '')
@@ -102,6 +109,7 @@ def animate(i, axis, args) -> None:
     axis[2, 2].plot(tsteps, r_actvar, label='r_actvar' if not np.isnan(np.sum(r_actvar)) else '')
     axis[2, 2].set_title('rewards')
     axis[2, 2].legend()
+    axis[2, 2].grid()
 
 
 # parse command line arguments
@@ -126,5 +134,4 @@ ax[0, 2] = fig.add_subplot(3, 3, 3, projection='3d')
 # starting animation
 ani = FuncAnimation(plt.gcf(), animate, fargs=(ax, args, ), interval=50, blit=False)
 print("Animation plot started...", file=sys.stderr)
-
 plt.show()
