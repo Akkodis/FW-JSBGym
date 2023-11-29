@@ -54,7 +54,7 @@ class AttitudeControlTask(JSBSimEnv):
             prp.airspeed_mps, # airspeed
             prp.p_radps, prp.q_radps, prp.r_radps, # angular rates
             prp.airspeed_err, prp.roll_err, prp.pitch_err, # errors
-            prp.elevator_avg, prp.aileron_avg, prp.throttle_avg, # average of past 5 fcs commands
+            prp.elevator_avg, prp.aileron_avg, prp.throttle_avg # average of past 5 fcs commands
         )
 
         self.action_prps: Tuple[BoundedProperty, ...] = (
@@ -70,9 +70,14 @@ class AttitudeControlTask(JSBSimEnv):
         self.telemetry_prps: Tuple[BoundedProperty, ...] = (
             prp.lat_gc_deg, prp.lng_gc_deg, prp.altitude_sl_m, # position
             prp.roll_rad, prp.pitch_rad, prp.heading_rad, # attitude
-            prp.p_radps, prp.q_radps, prp.r_radps, prp.airspeed_mps, # angular rates and airspeed
+            prp.p_radps, prp.q_radps, prp.r_radps, # angular rates and airspeed
             prp.throttle_cmd, prp.elevator_cmd, prp.aileron_cmd, # control surface commands
-            prp.reward_total, prp.reward_roll, prp.reward_pitch, prp.reward_airspeed # rewards
+            prp.reward_total, prp.reward_roll, prp.reward_pitch, prp.reward_airspeed, # rewards
+            prp.airspeed_mps, prp.airspeed_kph, # airspeed
+            prp.windspeed_north_mps, prp.windspeed_east_mps, prp.windspeed_down_mps, # wind speed mps
+            prp.windspeed_north_kph, prp.windspeed_east_kph, prp.windspeed_down_kph, # wind speed kph
+            prp.turb_north_mps, prp.turb_east_mps, prp.turb_down_mps, # turbulence mps
+            prp.turb_north_kph, prp.turb_east_kph, prp.turb_down_kph, # turbulence kph
         ) + self.target_prps # target state variables
 
         self.error_prps: Tuple[BoundedProperty, ...] = (
@@ -132,8 +137,8 @@ class AttitudeControlTask(JSBSimEnv):
         # run the simulation for sim_steps_after_agent_action steps
         for _ in range(self.sim_steps_after_agent_action):
             self.sim.run_step()
-            # convert the airspeed from kts to m/s at each sim step in the jsbsim properties
-            self.convert_airspeed_kts2mps()
+            # convert some props to international system units
+            self.convert_props_to_IS()
             # write the telemetry to a log csv file every fdm step (as opposed to every agent step -> to put out of this for loop)
             # self.telemetry_logging()
             # decrement the steps left

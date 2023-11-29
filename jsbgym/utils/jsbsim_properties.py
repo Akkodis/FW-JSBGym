@@ -58,8 +58,27 @@ altitude_rate_fps = Property('velocities/h-dot-fps', 'Rate of altitude change [f
 airspeed_fps = BoundedProperty('velocities/vt-fps', 'True aircraft airspeed [ft/s]', float('-inf'), float('+inf'))
 airspeed_kts = BoundedProperty('velocities/vtrue-kts', 'True aircraft airspeed [kts]', float('-inf'), float('+inf'))
 airspeed_mps = BoundedProperty('velocities/vt-mps', 'True aircraft airspeed [m/s]', 0, 42) # 42 m/s = 150 km/h = 81 knots
+airspeed_kph = BoundedProperty('velocities/vt-kph', 'True aircraft airspeed [m/s]', 0, 151) # 42 m/s = 150 km/h = 81 knots
 alpha = Property('aero/alpha-rad', 'aircraft angle of attack [rad]')
 ci2vel = Property('aero/ci2vel', 'chord/2*airspeed')
+windspeed_north_fps = Property('atmosphere/total-wind-north-fps', 'total wind speed north [ft/s]')
+windspeed_north_mps = Property('atmosphere/total-wind-north-mps', 'total wind speed north [m/s]')
+windspeed_north_kph = Property('atmosphere/total-wind-north-kph', 'total wind speed north [km/h]')
+windspeed_east_fps = Property('atmosphere/total-wind-east-fps', 'total wind speed east [ft/s]')
+windspeed_east_mps = Property('atmosphere/total-wind-east-mps', 'total wind speed east [m/s]')
+windspeed_east_kph = Property('atmosphere/total-wind-east-kph', 'total wind speed east [km/h]')
+windspeed_down_fps = Property('atmosphere/total-wind-down-fps', 'total wind speed down [ft/s]')
+windspeed_down_mps = Property('atmosphere/total-wind-down-mps', 'total wind speed down [m/s]')
+windspeed_down_kph = Property('atmosphere/total-wind-down-kph', 'total wind speed down [km/h]')
+turb_north_fps = Property('atmosphere/turb-north-fps', 'turbulence wind speed north [ft/s]')
+turb_north_mps = Property('atmosphere/turb-north-mps', 'turbulence wind speed north [m/s]')
+turb_north_kph = Property('atmosphere/turb-north-fps', 'turbulence wind speed north [km/h]')
+turb_east_fps = Property('atmosphere/turb-east-fps', 'turbulence wind speed east [ft/s]')
+turb_east_mps = Property('atmosphere/turb-east-mps', 'turbulence wind speed east [m/s]')
+turb_east_kph = Property('atmosphere/turb-east-kph', 'turbulence wind speed east [km/h]')
+turb_down_fps = Property('atmosphere/turb-down-fps', 'turbulence wind speed down [ft/s]')
+turb_down_mps = Property('atmosphere/turb-down-mps', 'turbulence wind speed down [m/s]')
+turb_down_kph = Property('atmosphere/turb-down-kph', 'turbulence wind speed down [km/h]')
 
 # controls state
 aileron_left = BoundedProperty('fcs/left-aileron-pos-norm', 'left aileron position, normalised', -1, 1)

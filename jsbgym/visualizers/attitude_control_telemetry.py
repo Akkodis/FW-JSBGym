@@ -27,7 +27,15 @@ def animate(i, axis, args) -> None:
     pitch_rate = df.get(prp.q_radps.get_legal_name(), default=nan_arr)
     yaw_rate = df.get(prp.r_radps.get_legal_name(), default=nan_arr)
 
-    airspeed = df.get(prp.airspeed_mps.get_legal_name(), default=nan_arr)
+    airspeed = df.get(prp.airspeed_kph.get_legal_name(), default=nan_arr)
+
+    windspeed_n_kph = df.get(prp.windspeed_north_kph.get_legal_name(), default=nan_arr)
+    windspeed_e_kph = df.get(prp.windspeed_east_kph.get_legal_name(), default=nan_arr)
+    windspeed_d_kph = df.get(prp.windspeed_down_kph.get_legal_name(), default=nan_arr)
+
+    turb_n_kph = df.get(prp.turb_north_kph.get_legal_name(), default=nan_arr)
+    turb_e_kph = df.get(prp.turb_east_kph.get_legal_name(), default=nan_arr)
+    turb_d_kph = df.get(prp.turb_down_kph.get_legal_name(), default=nan_arr)
 
     throttle_cmd = df.get(prp.throttle_cmd.get_legal_name(), default=nan_arr)
     elevator_cmd = df.get(prp.elevator_cmd.get_legal_name(), default=nan_arr)
@@ -61,14 +69,20 @@ def animate(i, axis, args) -> None:
     axis[0, 1].legend()
     axis[0, 1].grid()
 
-    # wait for the telemetry file to be filled with some data so that the plotter doesn't crash when computing scale bounds
-    if args.scale and df.index.size > 0:
-        axis[0, 2].set_zlim(alt.min() - 50, alt.max() + 50)
-        axis[0, 2].set_xlim(lon.min(), lon.max())
-        axis[0, 2].set_ylim(lat.min(), lat.max())
-
-    axis[0, 2].plot(lon, lat, alt, label='Aircraft Trajectory')
+    axis[0, 2].plot(tsteps, airspeed, label='airspeed' if not np.isnan(np.sum(airspeed)) else '')
+    axis[0, 2].plot(tsteps, airspeed_ref, color='r', linestyle='--', label='airspeed_ref' if not np.isnan(np.sum(airspeed_ref)) else '')
+    axis[0, 2].set_title('airspeed control [km/h]')
     axis[0, 2].legend()
+    axis[0, 2].grid()
+
+    # wait for the telemetry file to be filled with some data so that the plotter doesn't crash when computing scale bounds
+    # if args.scale and df.index.size > 0:
+    #     axis[0, 2].set_zlim(alt.min() - 50, alt.max() + 50)
+    #     axis[0, 2].set_xlim(lon.min(), lon.max())
+    #     axis[0, 2].set_ylim(lat.min(), lat.max())
+
+    # axis[0, 2].plot(lon, lat, alt, label='Aircraft Trajectory')
+    # axis[0, 2].legend()
 
     axis[1, 0].plot(tsteps, pitch, label='pitch' if not np.isnan(np.sum(pitch)) else '')
     axis[1, 0].plot(tsteps, pitch_ref, color='r', linestyle='--', label='pitch_ref' if not np.isnan(np.sum(pitch_ref)) else '')
@@ -82,9 +96,10 @@ def animate(i, axis, args) -> None:
     axis[1, 1].legend()
     axis[1, 1].grid()
 
-    axis[1, 2].plot(tsteps, airspeed, label='airspeed' if not np.isnan(np.sum(airspeed)) else '')
-    axis[1, 2].plot(tsteps, airspeed_ref, color='r', linestyle='--', label='airspeed_ref' if not np.isnan(np.sum(airspeed_ref)) else '')
-    axis[1, 2].set_title('airspeed control [m/s]')
+    axis[1, 2].plot(tsteps, windspeed_n_kph, label='north' if not np.isnan(np.sum(windspeed_n_kph)) else '')
+    axis[1, 2].plot(tsteps, windspeed_e_kph, label='east' if not np.isnan(np.sum(windspeed_e_kph)) else '')
+    axis[1, 2].plot(tsteps, windspeed_d_kph, label='down' if not np.isnan(np.sum(windspeed_d_kph)) else '')
+    axis[1, 2].set_title('windspeed [km/h]')
     axis[1, 2].legend()
     axis[1, 2].grid()
 
@@ -128,8 +143,8 @@ if args.fullscreen:
     manager.full_screen_toggle()
 
 # Setting 3D subplot for trajectory plot
-ax[0, 2].remove()
-ax[0, 2] = fig.add_subplot(3, 3, 3, projection='3d')
+# ax[0, 2].remove()
+# ax[0, 2] = fig.add_subplot(3, 3, 3, projection='3d')
 
 # starting animation
 ani = FuncAnimation(plt.gcf(), animate, fargs=(ax, args, ), interval=50, blit=False)

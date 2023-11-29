@@ -157,12 +157,13 @@ class JSBSimEnv(gym.Env, ABC):
                                   enable_fgear_output=self.enable_fgear_output)
 
         # convert the airspeed from kts to m/s
-        self.convert_airspeed_kts2mps()
+        self.convert_props_to_IS()
 
         # reset the random number generator
         super().reset(seed=seed)
         if seed is not None:
                 self.sim["simulation/randomseed"] = seed
+
 
     @abstractmethod
     def step(self, action: np.ndarray) -> None:
@@ -241,6 +242,7 @@ class JSBSimEnv(gym.Env, ABC):
         # fill state namedtuple with state variable values from the sim properties
         self.state = self.State(*[self.sim[prop] for prop in self.state_prps])
 
+
     @abstractmethod
     def get_reward(self):
         """
@@ -249,11 +251,24 @@ class JSBSimEnv(gym.Env, ABC):
         raise NotImplementedError
 
 
-    def convert_airspeed_kts2mps(self) -> None:
+    def convert_props_to_IS(self) -> None:
         """
-            Converts the airspeed from kts to m/s
+            Converts some properties from imperial to metric system
         """
         self.sim[prp.airspeed_mps] = self.sim[prp.airspeed_kts] * 0.51444
+        self.sim[prp.airspeed_kph] = self.sim[prp.airspeed_kts] * 1.852
+        self.sim[prp.windspeed_north_mps] = self.sim[prp.windspeed_north_fps] * 0.3048
+        self.sim[prp.windspeed_north_kph] = self.sim[prp.windspeed_north_fps] * 1.09728
+        self.sim[prp.windspeed_east_mps] = self.sim[prp.windspeed_east_fps] * 0.3048
+        self.sim[prp.windspeed_east_kph] = self.sim[prp.windspeed_east_fps] * 1.09728
+        self.sim[prp.windspeed_down_mps] = self.sim[prp.windspeed_down_fps] * 0.3048
+        self.sim[prp.windspeed_down_kph] = self.sim[prp.windspeed_down_fps] * 1.09728
+        self.sim[prp.turb_north_mps] = self.sim[prp.turb_north_fps] * 0.3048
+        self.sim[prp.turb_north_kph] = self.sim[prp.turb_north_fps] * 1.09728
+        self.sim[prp.turb_east_mps] = self.sim[prp.turb_east_fps] * 0.3048
+        self.sim[prp.turb_east_kph] = self.sim[prp.turb_east_fps] * 1.09728
+        self.sim[prp.turb_down_mps] = self.sim[prp.turb_down_fps] * 0.3048
+        self.sim[prp.turb_down_kph] = self.sim[prp.turb_down_fps] * 1.09728
 
 
     def telemetry_logging(self) -> None:

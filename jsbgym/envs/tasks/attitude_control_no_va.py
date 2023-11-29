@@ -47,9 +47,14 @@ class AttitudeControlNoVaTask(AttitudeControlTask):
         self.telemetry_prps: Tuple[BoundedProperty, ...] = (
             prp.lat_gc_deg, prp.lng_gc_deg, prp.altitude_sl_m, # position
             prp.roll_rad, prp.pitch_rad, prp.heading_rad, # attitude
-            prp.p_radps, prp.q_radps, prp.r_radps, prp.airspeed_mps, # angular rates and airspeed
+            prp.p_radps, prp.q_radps, prp.r_radps, # angular rates and airspeed
             prp.throttle_cmd, prp.elevator_cmd, prp.aileron_cmd, # control surface commands
-            prp.reward_total, prp.reward_roll, prp.reward_pitch # rewards
+            prp.reward_total, prp.reward_roll, prp.reward_pitch, # rewards
+            prp.airspeed_mps, prp.airspeed_kph, # airspeed
+            prp.windspeed_north_mps, prp.windspeed_east_mps, prp.windspeed_down_mps, # wind speed mps
+            prp.windspeed_north_kph, prp.windspeed_east_kph, prp.windspeed_down_kph, # wind speed kph
+            prp.turb_north_mps, prp.turb_east_mps, prp.turb_down_mps, # turbulence mps
+            prp.turb_north_kph, prp.turb_east_kph, prp.turb_down_kph, # turbulence kph
         ) + self.target_prps
 
         self.error_prps: Tuple[BoundedProperty, ...] = (
