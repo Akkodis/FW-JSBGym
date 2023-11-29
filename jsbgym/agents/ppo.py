@@ -13,9 +13,8 @@ def make_env(env_id, config, render_mode, telemetry_file=None, eval=False, gamma
         env = gym.wrappers.RecordEpisodeStatistics(env)
         env = gym.wrappers.ClipAction(env)
         env = MyNormalizeObservation(env, eval=eval)
-        env = gym.wrappers.TransformObservation(env, lambda obs: np.clip(obs, -10, 10)) # TODO : remove ?
-        env = gym.wrappers.NormalizeReward(env, gamma=gamma) # TODO : remove ?
-        env = gym.wrappers.TransformReward(env, lambda reward: np.clip(reward, -10, 10))
+        if not eval:
+            env = gym.wrappers.NormalizeReward(env, gamma=gamma)
         return env
 
     return thunk
