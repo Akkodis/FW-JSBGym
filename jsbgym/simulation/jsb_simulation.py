@@ -66,18 +66,20 @@ class Simulation(object):
         self.load_run_ic()
 
 
-    def __getitem__(self, prop: Union[prp.Property, prp.BoundedProperty] | str) -> float:
+    def __getitem__(self, prop: Union[prp.Property, prp.HelperProperty, prp.BoundedProperty, prp.BoundedHelperProperty] | str) -> float:
+        self.convert_props_to_SI()
         if isinstance(prop, str):
             return self.fdm[prop]
         else:
             return self.fdm[prop.name]
 
 
-    def __setitem__(self, prop: Union[prp.Property, prp.BoundedProperty] | str, value) -> None:
+    def __setitem__(self, prop: Union[prp.Property, prp.HelperProperty, prp.BoundedProperty, prp.BoundedHelperProperty] | str, value) -> None:
         if isinstance(prop, str):
             self.fdm[prop] = value
         else:
             self.fdm[prop.name] = value
+        self.convert_props_to_SI()
 
 
     def load_run_ic(self) -> bool:
@@ -127,4 +129,29 @@ class Simulation(object):
         else:
             # Convert the time factor into a time step period for visualization
             self.viz_dt = self.fdm_dt / time_factor
+
+    def convert_props_to_SI(self) -> None:
+        """
+            Converts some properties from imperial to international metric system
+        """
+        self.fdm[prp.airspeed_mps.name] = self.fdm[prp.airspeed_kts.name] * 0.51444
+        self.fdm[prp.airspeed_kph.name] = self.fdm[prp.airspeed_kts.name] * 1.852
+        self.fdm[prp.windspeed_north_mps.name] = self.fdm[prp.windspeed_north_fps.name] * 0.3048
+        self.fdm[prp.windspeed_north_kph.name] = self.fdm[prp.windspeed_north_fps.name] * 1.09728
+        self.fdm[prp.windspeed_east_mps.name] = self.fdm[prp.windspeed_east_fps.name] * 0.3048
+        self.fdm[prp.windspeed_east_kph.name] = self.fdm[prp.windspeed_east_fps.name] * 1.09728
+        self.fdm[prp.windspeed_down_mps.name] = self.fdm[prp.windspeed_down_fps.name] * 0.3048
+        self.fdm[prp.windspeed_down_kph.name] = self.fdm[prp.windspeed_down_fps.name] * 1.09728
+        self.fdm[prp.total_windspeed_north_mps.name] = self.fdm[prp.total_windspeed_north_fps.name] * 0.3048
+        self.fdm[prp.total_windspeed_north_kph.name] = self.fdm[prp.total_windspeed_north_fps.name] * 1.09728
+        self.fdm[prp.total_windspeed_east_mps.name] = self.fdm[prp.total_windspeed_east_fps.name] * 0.3048
+        self.fdm[prp.total_windspeed_east_kph.name] = self.fdm[prp.total_windspeed_east_fps.name] * 1.09728
+        self.fdm[prp.total_windspeed_down_mps.name] = self.fdm[prp.total_windspeed_down_fps.name] * 0.3048
+        self.fdm[prp.total_windspeed_down_kph.name] = self.fdm[prp.total_windspeed_down_fps.name] * 1.09728
+        self.fdm[prp.turb_north_mps.name] = self.fdm[prp.turb_north_fps.name] * 0.3048
+        self.fdm[prp.turb_north_kph.name] = self.fdm[prp.turb_north_fps.name] * 1.09728
+        self.fdm[prp.turb_east_mps.name] = self.fdm[prp.turb_east_fps.name] * 0.3048
+        self.fdm[prp.turb_east_kph.name] = self.fdm[prp.turb_east_fps.name] * 1.09728
+        self.fdm[prp.turb_down_mps.name] = self.fdm[prp.turb_down_fps.name] * 0.3048
+        self.fdm[prp.turb_down_kph.name] = self.fdm[prp.turb_down_fps.name] * 1.09728
 
