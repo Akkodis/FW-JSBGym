@@ -74,8 +74,8 @@ class AttitudeControlTask(JSBSimEnv):
             prp.throttle_cmd, prp.elevator_cmd, prp.aileron_cmd, # control surface commands
             prp.reward_total, prp.reward_roll, prp.reward_pitch, prp.reward_airspeed, # rewards
             prp.airspeed_mps, prp.airspeed_kph, # airspeed
-            prp.windspeed_north_mps, prp.windspeed_east_mps, prp.windspeed_down_mps, # wind speed mps
-            prp.windspeed_north_kph, prp.windspeed_east_kph, prp.windspeed_down_kph, # wind speed kph
+            prp.total_windspeed_north_mps, prp.total_windspeed_east_mps, prp.total_windspeed_down_mps, # wind speed mps
+            prp.total_windspeed_north_kph, prp.total_windspeed_east_kph, prp.total_windspeed_down_kph, # wind speed kph
             prp.turb_north_mps, prp.turb_east_mps, prp.turb_down_mps, # turbulence mps
             prp.turb_north_kph, prp.turb_east_kph, prp.turb_down_kph, # turbulence kph
         ) + self.target_prps # target state variables
@@ -105,8 +105,8 @@ class AttitudeControlTask(JSBSimEnv):
             Args:
                 - `sim`: the simulation object containing the JSBSim FDM
         """
-        super().reset(seed=seed)
-        if options is not None: self.render_mode = options["render_mode"]
+        super().reset(seed=seed, options=options)
+        # if options is not None: self.render_mode = options["render_mode"]
 
         self.reset_target_state() # reset task target state
         self.update_errors() # reset task errors
@@ -138,7 +138,7 @@ class AttitudeControlTask(JSBSimEnv):
         for _ in range(self.sim_steps_after_agent_action):
             self.sim.run_step()
             # convert some props to international system units
-            self.convert_props_to_IS()
+            # self.convert_props_to_SI()
             # write the telemetry to a log csv file every fdm step (as opposed to every agent step -> to put out of this for loop)
             # self.telemetry_logging()
             # decrement the steps left

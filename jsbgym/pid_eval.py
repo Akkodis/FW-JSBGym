@@ -19,6 +19,7 @@ def parse_args():
     parser.add_argument("--tele-file", type=str, default="telemetry/pid_eval_telemetry.csv", 
         help="telemetry csv file")
     parser.add_argument('--rand-targets', action='store_true', help='set targets randomly')
+    parser.add_argument('--rand-atmo-mag', action='store_true', help='randomize the wind and turb magnitudes at each episode')
     parser.add_argument('--turb', action='store_true', help='add turbulence')
     parser.add_argument('--wind', action='store_true', help='add wind')
     args = parser.parse_args()
@@ -41,22 +42,15 @@ if __name__ == '__main__':
     elif args.env_id == "AttitudeControlNoVa-v0":
         args.config = "config/ppo_caps_no_va.yaml"
 
-    print(args.config)
-
     env = gym.make(args.env_id, config_file=args.config, render_mode=args.render_mode,
                     telemetry_file=args.tele_file)
     env = gym.wrappers.RecordEpisodeStatistics(env)
-    obs, _ = env.reset()
+
+    sim_options = {"atmosphere": {"rand_magnitudes": args.rand_atmo_mag, 
+                                  "wind": args.wind,
+                                  "turb": args.turb}}
+    obs, _ = env.reset(options=sim_options)
     Va, roll, pitch, roll_rate, pitch_rate = rearrange_obs(obs)
-
-    if args.turb:
-        env.sim['atmosphere/turb-type'] = 3
-        env.sim['atmosphere/turbulence/milspec/windspeed_at_20ft_AGL-fps'] = 75
-        env.sim["atmosphere/turbulence/milspec/severity"] = 6
-
-    if args.wind:
-        env.sim["atmosphere/wind-north-fps"] = 16.26 * 3.281 # mps to fps
-        env.sim["atmosphere/wind-east-fps"] = 16.26 * 3.281 # mps to fps
 
     x8 = aerodynamics.AeroModel()
     trim_point = TrimPoint('x8')
@@ -91,7 +85,7 @@ if __name__ == '__main__':
     pitch_ref: float = 0.0
     airspeed_ref: float = trim_point.Va_ms
 
-    for step in range(2500):
+    for step in range(8000):
         # set random target values
         if args.rand_targets and step % 500 == 0:
             roll_ref = np.random.uniform(-45, 45) * (np.pi / 180)
@@ -121,4 +115,3 @@ if __name__ == '__main__':
         done = np.logical_or(truncated, terminated)
         if done:
             print(f"Episode reward: {info['episode']['r']}")
-            break 

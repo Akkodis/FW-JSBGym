@@ -29,9 +29,9 @@ def animate(i, axis, args) -> None:
 
     airspeed = df.get(prp.airspeed_kph.get_legal_name(), default=nan_arr)
 
-    windspeed_n_kph = df.get(prp.windspeed_north_kph.get_legal_name(), default=nan_arr)
-    windspeed_e_kph = df.get(prp.windspeed_east_kph.get_legal_name(), default=nan_arr)
-    windspeed_d_kph = df.get(prp.windspeed_down_kph.get_legal_name(), default=nan_arr)
+    windspeed_n_kph = df.get(prp.total_windspeed_north_kph.get_legal_name(), default=nan_arr)
+    windspeed_e_kph = df.get(prp.total_windspeed_east_kph.get_legal_name(), default=nan_arr)
+    windspeed_d_kph = df.get(prp.total_windspeed_down_kph.get_legal_name(), default=nan_arr)
 
     turb_n_kph = df.get(prp.turb_north_kph.get_legal_name(), default=nan_arr)
     turb_e_kph = df.get(prp.turb_east_kph.get_legal_name(), default=nan_arr)
@@ -58,7 +58,7 @@ def animate(i, axis, args) -> None:
 
     num_steps = len(df.index)
     tsteps = np.linspace(0, num_steps-1, num=num_steps)
-    
+
     axis[0, 0].plot(tsteps, alt, label='altitude' if not np.isnan(np.sum(alt)) else '')
     axis[0, 0].set_title("altitude control [m]")
     axis[0, 0].legend()
@@ -148,5 +148,6 @@ if args.fullscreen:
 
 # starting animation
 ani = FuncAnimation(plt.gcf(), animate, fargs=(ax, args, ), interval=50, blit=False)
+# print("TELEMETRY FILE : ", args.tele_file, file=sys.stderr)
 print("Animation plot started...", file=sys.stderr)
 plt.show()

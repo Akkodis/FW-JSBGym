@@ -121,6 +121,8 @@ class JSBSimEnv(gym.Env, ABC):
 
         self.reward: float = None
 
+        self.sim_options: dict = None
+
 
     def initialize(self) -> None:
         # initialize state NamedTuple structure
@@ -156,13 +158,79 @@ class JSBSimEnv(gym.Env, ABC):
                                   viz_time_factor=self.viz_time_factor,
                                   enable_fgear_output=self.enable_fgear_output)
 
-        # convert the airspeed from kts to m/s
-        self.convert_props_to_IS()
-
         # reset the random number generator
         super().reset(seed=seed)
         if seed is not None:
-                self.sim["simulation/randomseed"] = seed
+            self.sim["simulation/randomseed"] = seed
+        else:
+            self.sim["simulation/randomseed"] = np.random.randint(0, 10000)
+
+        # Get options dict and store in as an attribute to keep it across resets
+        # (the options argument is set to None when SyncVectorEnv autoresets the envs)
+        if self.sim_options is None:
+            self.sim_options = options
+
+        # setup wind and turbulence
+        # TODO add curriculum learning with a bool in args.config yaml file and change
+        # the sim_options dict accordingly
+        if self.sim_options is not None:
+            self.set_atmosphere(self.sim_options["atmosphere"])
+
+
+    def set_atmosphere(self, atmo_options: dict=None) -> None:
+        """
+            Set the atmosphere (wind and turbulences) of the environment.
+        """
+        # set atmosphere
+        if atmo_options is not None:
+            if atmo_options["rand_magnitudes"]: # random wind and turbulence magnitudes
+                if atmo_options["wind"]:
+                    wind_vector = self.random_wind_vec(wspeed_limit=90)
+                    self.sim[prp.windspeed_north_fps] = wind_vector[0] * 0.9115 # kmh to fps
+                    self.sim[prp.windspeed_east_fps] = wind_vector[1] * 0.9115 # kmh to fps
+                    self.sim[prp.windspeed_down_fps] = wind_vector[2] * 0.9115 # kmh to fps
+                    print(f"Wind: \n"
+                            f"  N: {self.sim[prp.windspeed_north_kph]} kph\n" \
+                            f"  E: {self.sim[prp.windspeed_east_kph]} kph\n" \
+                            f"  D: {self.sim[prp.windspeed_down_kph]} kph\n" \
+                            f"  Magnitude: {np.linalg.norm(wind_vector)} kph")
+                if atmo_options["turb"]:
+                    self.sim[prp.turb_type] = 3
+                    turb_severity = np.random.randint(1, 4)
+                    match turb_severity:
+                        case 1: # light turbulence
+                            self.sim[prp.turb_w20_fps] = 25
+                            self.sim[prp.turb_severity] = 3
+                            print("Light Turbulence")
+                        case 2: # moderate turbulence
+                            self.sim[prp.turb_w20_fps] = 50
+                            self.sim[prp.turb_severity] = 4
+                            print("Moderate Turbulence")
+                        case 3: # severe turbulence
+                            self.sim[prp.turb_w20_fps] = 75
+                            self.sim[prp.turb_severity] = 6
+                            print("Severe Turbulence")
+                else:
+                    self.sim[prp.turb_type] = 0
+                    print("No Turbulence") 
+            else: # fixed wind and turbulence magnitudes : 58 kmh wind and severe turbulence
+                if atmo_options["wind"]:
+                    print("Fixed wind : 58 kph N/E")
+                    self.sim[prp.windspeed_north_fps] = 58 * 0.9115 # kmh to fps
+                    self.sim[prp.windspeed_east_fps] = 58 * 0.9115 # kmh to fps
+                if atmo_options["turb"]:
+                    print("Fixed turbulence : Severe, W20 = 75 fps")
+                    self.sim[prp.turb_type] = 3
+                    self.sim[prp.turb_w20_fps] = 75
+                    self.sim[prp.turb_severity] = 6
+
+
+    def random_wind_vec(self, wspeed_limit: int = 30):
+        rand_vec = np.random.uniform(-1, 1, size=(3))
+        unit_vector = rand_vec / np.linalg.norm(rand_vec)
+        wind_norm = np.random.uniform(0, wspeed_limit)
+        wind_vector = unit_vector * wind_norm
+        return wind_vector
 
 
     @abstractmethod
@@ -249,26 +317,6 @@ class JSBSimEnv(gym.Env, ABC):
             Reward function
         """
         raise NotImplementedError
-
-
-    def convert_props_to_IS(self) -> None:
-        """
-            Converts some properties from imperial to metric system
-        """
-        self.sim[prp.airspeed_mps] = self.sim[prp.airspeed_kts] * 0.51444
-        self.sim[prp.airspeed_kph] = self.sim[prp.airspeed_kts] * 1.852
-        self.sim[prp.windspeed_north_mps] = self.sim[prp.windspeed_north_fps] * 0.3048
-        self.sim[prp.windspeed_north_kph] = self.sim[prp.windspeed_north_fps] * 1.09728
-        self.sim[prp.windspeed_east_mps] = self.sim[prp.windspeed_east_fps] * 0.3048
-        self.sim[prp.windspeed_east_kph] = self.sim[prp.windspeed_east_fps] * 1.09728
-        self.sim[prp.windspeed_down_mps] = self.sim[prp.windspeed_down_fps] * 0.3048
-        self.sim[prp.windspeed_down_kph] = self.sim[prp.windspeed_down_fps] * 1.09728
-        self.sim[prp.turb_north_mps] = self.sim[prp.turb_north_fps] * 0.3048
-        self.sim[prp.turb_north_kph] = self.sim[prp.turb_north_fps] * 1.09728
-        self.sim[prp.turb_east_mps] = self.sim[prp.turb_east_fps] * 0.3048
-        self.sim[prp.turb_east_kph] = self.sim[prp.turb_east_fps] * 1.09728
-        self.sim[prp.turb_down_mps] = self.sim[prp.turb_down_fps] * 0.3048
-        self.sim[prp.turb_down_kph] = self.sim[prp.turb_down_fps] * 1.09728
 
 
     def telemetry_logging(self) -> None:

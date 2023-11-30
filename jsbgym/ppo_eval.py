@@ -22,6 +22,7 @@ def parse_args():
     parser.add_argument("--tele-file", type=str, default="telemetry/ppo_eval_telemetry.csv", 
         help="telemetry csv file")
     parser.add_argument('--rand-targets', action='store_true', help='set targets randomly')
+    parser.add_argument('--rand-atmo-mag', action='store_true', help='randomize the wind and turb magnitudes at each episode')
     parser.add_argument('--turb', action='store_true', help='add turbulence')
     parser.add_argument('--wind', action='store_true', help='add wind')
     args = parser.parse_args()
@@ -43,10 +44,9 @@ if __name__ == '__main__':
     seed = train_dict['seed']
 
     # seeding
-    random.seed(seed)
+    # random.seed(seed)
     # np.random.seed(seed)
-    torch.manual_seed(seed)
-    torch.backends.cudnn.deterministic = True
+    # torch.manual_seed(seed)
 
     # env setup
     envs = gym.vector.SyncVectorEnv(
@@ -55,16 +55,11 @@ if __name__ == '__main__':
     unwrapped_env = envs.envs[0].unwrapped
     trim_point = TrimPoint('x8')
 
-    obs, _ = envs.reset(seed=seed)
+    sim_options = {"atmosphere": {"rand_magnitudes": args.rand_atmo_mag, 
+                                  "wind": args.wind,
+                                  "turb": args.turb}}
+    obs, _ = envs.reset(options=sim_options)
     obs = torch.Tensor(obs).to(device)
-    if args.turb:
-        unwrapped_env.sim['atmosphere/turb-type'] = 3
-        unwrapped_env.sim['atmosphere/turbulence/milspec/windspeed_at_20ft_AGL-fps'] = 75
-        unwrapped_env.sim["atmosphere/turbulence/milspec/severity"] = 6
-
-    if args.wind:
-        unwrapped_env.sim["atmosphere/wind-north-fps"] = 16.26 * 3.281 # mps to fps
-        unwrapped_env.sim["atmosphere/wind-east-fps"] = 16.26 * 3.281 # mps to fps
 
     # setting the observation normalization parameters
     envs.envs[0].set_obs_rms(train_dict['norm_obs_rms']['mean'], train_dict['norm_obs_rms']['var'])
@@ -80,11 +75,17 @@ if __name__ == '__main__':
     pitch_ref: float = 0.0
     airspeed_ref: float = trim_point.Va_ms
 
-    for step in range(2500):
+    for step in range(8000):
         if args.rand_targets and step % 500 == 0:
             roll_ref = np.random.uniform(-45, 45) * (np.pi / 180)
             pitch_ref = np.random.uniform(-15, 15) * (np.pi / 180)
             airspeed_ref = np.random.uniform(trim_point.Va_ms - 2, trim_point.Va_ms + 2)
+            print("--------------------------------------")
+            if args.env_id == "AttitudeControl-v0":
+                print(f"roll_ref: {roll_ref}, pitch_ref: {pitch_ref}, airspeed_ref: {airspeed_ref}")
+            if args.env_id == "AttitudeControlNoVa-v0":
+                print(f"roll_ref: {roll_ref}, pitch_ref: {pitch_ref}")
+
         if args.env_id == "AttitudeControl-v0":
             unwrapped_env.set_target_state(roll_ref, pitch_ref, airspeed_ref)
         elif args.env_id == "AttitudeControlNoVa-v0":
@@ -98,6 +99,5 @@ if __name__ == '__main__':
         if done:
             for info in infos["final_info"]:
                 print(f"Episode reward: {info['episode']['r']}")
-            break
 
     envs.close()

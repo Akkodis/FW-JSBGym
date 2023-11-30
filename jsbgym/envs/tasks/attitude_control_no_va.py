@@ -25,7 +25,6 @@ class AttitudeControlNoVaTask(AttitudeControlTask):
                 - `telemetry_file`: the name of the file containing the flight data to be logged
                 - `render_mode`: the render mode for the task
         """
-
         super().__init__(config_file, telemetry_file, render_mode)
 
         self.state_prps: Tuple[BoundedProperty, ...] = (
@@ -51,11 +50,11 @@ class AttitudeControlNoVaTask(AttitudeControlTask):
             prp.throttle_cmd, prp.elevator_cmd, prp.aileron_cmd, # control surface commands
             prp.reward_total, prp.reward_roll, prp.reward_pitch, # rewards
             prp.airspeed_mps, prp.airspeed_kph, # airspeed
-            prp.windspeed_north_mps, prp.windspeed_east_mps, prp.windspeed_down_mps, # wind speed mps
-            prp.windspeed_north_kph, prp.windspeed_east_kph, prp.windspeed_down_kph, # wind speed kph
+            prp.total_windspeed_north_mps, prp.total_windspeed_east_mps, prp.total_windspeed_down_mps, # wind speed mps
+            prp.total_windspeed_north_kph, prp.total_windspeed_east_kph, prp.total_windspeed_down_kph, # wind speed kph
             prp.turb_north_mps, prp.turb_east_mps, prp.turb_down_mps, # turbulence mps
             prp.turb_north_kph, prp.turb_east_kph, prp.turb_down_kph, # turbulence kph
-        ) + self.target_prps
+        ) + self.target_prps # target state variables
 
         self.error_prps: Tuple[BoundedProperty, ...] = (
             prp.roll_err, prp.pitch_err # errors
