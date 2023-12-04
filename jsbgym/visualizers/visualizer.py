@@ -10,7 +10,6 @@ class PlotVisualizer(object):
             cmd = f"python visualizers/attitude_control_telemetry.py --tele-file {telemetry_file} --scale"
         else:
             cmd = f"python visualizers/attitude_control_telemetry.py --tele-file {telemetry_file}"
-        print(telemetry_file)
         self.process: subprocess.Popen = subprocess.Popen(cmd, 
                                                           shell=True,
                                                           stdout=subprocess.PIPE,

@@ -83,11 +83,12 @@ def parse_args():
         help="the maximum norm for the gradient clipping")
     parser.add_argument("--target-kl", type=float, default=None,
         help="the target KL divergence threshold")
-    parser.add_argument('--save-best',type=lambda x: bool(strtobool(x)), default=True, nargs="?", const=True,
+    parser.add_argument('--save-best',type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True,
                          help='save only the best models')
 
     # training sim specific arguments
     parser.add_argument('--rand-targets',type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True, help='set targets randomly')
+    parser.add_argument('--rand-atmo-mag',type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True, help='randomize the wind and turb magnitudes at each episode')
     parser.add_argument('--turb', type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True, help='add turbulence')
     parser.add_argument('--wind', type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True, help='add wind')
     args = parser.parse_args()
@@ -96,6 +97,14 @@ def parse_args():
     # fmt: on
     return args
 
+# TODO: Implement save_model function
+def save_model(save_path, run_name, agent, env, seed):
+    print("saving agent...")
+    train_dict = {}
+    train_dict["norm_obs_rms"] = {"mean": env.get_obs_rms().mean, "var": env.get_obs_rms().var}
+    train_dict["seed"] = seed
+    train_dict["agent"] = agent.state_dict()
+    torch.save(train_dict, f"{save_path}{run_name}.pt")
 
 if __name__ == "__main__":
     args = parse_args()
@@ -169,21 +178,13 @@ if __name__ == "__main__":
     # TRY NOT TO MODIFY: start the game
     global_step = 0
     start_time = time.time()
-    next_obs, _ = envs.reset(seed=args.seed)
+    sim_options = {"atmosphere": {"rand_magnitudes": args.rand_atmo_mag, 
+                                  "wind": args.wind,
+                                  "turb": args.turb}}
+    next_obs, _ = envs.reset(options=sim_options)
     next_obs = torch.Tensor(next_obs).to(device)
     next_terminated = torch.zeros(args.num_envs).to(device)
     num_updates = args.total_timesteps // args.batch_size
-
-    # set the simulation parameters
-    for i in range(args.num_envs):
-        if args.turb:
-            unwrapped_envs[i].sim['atmosphere/turb-type'] = 3
-            unwrapped_envs[i].sim['atmosphere/turbulence/milspec/windspeed_at_20ft_AGL-fps'] = 75
-            unwrapped_envs[i].sim["atmosphere/turbulence/milspec/severity"] = 6
-
-        if args.wind:
-            unwrapped_envs[i].sim["atmosphere/wind-north-fps"] = 16.26 * 3.281 # mps to fps
-            unwrapped_envs[i].sim["atmosphere/wind-east-fps"] = 16.26 * 3.281 # mps to fps
 
     for update in range(1, num_updates + 1):
         # Annealing the rate if instructed to do so.
@@ -375,13 +376,14 @@ if __name__ == "__main__":
 
     # Evaluate the agent
     if not args.no_eval:
+        print("******** Evaluating agent... ***********")
         e_env = envs.envs[0]
         e_env.eval = True
         telemetry_file = f"telemetry/{run_name}.csv"
         e_obs, _ = e_env.reset(options={"render_mode": "log"})
         e_env.unwrapped.telemetry_setup(telemetry_file)
         e_obs = torch.Tensor(e_obs).unsqueeze(0).to(device)
-        for step in range(2500):
+        for step in range(6000):
             if step % 500 == 0:
                 roll_ref = np.random.uniform(-45, 45) * (np.pi / 180)
                 pitch_ref = np.random.uniform(-15, 15) * (np.pi / 180)
@@ -404,23 +406,16 @@ if __name__ == "__main__":
                 if args.save_best:
                     if (args.env_id == "AttitudeControl-v0" and r_per_step > -0.20) or \
                        (args.env_id == "AttitudeControlNoVa-v0" and r_per_step > -0.06):
-                        print("saving best agent...")
-                        train_dict = {}
-                        train_dict["norm_obs_rms"] = {"mean": envs.envs[0].get_obs_rms().mean, "var": envs.envs[0].get_obs_rms().var}
-                        train_dict["seed"] = args.seed
-                        train_dict["agent"] = agent.state_dict()
-                        torch.save(train_dict, f"{save_path}{run_name}.pt")
+                        save_model(save_path, run_name, agent, e_env, args.seed)
                 else:
-                    print("saving agent...")
-                    train_dict = {}
-                    train_dict["norm_obs_rms"] = {"mean": envs.envs[0].get_obs_rms().mean, "var": envs.envs[0].get_obs_rms().var}
-                    train_dict["seed"] = args.seed
-                    train_dict["agent"] = agent.state_dict()
-                    torch.save(train_dict, f"{save_path}{run_name}.pt")
+                    save_model(save_path, run_name, agent, e_env, args.seed)
                 break
-
         telemetry_df = pd.read_csv(telemetry_file)
         telemetry_table = wandb.Table(dataframe=telemetry_df)
         wandb.log({"telemetry": telemetry_table})
+    # Even if we don't evaluate, we still want to save the model
+    else:
+        save_model(save_path, run_name, agent, envs.envs[0], args.seed)
 
+    envs.close()
     writer.close()

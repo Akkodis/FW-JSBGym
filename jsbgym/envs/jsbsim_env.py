@@ -165,16 +165,21 @@ class JSBSimEnv(gym.Env, ABC):
         else:
             self.sim["simulation/randomseed"] = np.random.randint(0, 10000)
 
-        # Get options dict and store in as an attribute to keep it across resets
-        # (the options argument is set to None when SyncVectorEnv autoresets the envs)
-        if self.sim_options is None:
-            self.sim_options = options
+        # set render mode
+        if options is not None:
+            if "render_mode" in options: 
+                self.render_mode = options["render_mode"]
+            # Get options dict and store in as an attribute to keep it across resets
+            # (the options argument is set to None when SyncVectorEnv autoresets the envs)
+            # setup wind and turbulence
+            if self.sim_options is None:
+                self.sim_options = options
 
-        # setup wind and turbulence
         # TODO add curriculum learning with a bool in args.config yaml file and change
         # the sim_options dict accordingly
         if self.sim_options is not None:
-            self.set_atmosphere(self.sim_options["atmosphere"])
+            if "atmosphere" in self.sim_options:
+                self.set_atmosphere(self.sim_options["atmosphere"])
 
 
     def set_atmosphere(self, atmo_options: dict=None) -> None:
@@ -215,7 +220,7 @@ class JSBSimEnv(gym.Env, ABC):
                     print("No Turbulence") 
             else: # fixed wind and turbulence magnitudes : 58 kmh wind and severe turbulence
                 if atmo_options["wind"]:
-                    print("Fixed wind : 58 kph N/E")
+                    print("Fixed wind : 82 kph N/E")
                     self.sim[prp.windspeed_north_fps] = 58 * 0.9115 # kmh to fps
                     self.sim[prp.windspeed_east_fps] = 58 * 0.9115 # kmh to fps
                 if atmo_options["turb"]:

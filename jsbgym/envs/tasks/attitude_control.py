@@ -106,7 +106,6 @@ class AttitudeControlTask(JSBSimEnv):
                 - `sim`: the simulation object containing the JSBSim FDM
         """
         super().reset(seed=seed, options=options)
-        # if options is not None: self.render_mode = options["render_mode"]
 
         self.reset_target_state() # reset task target state
         self.update_errors() # reset task errors
@@ -137,8 +136,6 @@ class AttitudeControlTask(JSBSimEnv):
         # run the simulation for sim_steps_after_agent_action steps
         for _ in range(self.sim_steps_after_agent_action):
             self.sim.run_step()
-            # convert some props to international system units
-            # self.convert_props_to_SI()
             # write the telemetry to a log csv file every fdm step (as opposed to every agent step -> to put out of this for loop)
             # self.telemetry_logging()
             # decrement the steps left

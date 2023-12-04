@@ -83,13 +83,10 @@ if __name__ == '__main__':
             print("--------------------------------------")
             if args.env_id == "AttitudeControl-v0":
                 print(f"roll_ref: {roll_ref}, pitch_ref: {pitch_ref}, airspeed_ref: {airspeed_ref}")
+                unwrapped_env.set_target_state(roll_ref, pitch_ref, airspeed_ref)
             if args.env_id == "AttitudeControlNoVa-v0":
                 print(f"roll_ref: {roll_ref}, pitch_ref: {pitch_ref}")
-
-        if args.env_id == "AttitudeControl-v0":
-            unwrapped_env.set_target_state(roll_ref, pitch_ref, airspeed_ref)
-        elif args.env_id == "AttitudeControlNoVa-v0":
-            unwrapped_env.set_target_state(roll_ref, pitch_ref)
+                unwrapped_env.set_target_state(roll_ref, pitch_ref)
 
         action = ppo_agent.get_action_and_value(obs)[1].detach().cpu().numpy()
         obs, reward, truncated, terminated, infos = envs.step(action)
