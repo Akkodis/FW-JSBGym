@@ -36,7 +36,7 @@ class AeroModel(object):
         self.gamma8: float = self.Ixx / self.gamma
 
         # Geometric parameters of the aircraft
-        self.Va_trim: float = self.trim.Va_ms   # trim airspeed, chosen to be 33kts -> 16.97 m/s or 61.12 km/h : include it here ?
+        self.Va_trim: float = self.trim.Va_mps   # trim airspeed, chosen to be 33kts -> 16.97 m/s or 61.12 km/h : include it here ?
         self.S: float = 0.75  # wing span m2
         self.b: float = 2.10  # wing span m
         self.c: float = 0.3571 # mean aerodynamic chord m
@@ -139,7 +139,7 @@ class AeroModel(object):
 
         # Airspeed hold using throttle
         self.throttle_limit: float = 1.0  # throttle actuator max value
-        self.av1: float = ((self.rho * trim.Va_ms * self.S) / self.mass) / (self.CDo + self.CDalpha * trim.alpha_rad + self.CDde * trim.elevator)
+        self.av1: float = ((self.rho * trim.Va_mps * self.S) / self.mass) / (self.CDo + self.CDalpha * trim.alpha_rad + self.CDde * trim.elevator)
         self.av2: float = (self.Pwatt / self.Khp2w) * self.Khp2ftlbsec
         self.av3: float = self.G * np.cos(trim.theta_rad - trim.alpha_rad)
         self.v_damping: float = 1

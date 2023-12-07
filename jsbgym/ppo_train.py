@@ -205,7 +205,7 @@ if __name__ == "__main__":
                     # print("setting random targets @ step: ", unwrapped_envs[i].sim[unwrapped_envs[i].steps_left])
                     roll_ref = np.random.uniform(-45, 45) * (np.pi / 180)
                     pitch_ref = np.random.uniform(-15, 15) * (np.pi / 180)
-                    airspeed_ref = np.random.uniform(trim_point.Va_ms - 2, trim_point.Va_ms + 2)
+                    airspeed_ref = np.random.uniform(trim_point.Va_kph - 10, trim_point.Va_kph + 10)
                     if args.env_id == "AttitudeControl-v0":
                         unwrapped_envs[i].set_target_state(roll_ref, pitch_ref, airspeed_ref)
                     elif args.env_id == "AttitudeControlNoVa-v0":
@@ -387,7 +387,7 @@ if __name__ == "__main__":
             if step % 500 == 0:
                 roll_ref = np.random.uniform(-45, 45) * (np.pi / 180)
                 pitch_ref = np.random.uniform(-15, 15) * (np.pi / 180)
-                airspeed_ref = np.random.uniform(trim_point.Va_ms - 2, trim_point.Va_ms + 2)
+                airspeed_ref = np.random.uniform(trim_point.Va_kph - 10, trim_point.Va_kph + 10)
 
             if args.env_id == "AttitudeControl-v0":
                 e_env.unwrapped.set_target_state(roll_ref, pitch_ref, airspeed_ref)

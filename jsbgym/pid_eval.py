@@ -83,14 +83,14 @@ if __name__ == '__main__':
     # set default target values
     roll_ref: float = 0.0
     pitch_ref: float = 0.0
-    airspeed_ref: float = trim_point.Va_ms
+    airspeed_ref: float = trim_point.Va_kph
 
     for step in range(8000):
         # set random target values
         if args.rand_targets and step % 500 == 0:
             roll_ref = np.random.uniform(-45, 45) * (np.pi / 180)
             pitch_ref = np.random.uniform(-15, 15) * (np.pi / 180)
-            airspeed_ref = np.random.uniform(trim_point.Va_ms - 2, trim_point.Va_ms + 2)
+            airspeed_ref = np.random.uniform(trim_point.Va_kph - 2, trim_point.Va_kph + 2)
 
         # apply target values
         roll_pid.set_reference(roll_ref)
