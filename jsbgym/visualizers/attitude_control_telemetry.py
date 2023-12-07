@@ -41,7 +41,7 @@ def animate(i, axis, args) -> None:
     elevator_cmd = df.get(prp.elevator_cmd.get_legal_name(), default=nan_arr)
     aileron_cmd = df.get(prp.aileron_cmd.get_legal_name(), default=nan_arr)
 
-    airspeed_ref = df.get(prp.target_airspeed_mps.get_legal_name(), default=nan_arr)
+    airspeed_ref = df.get(prp.target_airspeed_kph.get_legal_name(), default=nan_arr)
     roll_ref = df.get(prp.target_roll_rad.get_legal_name(), default=nan_arr)
     pitch_ref = df.get(prp.target_pitch_rad.get_legal_name(), default=nan_arr)
 
