@@ -42,7 +42,7 @@
             <y> 0.0 </y>
             <z> 0.0 </z>
         </location>
-        <location mame="VRP" unit="M">
+        <location name="VRP" unit="M">
             <x> 0.2 </x>
             <y> 0.0 </y>
             <z> 0.0 </z>
@@ -141,18 +141,22 @@
                 <gain>0.01745</gain>
             </aerosurface_scale>
 
-            <actuator name="fcs/elevator-actuator">
+            <second_order_filter name="fcs/elevator-filter">
+                <input>fcs/elevator-control</input>
+                <c1>0</c1>
+                <c2>0</c2>
+                <c3>10000</c3>
+                <c4>1</c4>
+                <c5>141.4213562</c5>
+                <c6>10000</c6>
+                <output>fcs/elevator-pos-rad</output>
+            </second_order_filter>
+
+            <!-- <actuator name="fcs/elevator-actuator">
                 <description>Converting the actuator command to a control surface movement</description>
                 <input>fcs/elevator-control</input>
-                <!-- <lag>60</lag>
-                <bias>0.002</bias> -->
-                <clipto>
-                    <!-- +/- 30 degs -->
-                    <min>-0.52</min>
-                    <max>0.52</max>
-                </clipto>
                 <output>fcs/elevator-pos-rad</output>
-            </actuator>
+            </actuator> -->
 
         </channel>
 
@@ -176,24 +180,13 @@
                     <max>30</max>
                 </range>
             </aerosurface_scale>
-
+            
+            <!-- Not sure it's doing anything -->
             <actuator name="fcs/left-aileron-actuator">
-                <description>Port aileron actuator, max +/- 30 degrees, just pass through for now</description>
-                <input>fcs/left-aileron-control</input>
+                <input>fcs/left-aileron-pos-rad</input>
+                <rate_limit>3.49066</rate_limit>
                 <output>fcs/left-aileron-pos-rad</output>
             </actuator>
-
-<!--            <actuator name="fcs/left-aileron-actuator">-->
-<!--                <description>Port aileron actuator, max +/- 30 degrees</description>-->
-<!--                <input>fcs/left-aileron-control</input>-->
-<!--                <rate_limit>1.57</rate_limit>-->
-<!--                <hysterisis>0.005</hysterisis>-->
-<!--                <clipto>-->
-<!--                    <min>-0.52</min>-->
-<!--                    <max>+0.52</max>-->
-<!--                </clipto>-->
-<!--                <output>fcs/left-aileron-pos-rad</output>-->
-<!--            </actuator>-->
 
             <aerosurface_scale name="fcs/right-aileron-control">
                 <description>The Starboard aileron output is in radians</description>
@@ -205,31 +198,63 @@
                 </range>
             </aerosurface_scale>
 
+            <second_order_filter name="fcs/left-aileron-filter">
+                <input>fcs/left-aileron-control</input>
+                <c1>0</c1>
+                <c2>0</c2>
+                <c3>10000</c3>
+                <c4>1</c4>
+                <c5>141.4213562</c5>
+                <c6>10000</c6>
+                <output>fcs/left-aileron-pos-rad</output>
+            </second_order_filter>
+
+            <!-- Not sure it's doing anything -->
             <actuator name="fcs/right-aileron-actuator">
-                <description>Starboard aileron actuator, max +/- 30 degrees, just pass through for now</description>
-                <input>fcs/right-aileron-control</input>
+                <input>fcs/right-aileron-pos-rad</input>
+                <rate_limit>3.49066</rate_limit>
                 <output>fcs/right-aileron-pos-rad</output>
             </actuator>
 
-<!--            <actuator name="fcs/right-aileron-actuator">-->
-<!--                <description>Starboard aileron actuator, max +/- 30 degrees</description>-->
-<!--                <input>fcs/right-aileron-control</input>-->
-<!--                <rate_limit>1.57</rate_limit>-->
-<!--                <hysterisis>0.005</hysterisis>-->
-<!--                <clipto>-->
-<!--                    <min>-0.52</min>-->
-<!--                    <max>+0.52</max>-->
-<!--                </clipto>-->
-<!--                <output>fcs/right-aileron-pos-rad</output>-->
-<!--            </actuator>-->
+            <second_order_filter name="fcs/right-aileron-filter">
+                <input>fcs/right-aileron-control</input>
+                <c1>0</c1>
+                <c2>0</c2>
+                <c3>10000</c3>
+                <c4>1</c4>
+                <c5>141.4213562</c5>
+                <c6>10000</c6>
+                <output>fcs/right-aileron-pos-rad</output>
+            </second_order_filter>
 
             <summer name="fcs/effective-aileron-pos">
                 <description>Combine and invert deflection based on the expected roll condition</description>
                 <input>fcs/left-aileron-pos-rad</input>
                 <input>fcs/right-aileron-pos-rad</input>
-                <gain>0.5</gain>
+                <!-- <gain>0.5</gain> -->
             </summer>
+            
+            <!-- Placed a pure gain here to reduce the aileron deflection by half, as the gain previously set in the summer just above didn't do anything -->
+            <pure_gain name="fcs/effective_aileron_pos_gain">
+                <input>fcs/effective-aileron-pos</input>
+                <gain>0.5</gain>
+                <output>fcs/effective-aileron-pos</output>
+            </pure_gain>
 
+            <!-- <actuator name="fcs/effective_aileron_actuator">
+                <input>fcs/effective-aileron-pos</input>
+                <rate_limit>3.49066</rate_limit>
+                <output>fcs/effective-aileron-pos</output>
+            </actuator> -->
+
+        </channel>
+
+        <channel name="Throttle">
+            <lag_filter name="fcs/throttle-lag-filter">
+                <input>fcs/throttle-cmd-norm</input>
+                <c1>5</c1>
+                <output>fcs/throttle-pos-norm</output>
+            </lag_filter>
         </channel>
 
     </flight_control>
