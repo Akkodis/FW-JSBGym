@@ -112,6 +112,7 @@ class AttitudeControlTask(JSBSimEnv):
         self.update_action_history() # reset action history
         self.update_action_avg() # reset action avg
         self.sim[self.steps_left] = self.steps_left.max # reset the number of steps left in the episode to the max
+        self.sim[self.current_step] = self.current_step.min # reset the number of steps left in the episode to 
 
         # reset observation and return the first observation of the episode
         self.observation_deque.clear()
@@ -140,6 +141,7 @@ class AttitudeControlTask(JSBSimEnv):
             # self.telemetry_logging()
             # decrement the steps left
             self.sim[self.steps_left] -= 1
+            self.sim[self.current_step] += 1
 
         # update the action_avg
         self.update_action_avg()
