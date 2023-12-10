@@ -87,10 +87,14 @@ if __name__ == '__main__':
     pitch_ref: float = 0.0
     airspeed_ref: float = trim_point.Va_kph
 
+    ref_data = np.load("ref_seq_arr.npy")
+
     for step in range(8000):
         # set random target values
         if args.rand_targets:
-            roll_ref, pitch_ref, airspeed_ref = refSeq.sample_refs(step)
+            # roll_ref, pitch_ref, airspeed_ref = refSeq.sample_refs(step)
+            refs = ref_data[step]
+            roll_ref, pitch_ref, airspeed_ref = refs[0], refs[1], refs[2]
 
         # apply target values
         roll_pid.set_reference(roll_ref)
@@ -115,5 +119,5 @@ if __name__ == '__main__':
         done = np.logical_or(truncated, terminated)
         if done:
             print(f"Episode reward: {info['episode']['r']}")
-            print(step)
-            refSeq.sample_steps(offset=step)
+            # print(step)
+            # refSeq.sample_steps(offset=step)
