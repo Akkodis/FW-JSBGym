@@ -390,8 +390,9 @@ if __name__ == "__main__":
         e_env.unwrapped.telemetry_setup(telemetry_file)
         e_obs = torch.Tensor(e_obs).unsqueeze(0).to(device)
         e_refSeq = RefSequence(num_refs=5)
+        e_refSeq.sample_steps()
         for step in range(6000):
-            roll_ref, pitch_ref, airspeed_ref = e_refSeq.sample_refs(step, 0)
+            roll_ref, pitch_ref, airspeed_ref = e_refSeq.sample_refs(step)
             if args.env_id == "AttitudeControl-v0":
                 e_env.unwrapped.set_target_state(roll_ref, pitch_ref, airspeed_ref)
             elif args.env_id == "AttitudeControlNoVa-v0":
