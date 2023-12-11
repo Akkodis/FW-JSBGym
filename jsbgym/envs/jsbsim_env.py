@@ -226,7 +226,7 @@ class JSBSimEnv(gym.Env, ABC):
                             self.sim[prp.turb_severity] = 6
                             print("Severe Turbulence")
                 else:
-                    self.sim[prp.turb_type] = 0
+                    self.sim[prp.turb_type] = 3
                     self.sim[prp.turb_w20_fps] = 0
                     self.sim[prp.turb_severity] = 0
                     print("No Turbulence") 
