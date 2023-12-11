@@ -64,6 +64,7 @@ if __name__ == '__main__':
 
     # Generating a reference sequence
     refSeq = RefSequence(num_refs=5)
+    refSeq.sample_steps()
 
     # setting the observation normalization parameters
     envs.envs[0].set_obs_rms(train_dict['norm_obs_rms']['mean'], 
