@@ -53,7 +53,7 @@ class AttitudeControlTask(JSBSimEnv):
             prp.roll_rad, prp.pitch_rad, # attitude
             prp.airspeed_mps, # airspeed
             prp.p_radps, prp.q_radps, prp.r_radps, # angular rates
-            prp.airspeed_err, prp.roll_err, prp.pitch_err, # errors
+            prp.roll_err, prp.pitch_err, prp.airspeed_err, # errors
             prp.elevator_avg, prp.aileron_avg, prp.throttle_avg # average of past 5 fcs commands
         )
 
@@ -71,7 +71,7 @@ class AttitudeControlTask(JSBSimEnv):
             prp.lat_gc_deg, prp.lng_gc_deg, prp.altitude_sl_m, # position
             prp.roll_rad, prp.pitch_rad, prp.heading_rad, # attitude
             prp.p_radps, prp.q_radps, prp.r_radps, # angular rates and airspeed
-            prp.throttle_cmd, prp.elevator_cmd, prp.aileron_cmd, # control surface commands
+            prp.aileron_cmd, prp.elevator_cmd, prp.throttle_cmd, # control surface commands
             prp.reward_total, prp.reward_roll, prp.reward_pitch, prp.reward_airspeed, # rewards
             prp.airspeed_mps, prp.airspeed_kph, # airspeed
             prp.total_windspeed_north_mps, prp.total_windspeed_east_mps, prp.total_windspeed_down_mps, # wind speed mps
@@ -81,7 +81,7 @@ class AttitudeControlTask(JSBSimEnv):
         ) + self.target_prps # target state variables
 
         self.error_prps: Tuple[BoundedProperty, ...] = (
-            prp.airspeed_err, prp.roll_err, prp.pitch_err # errors
+            prp.roll_err, prp.pitch_err, prp.airspeed_err, # errors
         )
 
         # declaring observation. Deque with a maximum length of obs_history_size
@@ -193,6 +193,12 @@ class AttitudeControlTask(JSBSimEnv):
         episode_end: bool = self.sim[self.steps_left] <= 0 # if the episode is done, return True
         obs_out_of_bounds: bool = self.observation not in self.observation_space # if the observation contains out of bounds obs (due to JSBSim diverging), return True
 
+        if obs_out_of_bounds:
+            print(f"Out of bounds observation: {self.observation}")
+            print(f"Turbulence: {self.sim[prp.turb_type]}")
+            print(f"Turbulence: {self.sim[prp.turb_w20_fps]}")
+            print(f"Turbulence: {self.sim[prp.turb_severity]}")
+
         return episode_end or obs_out_of_bounds, episode_end, obs_out_of_bounds
 
 
@@ -298,7 +304,7 @@ class AttitudeControlTask(JSBSimEnv):
         # reset task class attributes with initial conditions
         self.set_target_state(target_roll_rad=self.sim[prp.initial_roll_rad], 
                               target_pitch_rad=self.sim[prp.initial_pitch_rad],
-                              target_airspeed_mps=self.sim[prp.initial_airspeed_kts] * 0.514444) # converting kts to mps
+                              target_airspeed_mps=self.sim[prp.initial_airspeed_kts] * 0.51444) # converting kts to kph
 
 
     def get_reward(self, action: np.ndarray) -> float:

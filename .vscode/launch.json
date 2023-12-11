@@ -36,8 +36,9 @@
             "cwd": "${workspaceFolder}/jsbgym",
             "program": "ppo_train.py",
             "args": ["--exp-name", "debug_exp", "--num-envs", "2",
-                "--total-timesteps", "6000", "--track", 
+                "--total-timesteps", "200000", "--track", 
                 "--env-id", "AttitudeControlNoVa-v0",
+                "--turb", "--wind", "--rand-atmo-mag", "--rand-targets"
                 // "--config", "config/ppo_caps_no_va.yaml",
                 // "--config", "config/ppo_caps.yaml",
                 ],

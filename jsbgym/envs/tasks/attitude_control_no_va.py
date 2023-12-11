@@ -47,7 +47,7 @@ class AttitudeControlNoVaTask(AttitudeControlTask):
             prp.lat_gc_deg, prp.lng_gc_deg, prp.altitude_sl_m, # position
             prp.roll_rad, prp.pitch_rad, prp.heading_rad, # attitude
             prp.p_radps, prp.q_radps, prp.r_radps, # angular rates and airspeed
-            prp.throttle_cmd, prp.elevator_cmd, prp.aileron_cmd, # control surface commands
+            prp.aileron_cmd, prp.elevator_cmd, prp.throttle_cmd, # control surface commands
             prp.reward_total, prp.reward_roll, prp.reward_pitch, # rewards
             prp.airspeed_mps, prp.airspeed_kph, # airspeed
             prp.total_windspeed_north_mps, prp.total_windspeed_east_mps, prp.total_windspeed_down_mps, # wind speed mps

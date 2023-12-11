@@ -93,8 +93,11 @@ class JSBSimEnv(gym.Env, ABC):
         if self.render_mode in self.metadata["render_modes"][2:]:
             self.viz_time_factor: float = jsbsim_config["viz_time_factor"]
 
-        max_episode_steps: int = ceil(self.episode_length_s * self.fdm_frequency)
-        self.steps_left: BoundedProperty = BoundedProperty("info/steps_left", "steps remaining in the current episode", 0, max_episode_steps)
+        # max_episode_steps: int = ceil(self.episode_length_s * self.fdm_frequency)
+        # self.steps_left: BoundedProperty = BoundedProperty("info/steps_left", "steps remaining in the current episode", 0, max_episode_steps)
+        self.max_episode_steps: int = ceil(self.episode_length_s * self.fdm_frequency)
+        self.current_step = BoundedProperty("info/current_step", "current step in the current episode", 0, self.max_episode_steps)
+        self.steps_left = BoundedProperty("info/steps_left", "steps remaining in the current episode", 0, self.max_episode_steps)
 
         ## Generic attributes for an env. Will be set in the task child class.
         # observation of the agent in a numpy array format
@@ -200,23 +203,33 @@ class JSBSimEnv(gym.Env, ABC):
                             f"  D: {self.sim[prp.windspeed_down_kph]} kph\n" \
                             f"  Magnitude: {np.linalg.norm(wind_vector)} kph")
                 if atmo_options["turb"]:
-                    self.sim[prp.turb_type] = 3
-                    turb_severity = np.random.randint(1, 4)
+                    # turb_severity = np.random.randint(1, 4)
+                    turb_severity = np.random.randint(0, 4)
                     match turb_severity:
+                        case 0: # no turbulence
+                            self.sim[prp.turb_type] = 3
+                            self.sim[prp.turb_w20_fps] = 0
+                            self.sim[prp.turb_severity] = 0
+                            print("No Turbulence")
                         case 1: # light turbulence
+                            self.sim[prp.turb_type] = 3
                             self.sim[prp.turb_w20_fps] = 25
                             self.sim[prp.turb_severity] = 3
                             print("Light Turbulence")
                         case 2: # moderate turbulence
+                            self.sim[prp.turb_type] = 3
                             self.sim[prp.turb_w20_fps] = 50
                             self.sim[prp.turb_severity] = 4
                             print("Moderate Turbulence")
                         case 3: # severe turbulence
+                            self.sim[prp.turb_type] = 3
                             self.sim[prp.turb_w20_fps] = 75
                             self.sim[prp.turb_severity] = 6
                             print("Severe Turbulence")
                 else:
                     self.sim[prp.turb_type] = 0
+                    self.sim[prp.turb_w20_fps] = 0
+                    self.sim[prp.turb_severity] = 0
                     print("No Turbulence") 
             else: # fixed wind and turbulence magnitudes : 58 kmh wind and severe turbulence
                 if atmo_options["wind"]:
