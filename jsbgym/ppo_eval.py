@@ -18,7 +18,7 @@ def parse_args():
     parser.add_argument('--train-model', type=str, required=True, 
         help='agent model file name')
     parser.add_argument('--render-mode', type=str, 
-        choices=['plot_scale', 'plot', 'fgear', 'fgear_plot', 'fgear_plot_scale'],
+        choices=['none','plot_scale', 'plot', 'fgear', 'fgear_plot', 'fgear_plot_scale'],
         help='render mode')
     parser.add_argument("--tele-file", type=str, default="telemetry/ppo_eval_telemetry.csv", 
         help="telemetry csv file")
@@ -42,12 +42,13 @@ if __name__ == '__main__':
 
     # load the training params
     train_dict = torch.load(args.train_model, map_location=device)
-    seed = train_dict['seed']
+    seed = 10
+    # seed = train_dict['seed']
 
     # seeding
-    # random.seed(seed)
-    # np.random.seed(seed)
-    # torch.manual_seed(seed)
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
 
     # env setup
     envs = gym.vector.SyncVectorEnv(
@@ -59,12 +60,13 @@ if __name__ == '__main__':
     sim_options = {"atmosphere": {"rand_magnitudes": args.rand_atmo_mag, 
                                   "wind": args.wind,
                                   "turb": args.turb}}
+
     obs, _ = envs.reset(options=sim_options)
     obs = torch.Tensor(obs).to(device)
 
     # Generating a reference sequence
-    refSeq = RefSequence(num_refs=5)
-    refSeq.sample_steps()
+    # refSeq = RefSequence(num_refs=5)
+    # refSeq.sample_steps()
 
     # setting the observation normalization parameters
     envs.envs[0].set_obs_rms(train_dict['norm_obs_rms']['mean'], 
@@ -81,23 +83,43 @@ if __name__ == '__main__':
     pitch_ref: float = 0.0
     airspeed_ref: float = trim_point.Va_kph
 
-    for step in range(8000):
-        if args.rand_targets:
-            roll_ref, pitch_ref, airspeed_ref = refSeq.sample_refs(step)
+    ref_data = np.load("ref_seq_arr.npy")
+    # ref_data = ref_data[:8000, :2]
+    e_actions = np.ndarray((ref_data.shape[0], 2))
+    e_obs = np.ndarray((ref_data.shape[0], 10))
 
-        if args.env_id == "AttitudeControl-v0":
-            unwrapped_env.set_target_state(roll_ref, pitch_ref, airspeed_ref)
+    for step in range(ref_data.shape[0]):
+        if args.rand_targets:
+            # roll_ref, pitch_ref, airspeed_ref = refSeq.sample_refs(step)
+            refs = ref_data[step]
+            roll_ref, pitch_ref = refs[0], refs[1]
+
+        # if args.env_id == "AttitudeControl-v0":
+        #     unwrapped_env.set_target_state(roll_ref, pitch_ref, airspeed_ref)
         if args.env_id == "AttitudeControlNoVa-v0":
             unwrapped_env.set_target_state(roll_ref, pitch_ref)
 
         action = ppo_agent.get_action_and_value(obs)[1].detach().cpu().numpy()
+        e_actions[step] = action
         obs, reward, truncated, terminated, infos = envs.step(action)
+        e_obs[step] = obs[0, 0, -1]
         obs = torch.Tensor(obs).to(device)
 
         done = np.logical_or(truncated, terminated)
         if done:
             for info in infos["final_info"]:
                 print(f"Episode reward: {info['episode']['r']}")
-                refSeq.sample_steps(offset=step)
+                # refSeq.sample_steps(offset=step)
 
     envs.close()
+
+    # compute mean square error
+    # Roll MSE
+    roll_errors = e_obs[:, 6]
+    roll_mse = np.mean(np.square(roll_errors))
+    print(f"roll mse: {roll_mse}") # roll mse: 0.1750963732741717
+
+    # Pitch MSE
+    pitch_errors = e_obs[:, 7]
+    pitch_mse = np.mean(np.square(pitch_errors))
+    print(f"pitch mse: {pitch_mse}") # pitch mse: 0.06732408213127292

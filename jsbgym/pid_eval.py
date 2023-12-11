@@ -1,6 +1,8 @@
 import argparse
 import gymnasium as gym
 import numpy as np
+import torch
+import random
 
 from agents.pid import PID
 from models import aerodynamics
@@ -15,7 +17,7 @@ def parse_args():
     parser.add_argument("--env-id", type=str, default="AttitudeControlNoVa-v0", 
         help="the id of the environment")
     parser.add_argument('--render-mode', type=str, 
-        choices=['plot_scale', 'plot', 'fgear', 'fgear_plot', 'fgear_plot_scale'],
+        choices=['none','plot_scale', 'plot', 'fgear', 'fgear_plot', 'fgear_plot_scale'],
         help='render mode')
     parser.add_argument("--tele-file", type=str, default="telemetry/pid_eval_telemetry.csv", 
         help="telemetry csv file")
@@ -43,6 +45,11 @@ if __name__ == '__main__':
     elif args.env_id == "AttitudeControlNoVa-v0":
         args.config = "config/ppo_caps_no_va.yaml"
 
+    # seeding
+    random.seed(10)
+    np.random.seed(10)
+    torch.manual_seed(10)
+
     env = gym.make(args.env_id, config_file=args.config, render_mode=args.render_mode,
                     telemetry_file=args.tele_file)
     env = gym.wrappers.RecordEpisodeStatistics(env)
@@ -52,7 +59,8 @@ if __name__ == '__main__':
                                   "turb": args.turb}}
     obs, _ = env.reset(options=sim_options)
     Va, roll, pitch, roll_rate, pitch_rate = rearrange_obs(obs)
-    refSeq = RefSequence(num_refs=5)
+    # refSeq = RefSequence(num_refs=5)
+    # refSeq.sample_steps()
 
     x8 = aerodynamics.AeroModel()
     trim_point = TrimPoint('x8')
@@ -88,32 +96,39 @@ if __name__ == '__main__':
     airspeed_ref: float = trim_point.Va_kph
 
     ref_data = np.load("ref_seq_arr.npy")
+    # ref_data = ref_data[:8000, :2]
+    # unique_refs = np.unique(ref_data, axis=0)
+    # print(f"unique refs: {unique_refs.shape}")
+    e_actions = np.ndarray((ref_data.shape[0], 2))
+    e_obs = np.ndarray((ref_data.shape[0], 10))
 
-    for step in range(8000):
+    for step in range(ref_data.shape[0]):
         # set random target values
         if args.rand_targets:
-            # roll_ref, pitch_ref, airspeed_ref = refSeq.sample_refs(step)
+            # roll_ref, pitch_ref = refSeq.sample_refs(step)
             refs = ref_data[step]
-            roll_ref, pitch_ref, airspeed_ref = refs[0], refs[1], refs[2]
+            roll_ref, pitch_ref = refs[0], refs[1]
 
         # apply target values
         roll_pid.set_reference(roll_ref)
         pitch_pid.set_reference(pitch_ref)
-        if args.env_id == "AttitudeControl-v0":
-            env.set_target_state(roll_ref, pitch_ref, airspeed_ref)
-            airspeed_pid.set_reference(airspeed_ref)
-            throttle_cmd, airspeed_err = airspeed_pid.update(state=Va, saturate=True)
-        elif args.env_id == "AttitudeControlNoVa-v0":
+        # if args.env_id == "AttitudeControl-v0":
+        #     env.set_target_state(roll_ref, pitch_ref, airspeed_ref)
+        #     airspeed_pid.set_reference(airspeed_ref)
+        #     throttle_cmd, airspeed_err = airspeed_pid.update(state=Va, saturate=True)
+        if args.env_id == "AttitudeControlNoVa-v0":
             env.set_target_state(roll_ref, pitch_ref)
 
         elevator_cmd, pitch_err = pitch_pid.update(state=pitch, state_dot=pitch_rate, saturate=True, normalize=True)
         aileron_cmd, roll_err = roll_pid.update(state=roll, state_dot=roll_rate, saturate=True, normalize=True)
 
-        if args.env_id == "AttitudeControl-v0":
-            action = np.array([aileron_cmd, elevator_cmd, throttle_cmd])
-        elif args.env_id == "AttitudeControlNoVa-v0":
+        # if args.env_id == "AttitudeControl-v0":
+        #     action = np.array([aileron_cmd, elevator_cmd, throttle_cmd])
+        if args.env_id == "AttitudeControlNoVa-v0":
             action = np.array([aileron_cmd, elevator_cmd])
+        e_actions[step] = action
         obs, reward, truncated, terminated, info = env.step(action)
+        e_obs[step] = obs[0, -1]
         Va, roll, pitch, roll_rate, pitch_rate = rearrange_obs(obs)
 
         done = np.logical_or(truncated, terminated)
@@ -121,3 +136,17 @@ if __name__ == '__main__':
             print(f"Episode reward: {info['episode']['r']}")
             # print(step)
             # refSeq.sample_steps(offset=step)
+
+    print(f"actions: {e_actions}")
+    print(f"obs: {e_obs}")
+
+    # compute mean square error
+    # Roll MSE
+    roll_errors = e_obs[:, 6]
+    roll_mse = np.mean(np.square(roll_errors))
+    print(f"roll mse: {roll_mse}") # roll mse: 0.0429050838624045
+
+    # Pitch MSE
+    pitch_errors = e_obs[:, 7]
+    pitch_mse = np.mean(np.square(pitch_errors))
+    print(f"pitch mse: {pitch_mse}") # pitch mse: 0.004513582613148686
