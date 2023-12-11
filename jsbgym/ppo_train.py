@@ -7,6 +7,7 @@ from time import strftime, localtime
 from distutils.util import strtobool
 from trim.trim_point import TrimPoint
 from agents import ppo
+from utils.eval_utils import RefSequence
 
 import wandb
 import gymnasium as gym
@@ -41,7 +42,7 @@ def parse_args():
     parser.add_argument("--no-eval", action='store_true', default=False, help="do not evaluate the agent at the end of training")
 
     # Algorithm specific arguments
-    parser.add_argument("--env-id", type=str, default="AttitudeControl-v0",
+    parser.add_argument("--env-id", type=str, default="AttitudeControlNoVa-v0",
         help="the id of the environment")
     parser.add_argument("--config", type=str, default="config/ppo_caps.yaml",
         help="the config file of the environnement")
@@ -109,6 +110,7 @@ def save_model(save_path, run_name, agent, env, seed):
 if __name__ == "__main__":
     args = parse_args()
     args.total_timesteps = int(args.total_timesteps)
+    np.set_printoptions(suppress=True)
 
     if args.env_id == "AttitudeControl-v0":
         args.config = "config/ppo_caps.yaml"
@@ -154,7 +156,7 @@ if __name__ == "__main__":
     envs = gym.vector.SyncVectorEnv(
         [ppo.make_env(args.env_id, args.config, "none", None, eval=False, gamma=args.gamma) for i in range(args.num_envs)]
     )
-    unwrapped_envs = [envs.envs[i].unwrapped for i in range(args.num_envs)]
+    unwr_envs = [envs.envs[i].unwrapped for i in range(args.num_envs)]
 
     assert isinstance(envs.single_action_space, gym.spaces.Box), "only continuous action space is supported"
     agent = ppo.Agent(envs).to(device)
@@ -186,6 +188,11 @@ if __name__ == "__main__":
     next_terminated = torch.zeros(args.num_envs).to(device)
     num_updates = args.total_timesteps // args.batch_size
 
+    # Generate a reference sequence and sample the first steps
+    refSeqs = [RefSequence(num_refs=5) for _ in range(args.num_envs)]
+    for _ in range(args.num_envs):
+        refSeqs[_].sample_steps()
+
     for update in range(1, num_updates + 1):
         # Annealing the rate if instructed to do so.
         if args.anneal_lr:
@@ -201,15 +208,13 @@ if __name__ == "__main__":
             terminateds[step] = next_terminated
 
             for i in range(args.num_envs):
-                if args.rand_targets and unwrapped_envs[i].sim[unwrapped_envs[i].steps_left] % 500 == 0:
-                    # print("setting random targets @ step: ", unwrapped_envs[i].sim[unwrapped_envs[i].steps_left])
-                    roll_ref = np.random.uniform(-45, 45) * (np.pi / 180)
-                    pitch_ref = np.random.uniform(-15, 15) * (np.pi / 180)
-                    airspeed_ref = np.random.uniform(trim_point.Va_kph - 2, trim_point.Va_kph + 2)
+                ith_env_step = unwr_envs[i].sim[unwr_envs[i].current_step]
+                if args.rand_targets:
+                    roll_ref, pitch_ref, airspeed_ref = refSeqs[i].sample_refs(ith_env_step, i)
                     if args.env_id == "AttitudeControl-v0":
-                        unwrapped_envs[i].set_target_state(roll_ref, pitch_ref, airspeed_ref)
+                        unwr_envs[i].set_target_state(roll_ref, pitch_ref, airspeed_ref)
                     elif args.env_id == "AttitudeControlNoVa-v0":
-                        unwrapped_envs[i].set_target_state(roll_ref, pitch_ref)
+                        unwr_envs[i].set_target_state(roll_ref, pitch_ref)
 
             # ALGO LOGIC: action logic
             with torch.no_grad():
@@ -229,6 +234,7 @@ if __name__ == "__main__":
             for env_i, done in enumerate(dones):
                 if done:
                     obs_t1[step][env_i] = obs[step][env_i]
+                    refSeqs[env_i].sample_steps() # Sample a new sequence of reference steps
                 else:
                     obs_t1[step][env_i] = next_obs[env_i]
 
@@ -383,12 +389,9 @@ if __name__ == "__main__":
         e_obs, _ = e_env.reset(options={"render_mode": "log"})
         e_env.unwrapped.telemetry_setup(telemetry_file)
         e_obs = torch.Tensor(e_obs).unsqueeze(0).to(device)
+        e_refSeq = RefSequence(num_refs=5)
         for step in range(6000):
-            if step % 500 == 0:
-                roll_ref = np.random.uniform(-45, 45) * (np.pi / 180)
-                pitch_ref = np.random.uniform(-15, 15) * (np.pi / 180)
-                airspeed_ref = np.random.uniform(trim_point.Va_kph - 2, trim_point.Va_kph + 2)
-
+            roll_ref, pitch_ref, airspeed_ref = e_refSeq.sample_refs(step, 0)
             if args.env_id == "AttitudeControl-v0":
                 e_env.unwrapped.set_target_state(roll_ref, pitch_ref, airspeed_ref)
             elif args.env_id == "AttitudeControlNoVa-v0":
@@ -400,6 +403,7 @@ if __name__ == "__main__":
             done = np.logical_or(truncated, terminated)
 
             if done:
+                e_refSeq.sample_steps(offset=step)
                 print(f"Episode reward: {info['episode']['r']}")
                 r_per_step = info["episode"]["r"]/info["episode"]["l"]
                 # Save the best agents depending on the env

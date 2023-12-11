@@ -15,6 +15,14 @@ class ConvFactor(Enum):
     fps2kph = 1.09728
     kph2mps = 0.277778
 
+
+class ConvFactor(Enum):
+    kts2mps = 0.51444
+    kts2kph = 1.852
+    fps2mps = 0.3048
+    fps2kph = 1.09728
+    kph2mps = 0.277778
+
 class Simulation(object):
     """
         Simulation class. Wrapper class for the JSBSim FDM.

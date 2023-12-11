@@ -6,6 +6,7 @@ import numpy as np
 
 from agents import ppo
 from trim.trim_point import TrimPoint
+from utils.eval_utils import RefSequence
 
 
 def parse_args():
@@ -61,8 +62,12 @@ if __name__ == '__main__':
     obs, _ = envs.reset(options=sim_options)
     obs = torch.Tensor(obs).to(device)
 
+    # Generating a reference sequence
+    refSeq = RefSequence(num_refs=5)
+
     # setting the observation normalization parameters
-    envs.envs[0].set_obs_rms(train_dict['norm_obs_rms']['mean'], train_dict['norm_obs_rms']['var'])
+    envs.envs[0].set_obs_rms(train_dict['norm_obs_rms']['mean'], 
+                             train_dict['norm_obs_rms']['var'])
 
     # loading the agent
     ppo_agent = ppo.Agent(envs).to(device)
@@ -73,20 +78,16 @@ if __name__ == '__main__':
     # set default target values
     roll_ref: float = 0.0
     pitch_ref: float = 0.0
-    airspeed_ref: float = trim_point.Va_mps
+    airspeed_ref: float = trim_point.Va_kph
 
     for step in range(8000):
-        if args.rand_targets and step % 500 == 0:
-            roll_ref = np.random.uniform(-45, 45) * (np.pi / 180)
-            pitch_ref = np.random.uniform(-15, 15) * (np.pi / 180)
-            airspeed_ref = np.random.uniform(trim_point.Va_mps - 2, trim_point.Va_mps + 2)
-            print("--------------------------------------")
-            if args.env_id == "AttitudeControl-v0":
-                print(f"roll_ref: {roll_ref}, pitch_ref: {pitch_ref}, airspeed_ref: {airspeed_ref}")
-                unwrapped_env.set_target_state(roll_ref, pitch_ref, airspeed_ref)
-            if args.env_id == "AttitudeControlNoVa-v0":
-                print(f"roll_ref: {roll_ref}, pitch_ref: {pitch_ref}")
-                unwrapped_env.set_target_state(roll_ref, pitch_ref)
+        if args.rand_targets:
+            roll_ref, pitch_ref, airspeed_ref = refSeq.sample_refs(step)
+
+        if args.env_id == "AttitudeControl-v0":
+            unwrapped_env.set_target_state(roll_ref, pitch_ref, airspeed_ref)
+        if args.env_id == "AttitudeControlNoVa-v0":
+            unwrapped_env.set_target_state(roll_ref, pitch_ref)
 
         action = ppo_agent.get_action_and_value(obs)[1].detach().cpu().numpy()
         obs, reward, truncated, terminated, infos = envs.step(action)
@@ -96,5 +97,6 @@ if __name__ == '__main__':
         if done:
             for info in infos["final_info"]:
                 print(f"Episode reward: {info['episode']['r']}")
+                refSeq.sample_steps(offset=step)
 
     envs.close()

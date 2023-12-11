@@ -5,13 +5,14 @@ import numpy as np
 from agents.pid import PID
 from models import aerodynamics
 from trim.trim_point import TrimPoint
+from utils.eval_utils import RefSequence
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=str, default="config/ppo_caps.yaml",
         help="the config file of the environnement")
-    parser.add_argument("--env-id", type=str, default="AttitudeControl-v0", 
+    parser.add_argument("--env-id", type=str, default="AttitudeControlNoVa-v0", 
         help="the id of the environment")
     parser.add_argument('--render-mode', type=str, 
         choices=['plot_scale', 'plot', 'fgear', 'fgear_plot', 'fgear_plot_scale'],
@@ -51,6 +52,7 @@ if __name__ == '__main__':
                                   "turb": args.turb}}
     obs, _ = env.reset(options=sim_options)
     Va, roll, pitch, roll_rate, pitch_rate = rearrange_obs(obs)
+    refSeq = RefSequence(num_refs=5)
 
     x8 = aerodynamics.AeroModel()
     trim_point = TrimPoint('x8')
@@ -83,14 +85,16 @@ if __name__ == '__main__':
     # set default target values
     roll_ref: float = 0.0
     pitch_ref: float = 0.0
-    airspeed_ref: float = trim_point.Va_mps
+    airspeed_ref: float = trim_point.Va_kph
+
+    ref_data = np.load("ref_seq_arr.npy")
 
     for step in range(8000):
         # set random target values
-        if args.rand_targets and step % 500 == 0:
-            roll_ref = np.random.uniform(-45, 45) * (np.pi / 180)
-            pitch_ref = np.random.uniform(-15, 15) * (np.pi / 180)
-            airspeed_ref = np.random.uniform(trim_point.Va_mps - 2, trim_point.Va_mps + 2)
+        if args.rand_targets:
+            # roll_ref, pitch_ref, airspeed_ref = refSeq.sample_refs(step)
+            refs = ref_data[step]
+            roll_ref, pitch_ref, airspeed_ref = refs[0], refs[1], refs[2]
 
         # apply target values
         roll_pid.set_reference(roll_ref)
@@ -115,3 +119,5 @@ if __name__ == '__main__':
         done = np.logical_or(truncated, terminated)
         if done:
             print(f"Episode reward: {info['episode']['r']}")
+            # print(step)
+            # refSeq.sample_steps(offset=step)

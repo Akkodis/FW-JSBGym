@@ -93,11 +93,10 @@ class JSBSimEnv(gym.Env, ABC):
         if self.render_mode in self.metadata["render_modes"][2:]:
             self.viz_time_factor: float = jsbsim_config["viz_time_factor"]
 
-        # max_episode_steps: int = ceil(self.episode_length_s * self.fdm_frequency)
-        # self.steps_left: BoundedProperty = BoundedProperty("info/steps_left", "steps remaining in the current episode", 0, max_episode_steps)
         self.max_episode_steps: int = ceil(self.episode_length_s * self.fdm_frequency)
         self.current_step = BoundedProperty("info/current_step", "current step in the current episode", 0, self.max_episode_steps)
         self.steps_left = BoundedProperty("info/steps_left", "steps remaining in the current episode", 0, self.max_episode_steps)
+
 
         ## Generic attributes for an env. Will be set in the task child class.
         # observation of the agent in a numpy array format

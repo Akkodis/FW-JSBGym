@@ -51,7 +51,7 @@ class AttitudeControlTask(JSBSimEnv):
 
         self.state_prps: Tuple[BoundedProperty, ...] = (
             prp.roll_rad, prp.pitch_rad, # attitude
-            prp.airspeed_mps, # airspeed
+            prp.airspeed_kph, # airspeed
             prp.p_radps, prp.q_radps, prp.r_radps, # angular rates
             prp.roll_err, prp.pitch_err, prp.airspeed_err, # errors
             prp.elevator_avg, prp.aileron_avg, prp.throttle_avg # average of past 5 fcs commands
@@ -64,7 +64,7 @@ class AttitudeControlTask(JSBSimEnv):
 
         self.target_prps: Tuple[BoundedProperty, ...] = (
             prp.target_roll_rad, prp.target_pitch_rad, # target attitude
-            prp.target_airspeed_mps # target airspeed
+            prp.target_airspeed_kph # target airspeed
         )
 
         self.telemetry_prps: Tuple[BoundedProperty, ...] = (
@@ -81,7 +81,7 @@ class AttitudeControlTask(JSBSimEnv):
         ) + self.target_prps # target state variables
 
         self.error_prps: Tuple[BoundedProperty, ...] = (
-            prp.roll_err, prp.pitch_err, prp.airspeed_err, # errors
+            prp.roll_err, prp.pitch_err, prp.airspeed_err # errors
         )
 
         # declaring observation. Deque with a maximum length of obs_history_size
@@ -112,6 +112,7 @@ class AttitudeControlTask(JSBSimEnv):
         self.update_action_history() # reset action history
         self.update_action_avg() # reset action avg
         self.sim[self.steps_left] = self.steps_left.max # reset the number of steps left in the episode to the max
+        self.sim[self.current_step] = self.current_step.min # reset the number of steps left in the episode to 
 
         # reset observation and return the first observation of the episode
         self.observation_deque.clear()
@@ -140,6 +141,7 @@ class AttitudeControlTask(JSBSimEnv):
             # self.telemetry_logging()
             # decrement the steps left
             self.sim[self.steps_left] -= 1
+            self.sim[self.current_step] += 1
 
         # update the action_avg
         self.update_action_avg()
@@ -269,7 +271,7 @@ class AttitudeControlTask(JSBSimEnv):
         # update error sim properties
         self.sim[prp.roll_err] = self.sim[prp.target_roll_rad] - self.sim[prp.roll_rad]
         self.sim[prp.pitch_err] = self.sim[prp.target_pitch_rad] - self.sim[prp.pitch_rad]
-        self.sim[prp.airspeed_err] = self.sim[prp.target_airspeed_mps] - self.sim[prp.airspeed_mps]
+        self.sim[prp.airspeed_err] = self.sim[prp.target_airspeed_kph] - self.sim[prp.airspeed_kph]
 
         # fill errors namedtuple with error variable values from the sim properties
         self.errors = self.Errors(*[self.sim[prop] for prop in self.error_prps])
@@ -284,17 +286,17 @@ class AttitudeControlTask(JSBSimEnv):
         self.sim[prp.throttle_avg] = np.mean(np.array(self.action_hist)[:, 2])
 
 
-    def set_target_state(self, target_roll_rad: float, target_pitch_rad: float, target_airspeed_mps: float) -> None:
+    def set_target_state(self, target_roll_rad: float, target_pitch_rad: float, target_airspeed_kph: float) -> None:
         """
             Set the target state of the aircraft, i.e. the target state variables defined in the `target_state_vars` tuple.
         """
         # set target state sim properties
         self.sim[prp.target_roll_rad] = target_roll_rad
         self.sim[prp.target_pitch_rad] = target_pitch_rad
-        self.sim[prp.target_airspeed_mps] = target_airspeed_mps
+        self.sim[prp.target_airspeed_kph] = target_airspeed_kph
 
         # fill target state namedtuple with target state attributes
-        self.target = self.TargetState(str(target_roll_rad), str(target_pitch_rad), str(target_airspeed_mps))
+        self.target = self.TargetState(str(target_roll_rad), str(target_pitch_rad), str(target_airspeed_kph))
 
 
     def reset_target_state(self) -> None:
@@ -304,7 +306,7 @@ class AttitudeControlTask(JSBSimEnv):
         # reset task class attributes with initial conditions
         self.set_target_state(target_roll_rad=self.sim[prp.initial_roll_rad], 
                               target_pitch_rad=self.sim[prp.initial_pitch_rad],
-                              target_airspeed_mps=self.sim[prp.initial_airspeed_kts] * 0.51444) # converting kts to kph
+                              target_airspeed_kph=self.sim[prp.initial_airspeed_kts] * 1.852) # converting kts to kph
 
 
     def get_reward(self, action: np.ndarray) -> float:

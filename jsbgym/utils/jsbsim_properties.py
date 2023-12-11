@@ -176,12 +176,10 @@ Cmq = Property('aero/coefficient/Cmq', 'pitch rate pitch')
 CmDe = Property('aero/coefficient/CmDe', 'pitch due to elevator')
 
 # additional custom properties for error and target values
-# airspeed_err = BoundedProperty("error/airspeed-err", "airspeed error", -42, 42)
 airspeed_err = BoundedProperty("error/airspeed-err", "airspeed error", float('-inf'), float('+inf'))
 roll_err = BoundedProperty("error/roll-err", "roll error", -2*math.pi, 2*math.pi)
 pitch_err = BoundedProperty("error/pitch-err", "pitch error", -2*math.pi, 2*math.pi)
-# target_airspeed_kts = BoundedProperty("target/airspeed", "desired airspeed", float('-inf'), float('+inf'))
-# target_airspeed_mps = BoundedProperty("target/airspeed", "desired airspeed", 0, 42)
+# target_airspeed_kts = BoundedProperty("target/airspeed-kts", "desired airspeed [knots]", float('-inf'), float('+inf'))
 target_airspeed_mps = BoundedProperty("target/airspeed-mps", "desired airspeed [m/s]", float('-inf'), float('+inf'))
 target_airspeed_kph = BoundedProperty("target/airspeed-kph", "desired airspeed [km/h]", float('-inf'), float('+inf'))
 target_roll_rad = BoundedProperty("target/roll-rad", "desired roll angle [rad]", -math.pi, math.pi)

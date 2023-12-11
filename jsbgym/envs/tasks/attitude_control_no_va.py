@@ -29,7 +29,7 @@ class AttitudeControlNoVaTask(AttitudeControlTask):
 
         self.state_prps: Tuple[BoundedProperty, ...] = (
             prp.roll_rad, prp.pitch_rad, # attitude
-            prp.airspeed_mps, # airspeed
+            prp.airspeed_kph, # airspeed
             prp.p_radps, prp.q_radps, prp.r_radps, # angular rates
             prp.roll_err, prp.pitch_err, # errors
             prp.aileron_avg, prp.elevator_avg # average of past 5 fcs commands
