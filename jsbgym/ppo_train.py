@@ -110,6 +110,7 @@ def save_model(save_path, run_name, agent, env, seed):
 if __name__ == "__main__":
     args = parse_args()
     args.total_timesteps = int(args.total_timesteps)
+    np.set_printoptions(suppress=True)
 
     if args.env_id == "AttitudeControl-v0":
         args.config = "config/ppo_caps.yaml"
@@ -187,8 +188,10 @@ if __name__ == "__main__":
     next_terminated = torch.zeros(args.num_envs).to(device)
     num_updates = args.total_timesteps // args.batch_size
 
-    # Generate a reference sequence
+    # Generate a reference sequence and sample the first steps
     refSeqs = [RefSequence(num_refs=5) for _ in range(args.num_envs)]
+    for _ in range(args.num_envs):
+        refSeqs[_].sample_steps()
 
     for update in range(1, num_updates + 1):
         # Annealing the rate if instructed to do so.
