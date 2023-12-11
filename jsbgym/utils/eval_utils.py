@@ -37,7 +37,6 @@ class RefSequence():
                 self.ref_steps[i, fcs] = next_step
 
         self.ref_steps += offset  # Convert the steps to integers
-        # print(self.ref_steps)  # Print the steps
 
 
     def sample_refs(self, step: int, env_num: int=0):
@@ -46,10 +45,8 @@ class RefSequence():
                 if step % self.ref_steps[self.ref_cnts[state], state] == 0:
                     if state == State.ROLL:
                         self.roll_ref = np.deg2rad(np.random.uniform(-self.roll_bound, self.roll_bound))
-                        # print(f"env_num {env_num}, roll ref change @ step {step}: {self.roll_ref}")
                     elif state == State.PITCH:
                         self.pitch_ref = np.deg2rad(np.random.uniform(-self.pitch_bound, self.pitch_bound))
-                        # print(f"env_num {env_num}, pitch ref change @ step {step}: {self.pitch_ref}")
                     elif state == State.AIRSPEED:
                         self.airspeed_ref = np.random.uniform(TrimPoint().Va_kph - self.airspeed_bound, 
                                                               TrimPoint().Va_kph + self.airspeed_bound)
