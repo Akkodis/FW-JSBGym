@@ -27,9 +27,10 @@
             "program": "pid_eval.py",
             "args": [
                     "--render-mode", "plot_scale",
-                    "--turb", "--wind"],
+                    "--rand-targets"],
+                    // "--turb", "--wind"],
             "console": "integratedTerminal",
-            "justMyCode": true,
+            "justMyCode": false,
         },
        {
             "name": "ppo_train",
