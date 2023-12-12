@@ -1,8 +1,8 @@
 import argparse
 import random
-import gymnasium as gym
 import torch
 import numpy as np
+from tqdm import tqdm
 
 from agents import ppo
 from trim.trim_point import TrimPoint
@@ -40,55 +40,62 @@ if __name__ == '__main__':
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
 
-    # load the training params
-    train_dict = torch.load(args.train_model, map_location=device)
-    seed = 10
-    # seed = train_dict['seed']
-
     # seeding
+    seed = 10
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
+    torch.backends.cudnn.deterministic = True
 
     # env setup
-    envs = gym.vector.SyncVectorEnv(
-        [ppo.make_env(args.env_id, args.config, args.render_mode, args.tele_file, eval=True)]
-    )
-    unwrapped_env = envs.envs[0].unwrapped
+    env = ppo.make_env(args.env_id, args.config, args.render_mode, args.tele_file, eval=True)()
+
+    # unwrapped_env = envs.envs[0].unwrapped
     trim_point = TrimPoint('x8')
 
     sim_options = {"atmosphere": {"rand_magnitudes": args.rand_atmo_mag, 
                                   "wind": args.wind,
-                                  "turb": args.turb}}
+                                  "turb": args.turb},
+                   "seed": seed}
 
-    obs, _ = envs.reset(options=sim_options)
-    obs = torch.Tensor(obs).to(device)
+
 
     # Generating a reference sequence
     # refSeq = RefSequence(num_refs=5)
     # refSeq.sample_steps()
 
+    train_dict = torch.load(args.train_model, map_location=device)
+
     # setting the observation normalization parameters
-    envs.envs[0].set_obs_rms(train_dict['norm_obs_rms']['mean'], 
+    env.set_obs_rms(train_dict['norm_obs_rms']['mean'], 
                              train_dict['norm_obs_rms']['var'])
 
     # loading the agent
-    ppo_agent = ppo.Agent(envs).to(device)
+    ppo_agent = ppo.Agent(env).to(device)
     ppo_agent.load_state_dict(train_dict['agent'])
     ppo_agent.eval()
-    episode_reward = 0
 
     # set default target values
     roll_ref: float = 0.0
     pitch_ref: float = 0.0
     airspeed_ref: float = trim_point.Va_kph
 
+    # load the reference sequence and initialize the evaluation arrays
     ref_data = np.load("ref_seq_arr.npy")
-    # ref_data = ref_data[:8000, :2]
     e_actions = np.ndarray((ref_data.shape[0], 2))
     e_obs = np.ndarray((ref_data.shape[0], 10))
 
-    for step in range(ref_data.shape[0]):
+    # start the environment
+    obs, _ = env.reset(options=sim_options)
+    obs = torch.Tensor(obs).unsqueeze_(0).to(device)
+
+    # if no render mode, run the simulation for the whole reference sequence given by the .npy file
+    if args.render_mode == "none":
+        total_steps = ref_data.shape[0]
+    else: # otherwise, run the simulation for 8000 steps
+        total_steps = 8000
+
+    for step in tqdm(range(total_steps)):
         if args.rand_targets:
             # roll_ref, pitch_ref, airspeed_ref = refSeq.sample_refs(step)
             refs = ref_data[step]
@@ -97,21 +104,20 @@ if __name__ == '__main__':
         # if args.env_id == "AttitudeControl-v0":
         #     unwrapped_env.set_target_state(roll_ref, pitch_ref, airspeed_ref)
         if args.env_id == "AttitudeControlNoVa-v0":
-            unwrapped_env.set_target_state(roll_ref, pitch_ref)
+            env.set_target_state(roll_ref, pitch_ref)
 
-        action = ppo_agent.get_action_and_value(obs)[1].detach().cpu().numpy()
+        action = ppo_agent.get_action_and_value(obs)[1].squeeze_(0).detach().cpu().numpy()
         e_actions[step] = action
-        obs, reward, truncated, terminated, infos = envs.step(action)
-        e_obs[step] = obs[0, 0, -1]
-        obs = torch.Tensor(obs).to(device)
+        obs, reward, truncated, terminated, info = env.step(action)
+        e_obs[step] = obs[0, -1]
+        obs = torch.Tensor(obs).unsqueeze_(0).to(device)
 
         done = np.logical_or(truncated, terminated)
         if done:
-            for info in infos["final_info"]:
-                print(f"Episode reward: {info['episode']['r']}")
-                # refSeq.sample_steps(offset=step)
+            print(f"Episode reward: {info['episode']['r']}")
+            # refSeq.sample_steps(offset=step)
 
-    envs.close()
+    env.close()
 
     # compute mean square error
     # Roll MSE

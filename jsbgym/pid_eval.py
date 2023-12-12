@@ -3,6 +3,7 @@ import gymnasium as gym
 import numpy as np
 import torch
 import random
+from tqdm import tqdm
 
 from agents.pid import PID
 from models import aerodynamics
@@ -46,9 +47,11 @@ if __name__ == '__main__':
         args.config = "config/ppo_caps_no_va.yaml"
 
     # seeding
-    random.seed(10)
-    np.random.seed(10)
-    torch.manual_seed(10)
+    seed = 10
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.backends.cudnn.deterministic = True
 
     env = gym.make(args.env_id, config_file=args.config, render_mode=args.render_mode,
                     telemetry_file=args.tele_file)
@@ -56,9 +59,10 @@ if __name__ == '__main__':
 
     sim_options = {"atmosphere": {"rand_magnitudes": args.rand_atmo_mag, 
                                   "wind": args.wind,
-                                  "turb": args.turb}}
-    obs, _ = env.reset(options=sim_options)
-    Va, roll, pitch, roll_rate, pitch_rate = rearrange_obs(obs)
+                                  "turb": args.turb},
+                   "seed": seed}
+
+
     # refSeq = RefSequence(num_refs=5)
     # refSeq.sample_steps()
 
@@ -95,14 +99,22 @@ if __name__ == '__main__':
     pitch_ref: float = 0.0
     airspeed_ref: float = trim_point.Va_kph
 
+    # load reference sequence and initialize evaluation arrays
     ref_data = np.load("ref_seq_arr.npy")
-    # ref_data = ref_data[:8000, :2]
-    # unique_refs = np.unique(ref_data, axis=0)
-    # print(f"unique refs: {unique_refs.shape}")
     e_actions = np.ndarray((ref_data.shape[0], 2))
     e_obs = np.ndarray((ref_data.shape[0], 10))
 
-    for step in range(ref_data.shape[0]):
+    # start the environment
+    obs, _ = env.reset(options=sim_options)
+    Va, roll, pitch, roll_rate, pitch_rate = rearrange_obs(obs)
+
+    # if no render mode, run the simulation for the whole reference sequence given by the .npy file
+    if args.render_mode == "none":
+        total_steps = ref_data.shape[0]
+    else: # otherwise, run the simulation for 8000 steps
+        total_steps = 8000
+
+    for step in tqdm(range(total_steps)):
         # set random target values
         if args.rand_targets:
             # roll_ref, pitch_ref = refSeq.sample_refs(step)
@@ -134,11 +146,7 @@ if __name__ == '__main__':
         done = np.logical_or(truncated, terminated)
         if done:
             print(f"Episode reward: {info['episode']['r']}")
-            # print(step)
             # refSeq.sample_steps(offset=step)
-
-    print(f"actions: {e_actions}")
-    print(f"obs: {e_obs}")
 
     # compute mean square error
     # Roll MSE
