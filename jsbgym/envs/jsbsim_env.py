@@ -161,11 +161,11 @@ class JSBSimEnv(gym.Env, ABC):
                                   enable_fgear_output=self.enable_fgear_output)
 
         # reset the random number generator
-        super().reset(seed=seed)
-        if seed is not None:
-            self.sim["simulation/randomseed"] = seed
-        else:
-            self.sim["simulation/randomseed"] = np.random.randint(0, 10000)
+        # super().reset(seed=seed)
+        # if seed is not None:
+        #     self.sim["simulation/randomseed"] = seed
+        # else:
+        #     self.sim["simulation/randomseed"] = np.random.randint(0, 10000)
 
         # set render mode
         if options is not None:
@@ -180,6 +180,10 @@ class JSBSimEnv(gym.Env, ABC):
         # TODO add curriculum learning with a bool in args.config yaml file and change
         # the sim_options dict accordingly
         if self.sim_options is not None:
+            if "seed" in self.sim_options:
+                self.sim["simulation/randomseed"] = self.sim_options["seed"]
+            else:
+                self.sim["simulation/randomseed"] = np.random.randint(0, 10000)
             if "atmosphere" in self.sim_options:
                 self.set_atmosphere(self.sim_options["atmosphere"])
 
@@ -202,7 +206,6 @@ class JSBSimEnv(gym.Env, ABC):
                             f"  D: {self.sim[prp.windspeed_down_kph]} kph\n" \
                             f"  Magnitude: {np.linalg.norm(wind_vector)} kph")
                 if atmo_options["turb"]:
-                    # turb_severity = np.random.randint(1, 4)
                     turb_severity = np.random.randint(0, 4)
                     match turb_severity:
                         case 0: # no turbulence
@@ -235,11 +238,15 @@ class JSBSimEnv(gym.Env, ABC):
                     print("Fixed wind : 82 kph N/E")
                     self.sim[prp.windspeed_north_fps] = 58 * 0.9115 # kmh to fps
                     self.sim[prp.windspeed_east_fps] = 58 * 0.9115 # kmh to fps
+                else:
+                    print("No Wind")
                 if atmo_options["turb"]:
                     print("Fixed turbulence : Severe, W20 = 75 fps")
                     self.sim[prp.turb_type] = 3
                     self.sim[prp.turb_w20_fps] = 75
                     self.sim[prp.turb_severity] = 6
+                else:
+                    print("No Turbulence")
 
 
     def random_wind_vec(self, wspeed_limit: int = 30):
