@@ -36,7 +36,8 @@ class PID:
                 u_sat = -self.limit
         return u_sat
 
-    def update(self, state: float, state_dot: float = 0, saturate: bool = False, normalize: bool = False, is_course: bool = False) -> float:
+    def update(self, state: float, state_dot: float = 0, saturate: bool = False, 
+               normalize: bool = False, is_course: bool = False) -> tuple[float, float]:
         now = time.monotonic()
         if self.dt is None:
             self.dt = now - self.last_time if (now - self.last_time) else 1e-16

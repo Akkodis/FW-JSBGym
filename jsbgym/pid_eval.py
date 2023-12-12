@@ -1,10 +1,12 @@
 import argparse
-import random
-import torch
+import gymnasium as gym
 import numpy as np
+import torch
+import random
 from tqdm import tqdm
 
-from agents import ppo
+from agents.pid import PID
+from models import aerodynamics
 from trim.trim_point import TrimPoint
 from utils.eval_utils import RefSequence
 
@@ -13,14 +15,12 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=str, default="config/ppo_caps.yaml",
         help="the config file of the environnement")
-    parser.add_argument("--env-id", type=str, default="AttitudeControl-v0", 
+    parser.add_argument("--env-id", type=str, default="AttitudeControlNoVa-v0", 
         help="the id of the environment")
-    parser.add_argument('--train-model', type=str, required=True, 
-        help='agent model file name')
     parser.add_argument('--render-mode', type=str, 
         choices=['none','plot_scale', 'plot', 'fgear', 'fgear_plot', 'fgear_plot_scale'],
         help='render mode')
-    parser.add_argument("--tele-file", type=str, default="telemetry/ppo_eval_telemetry.csv", 
+    parser.add_argument("--tele-file", type=str, default="telemetry/pid_eval_telemetry.csv", 
         help="telemetry csv file")
     parser.add_argument('--rand-targets', action='store_true', help='set targets randomly')
     parser.add_argument('--rand-atmo-mag', action='store_true', help='randomize the wind and turb magnitudes at each episode')
@@ -30,15 +30,21 @@ def parse_args():
     return args
 
 
+def rearrange_obs(obs: np.ndarray) -> tuple[float, float, float, float, float]:
+    roll = obs[0][4][0]
+    pitch = obs[0][4][1]
+    Va = obs[0][4][2]
+    roll_rate = obs[0][4][3]
+    pitch_rate = obs[0][4][4]
+    return Va, roll, pitch, roll_rate, pitch_rate
+
+
 if __name__ == '__main__':
     args = parse_args()
     if args.env_id == "AttitudeControl-v0":
         args.config = "config/ppo_caps.yaml"
     elif args.env_id == "AttitudeControlNoVa-v0":
         args.config = "config/ppo_caps_no_va.yaml"
-
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"Using device: {device}")
 
     # seeding
     seed = 10
@@ -47,11 +53,9 @@ if __name__ == '__main__':
     torch.manual_seed(seed)
     torch.backends.cudnn.deterministic = True
 
-    # env setup
-    env = ppo.make_env(args.env_id, args.config, args.render_mode, args.tele_file, eval=True)()
-
-    # unwrapped_env = envs.envs[0].unwrapped
-    trim_point = TrimPoint('x8')
+    env = gym.make(args.env_id, config_file=args.config, render_mode=args.render_mode,
+                    telemetry_file=args.tele_file)
+    env = gym.wrappers.RecordEpisodeStatistics(env)
 
     sim_options = {"atmosphere": {"rand_magnitudes": args.rand_atmo_mag, 
                                   "wind": args.wind,
@@ -59,35 +63,50 @@ if __name__ == '__main__':
                    "seed": seed}
 
 
-
-    # Generating a reference sequence
     # refSeq = RefSequence(num_refs=5)
     # refSeq.sample_steps()
 
-    train_dict = torch.load(args.train_model, map_location=device)
+    x8 = aerodynamics.AeroModel()
+    trim_point = TrimPoint('x8')
+    # setting handtunes PID gains
+    # lateral dynamics
+    kp_roll: float = 1.0
+    ki_roll: float = 0.0
+    kd_roll: float = 0.5
+    roll_pid = PID(
+        kp=kp_roll, ki=ki_roll, kd=kd_roll,
+        dt=env.sim.fdm_dt, limit=x8.aileron_limit
+    )
 
-    # setting the observation normalization parameters
-    env.set_obs_rms(train_dict['norm_obs_rms']['mean'], 
-                             train_dict['norm_obs_rms']['var'])
+    # longitudinal dynamics
+    kp_pitch: float = -4.0
+    ki_pitch: float = -0.75
+    kd_pitch: float = -0.1
+    pitch_pid = PID(kp=kp_pitch, ki=ki_pitch, kd=kd_pitch,
+                    dt=env.sim.fdm_dt, limit=x8.aileron_limit)
 
-    # loading the agent
-    ppo_agent = ppo.Agent(env).to(device)
-    ppo_agent.load_state_dict(train_dict['agent'])
-    ppo_agent.eval()
+    kp_airspeed: float = 0.5
+    ki_airspeed: float = 0.1
+    kd_airspeed: float = 0.0
+    airspeed_pid = PID(
+        kp=kp_airspeed, ki=ki_airspeed, kd=kd_airspeed,
+        dt=env.sim.fdm_dt, trim=trim_point,
+        limit=x8.throttle_limit, is_throttle=True
+    )
 
     # set default target values
     roll_ref: float = 0.0
     pitch_ref: float = 0.0
     airspeed_ref: float = trim_point.Va_kph
 
-    # load the reference sequence and initialize the evaluation arrays
+    # load reference sequence and initialize evaluation arrays
     ref_data = np.load("ref_seq_arr.npy")
     e_actions = np.ndarray((ref_data.shape[0], 2))
     e_obs = np.ndarray((ref_data.shape[0], 10))
 
     # start the environment
     obs, _ = env.reset(options=sim_options)
-    obs = torch.Tensor(obs).unsqueeze_(0).to(device)
+    Va, roll, pitch, roll_rate, pitch_rate = rearrange_obs(obs)
 
     # if no render mode, run the simulation for the whole reference sequence given by the .npy file
     if args.render_mode == "none":
@@ -96,36 +115,46 @@ if __name__ == '__main__':
         total_steps = 8000
 
     for step in tqdm(range(total_steps)):
+        # set random target values
         if args.rand_targets:
-            # roll_ref, pitch_ref, airspeed_ref = refSeq.sample_refs(step)
+            # roll_ref, pitch_ref = refSeq.sample_refs(step)
             refs = ref_data[step]
             roll_ref, pitch_ref = refs[0], refs[1]
 
+        # apply target values
+        roll_pid.set_reference(roll_ref)
+        pitch_pid.set_reference(pitch_ref)
         # if args.env_id == "AttitudeControl-v0":
-        #     unwrapped_env.set_target_state(roll_ref, pitch_ref, airspeed_ref)
+        #     env.set_target_state(roll_ref, pitch_ref, airspeed_ref)
+        #     airspeed_pid.set_reference(airspeed_ref)
+        #     throttle_cmd, airspeed_err = airspeed_pid.update(state=Va, saturate=True)
         if args.env_id == "AttitudeControlNoVa-v0":
             env.set_target_state(roll_ref, pitch_ref)
 
-        action = ppo_agent.get_action_and_value(obs)[1].squeeze_(0).detach().cpu().numpy()
+        elevator_cmd, pitch_err = pitch_pid.update(state=pitch, state_dot=pitch_rate, saturate=True, normalize=True)
+        aileron_cmd, roll_err = roll_pid.update(state=roll, state_dot=roll_rate, saturate=True, normalize=True)
+
+        # if args.env_id == "AttitudeControl-v0":
+        #     action = np.array([aileron_cmd, elevator_cmd, throttle_cmd])
+        if args.env_id == "AttitudeControlNoVa-v0":
+            action = np.array([aileron_cmd, elevator_cmd])
         e_actions[step] = action
         obs, reward, truncated, terminated, info = env.step(action)
         e_obs[step] = obs[0, -1]
-        obs = torch.Tensor(obs).unsqueeze_(0).to(device)
+        Va, roll, pitch, roll_rate, pitch_rate = rearrange_obs(obs)
 
         done = np.logical_or(truncated, terminated)
         if done:
             print(f"Episode reward: {info['episode']['r']}")
             # refSeq.sample_steps(offset=step)
 
-    env.close()
-
     # compute mean square error
     # Roll MSE
     roll_errors = e_obs[:, 6]
     roll_mse = np.mean(np.square(roll_errors))
-    print(f"roll mse: {roll_mse}") # roll mse: 0.1750963732741717
+    print(f"roll mse: {roll_mse}") # roll mse: 0.0429050838624045
 
     # Pitch MSE
     pitch_errors = e_obs[:, 7]
     pitch_mse = np.mean(np.square(pitch_errors))
-    print(f"pitch mse: {pitch_mse}") # pitch mse: 0.06732408213127292
+    print(f"pitch mse: {pitch_mse}") # pitch mse: 0.004513582613148686

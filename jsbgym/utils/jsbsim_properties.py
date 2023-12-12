@@ -26,6 +26,15 @@ class Property(collections.namedtuple('Property', ['name', 'description'])):
     def get_legal_name(self):
         return AttributeFormatter.translate(self.name)
 
+# Helper class : setting those properties won't have any effect on the simulation, only for unit conversion and logging
+class HelperProperty(collections.namedtuple('HelperProperty', ['name', 'description'])):
+    def get_legal_name(self):
+        return AttributeFormatter.translate(self.name)
+
+class BoundedHelperProperty(collections.namedtuple('BoundedHelperProperty', ['name', 'description', 'min', 'max'])):
+    def get_legal_name(self):
+        return AttributeFormatter.translate(self.name)
+
 
 # position and attitude
 altitude_sl_ft = BoundedProperty('position/h-sl-ft', 'altitude above mean sea level [ft]', -1400, 85000)
@@ -57,9 +66,40 @@ r_radps = BoundedProperty('velocities/r-rad_sec', 'yaw rate [rad/s]', -20, 20)
 altitude_rate_fps = Property('velocities/h-dot-fps', 'Rate of altitude change [ft/s]')
 airspeed_fps = BoundedProperty('velocities/vt-fps', 'True aircraft airspeed [ft/s]', float('-inf'), float('+inf'))
 airspeed_kts = BoundedProperty('velocities/vtrue-kts', 'True aircraft airspeed [kts]', float('-inf'), float('+inf'))
-airspeed_mps = BoundedProperty('velocities/vt-mps', 'True aircraft airspeed [m/s]', 0, 42) # 42 m/s = 150 km/h = 81 knots
+airspeed_mps = BoundedHelperProperty('velocities/vt-mps', 'True aircraft airspeed [m/s]', 0, 53) # 53 m/s = 190 km/h = 102 kts
+airspeed_kph = BoundedHelperProperty('velocities/vt-kph', 'True aircraft airspeed [m/s]', 0, 190) # 53 m/s = 190 km/h = 102 kts
 alpha = Property('aero/alpha-rad', 'aircraft angle of attack [rad]')
 ci2vel = Property('aero/ci2vel', 'chord/2*airspeed')
+total_windspeed_north_fps = Property('atmosphere/total-wind-north-fps', 'total wind speed north [ft/s]')
+total_windspeed_north_mps = HelperProperty('atmosphere/total-wind-north-mps', 'total wind speed north [m/s]')
+total_windspeed_north_kph = HelperProperty('atmosphere/total-wind-north-kph', 'total wind speed north [km/h]')
+total_windspeed_east_fps = Property('atmosphere/total-wind-east-fps', 'total wind speed east [ft/s]')
+total_windspeed_east_mps = HelperProperty('atmosphere/total-wind-east-mps', 'total wind speed east [m/s]')
+total_windspeed_east_kph = HelperProperty('atmosphere/total-wind-east-kph', 'total wind speed east [km/h]')
+total_windspeed_down_fps = Property('atmosphere/total-wind-down-fps', 'total wind speed down [ft/s]')
+total_windspeed_down_mps = HelperProperty('atmosphere/total-wind-down-mps', 'total wind speed down [m/s]')
+total_windspeed_down_kph = HelperProperty('atmosphere/total-wind-down-kph', 'total wind speed down [km/h]')
+windspeed_north_fps = Property('atmosphere/wind-north-fps', 'wind speed north [ft/s]')
+windspeed_north_mps = HelperProperty('atmosphere/wind-north-mps', 'wind speed north [m/s]')
+windspeed_north_kph = HelperProperty('atmosphere/wind-north-kph', 'wind speed north [km/h]')
+windspeed_east_fps = Property('atmosphere/wind-east-fps', 'wind speed east [ft/s]')
+windspeed_east_mps = HelperProperty('atmosphere/wind-east-mps', 'wind speed east [m/s]')
+windspeed_east_kph = HelperProperty('atmosphere/wind-east-kph', 'wind speed east [km/h]')
+windspeed_down_fps = Property('atmosphere/wind-down-fps', 'wind speed down [ft/s]')
+windspeed_down_mps = HelperProperty('atmosphere/wind-down-mps', 'wind speed down [m/s]')
+windspeed_down_kph = HelperProperty('atmosphere/wind-down-kph', 'wind speed down [km/h]')
+turb_north_fps = Property('atmosphere/turb-north-fps', 'turbulence wind speed north [ft/s]')
+turb_north_mps = HelperProperty('atmosphere/turb-north-mps', 'turbulence wind speed north [m/s]')
+turb_north_kph = HelperProperty('atmosphere/turb-north-fps', 'turbulence wind speed north [km/h]')
+turb_east_fps = Property('atmosphere/turb-east-fps', 'turbulence wind speed east [ft/s]')
+turb_east_mps = HelperProperty('atmosphere/turb-east-mps', 'turbulence wind speed east [m/s]')
+turb_east_kph = HelperProperty('atmosphere/turb-east-kph', 'turbulence wind speed east [km/h]')
+turb_down_fps = Property('atmosphere/turb-down-fps', 'turbulence wind speed down [ft/s]')
+turb_down_mps = HelperProperty('atmosphere/turb-down-mps', 'turbulence wind speed down [m/s]')
+turb_down_kph = HelperProperty('atmosphere/turb-down-kph', 'turbulence wind speed down [km/h]')
+turb_type = Property('atmosphere/turb-type', 'turbulence type')
+turb_severity = Property('atmosphere/turbulence/milspec/severity', 'turbulence severity')
+turb_w20_fps = Property('atmosphere/turbulence/milspec/windspeed_at_20ft_AGL-fps', 'turbulence wind speed at 20ft AGL [ft/s]')
 
 # controls state
 aileron_left = BoundedProperty('fcs/left-aileron-pos-norm', 'left aileron position, normalised', -1, 1)
@@ -136,11 +176,12 @@ Cmq = Property('aero/coefficient/Cmq', 'pitch rate pitch')
 CmDe = Property('aero/coefficient/CmDe', 'pitch due to elevator')
 
 # additional custom properties for error and target values
-airspeed_err = BoundedProperty("error/airspeed-err", "airspeed error", -42, 42)
+airspeed_err = BoundedProperty("error/airspeed-err", "airspeed error", float('-inf'), float('+inf'))
 roll_err = BoundedProperty("error/roll-err", "roll error", -2*math.pi, 2*math.pi)
 pitch_err = BoundedProperty("error/pitch-err", "pitch error", -2*math.pi, 2*math.pi)
-target_airspeed_kts = BoundedProperty("target/airspeed", "desired airspeed", float('-inf'), float('+inf'))
-target_airspeed_mps = BoundedProperty("target/airspeed", "desired airspeed", 0, 42)
+# target_airspeed_kts = BoundedProperty("target/airspeed-kts", "desired airspeed [knots]", float('-inf'), float('+inf'))
+target_airspeed_mps = BoundedProperty("target/airspeed-mps", "desired airspeed [m/s]", float('-inf'), float('+inf'))
+target_airspeed_kph = BoundedProperty("target/airspeed-kph", "desired airspeed [km/h]", float('-inf'), float('+inf'))
 target_roll_rad = BoundedProperty("target/roll-rad", "desired roll angle [rad]", -math.pi, math.pi)
 target_pitch_rad = BoundedProperty("target/pitch-rad", "desired pitch angle [rad]", -math.pi, math.pi)
 

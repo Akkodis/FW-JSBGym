@@ -4,12 +4,12 @@ from jsbgym.simulation.jsb_simulation import Simulation
 
 
 class PlotVisualizer(object):
-    def __init__(self, scale: bool) -> None:
+    def __init__(self, scale: bool, telemetry_file: str) -> None:
         cmd: str = ""
         if scale:
-            cmd: str = "python visualizers/attitude_control_telemetry.py --scale"
+            cmd = f"python visualizers/attitude_control_telemetry.py --tele-file {telemetry_file} --scale"
         else:
-            cmd: str = "python visualizers/attitude_control_telemetry.py"
+            cmd = f"python visualizers/attitude_control_telemetry.py --tele-file {telemetry_file}"
         self.process: subprocess.Popen = subprocess.Popen(cmd, 
                                                           shell=True,
                                                           stdout=subprocess.PIPE,
@@ -30,7 +30,7 @@ class FlightGearVisualizer(object):
     SERVER = ''
     PORT = 5550
     PROTOCOL = 'udp'
-    LOADED_MESSAGE = "Primer reset to 0"
+    LOADED_MESSAGE = "PNG lib warning : Malformed iTXt chunk"
     TIME = 'noon'
     AIRCRAFT_FG_ID = 'c172p'
 
@@ -47,7 +47,8 @@ class FlightGearVisualizer(object):
         # cmd for running flightgear(.AppImage version 2020.3.17) from terminal.
         # We ignore the aircraft_id to load the c172p viz, since x8 doesn't exist in fgear
         cmd: str = f'exec $HOME/Apps/FlightGear-2020.3.17/FlightGear-2020.3.17-x86_64.AppImage --fdm=null \
-        --native-fdm=socket,in,60,,5550,udp --aircraft=c172p --timeofday=noon --disable-ai-traffic --disable-real-weather-fetch'
+        --native-fdm={self.TYPE},{self.DIRECTION},{self.RATE},{self.SERVER},{self.PORT},{self.PROTOCOL} \
+        --aircraft={aircraft_fgear_id} --timeofday={self.TIME} --disable-ai-traffic --disable-real-weather-fetch'
 
         flightgear_process = subprocess.Popen(cmd,
                                               shell=True,

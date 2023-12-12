@@ -18,7 +18,7 @@ parser.add_argument('--plot_viz', action='store_true', help='Enable plot visuali
 parser.add_argument('--aircraft_id', type=str, default='x8', help='Aircraft ID.')
 parser.add_argument('--fdm_frequency', type=float, default=240.0, help='FDM frequency in Hz.')
 parser.add_argument('--viz_time_factor', type=float, default=2.0, help='Visualization time factor.')
-parser.add_argument('--flight_data', type=str, default='data/flight_data.csv', help='Path to flight data csv file.')
+parser.add_argument('--flight_data', type=str, default='telemetry/flight_data.csv', help='Path to flight data csv file.')
 parser.add_argument('--turb', action='store_true', help='Enable turbulence.')
 parser.add_argument('--wind', action='store_true', help='Enable wind.')
 parser.add_argument('--gust', action='store_true', help='Enable gust.')

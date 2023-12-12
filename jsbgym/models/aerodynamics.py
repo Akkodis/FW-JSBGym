@@ -36,7 +36,7 @@ class AeroModel(object):
         self.gamma8: float = self.Ixx / self.gamma
 
         # Geometric parameters of the aircraft
-        self.Va_trim: float = self.trim.Va_ms   # trim airspeed, chosen to be 33kts -> 16.97 m/s or 61.12 km/h : include it here ?
+        self.Va_trim: float = self.trim.Va_mps   # trim airspeed, chosen to be 33kts -> 16.97 m/s or 61.12 km/h : include it here ?
         self.S: float = 0.75  # wing span m2
         self.b: float = 2.10  # wing span m
         self.c: float = 0.3571 # mean aerodynamic chord m
@@ -117,7 +117,7 @@ class AeroModel(object):
                         self.b / (2 * self.Va_trim))
         self.a_roll2: float = 1 / 2 * self.rho * self.Va_trim ** 2 * self.S * self.b * self.Cpda
 
-        self.aileron_limit: float = 30.0 * (math.pi / 180)  # aileron actuator max deflection : deg to rad
+        self.aileron_limit: float = 1.04 # combined aileron actuator max deflection : rad
         self.roll_max: float = 45.0 * (math.pi / 180)  # roll max angle : deg to rad
         self.roll_err_max: float = self.roll_max * 2  # max expected error, roll_max * 2 : rad
         self.roll_damping: float = 1.5  # ask if needed to plot the step responses for various damping ratios in something
@@ -139,7 +139,7 @@ class AeroModel(object):
 
         # Airspeed hold using throttle
         self.throttle_limit: float = 1.0  # throttle actuator max value
-        self.av1: float = ((self.rho * trim.Va_ms * self.S) / self.mass) / (self.CDo + self.CDalpha * trim.alpha_rad + self.CDde * trim.elevator)
+        self.av1: float = ((self.rho * trim.Va_mps * self.S) / self.mass) / (self.CDo + self.CDalpha * trim.alpha_rad + self.CDde * trim.elevator)
         self.av2: float = (self.Pwatt / self.Khp2w) * self.Khp2ftlbsec
         self.av3: float = self.G * np.cos(trim.theta_rad - trim.alpha_rad)
         self.v_damping: float = 1

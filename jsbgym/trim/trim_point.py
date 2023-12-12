@@ -18,8 +18,8 @@ class TrimPoint(object):
                 match key:
                     case 'Va': # trim airspeed
                         self.Va_kts: float = value # kts
-                        self.Va_ms: float = self.Va_kts / 1.944 # ms
-                        self.Va_kmh: float = self.Va_kts * 1.852 # kmh
+                        self.Va_mps: float = self.Va_kts / 1.944 # mps
+                        self.Va_kph: float = self.Va_kts * 1.852 # kph
                         key_count += 1
                     case 'AoA': # angle of attack
                         self.alpha_deg: float = value # deg

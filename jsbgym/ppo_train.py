@@ -7,9 +7,11 @@ from time import strftime, localtime
 from distutils.util import strtobool
 from trim.trim_point import TrimPoint
 from agents import ppo
+from utils.eval_utils import RefSequence
 
 import wandb
 import gymnasium as gym
+import pandas as pd
 import numpy as np
 import torch
 import torch.nn as nn
@@ -37,9 +39,10 @@ def parse_args():
         help="the entity (team) of wandb's project")
     parser.add_argument("--capture-video", type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True,
         help="whether to capture videos of the agent performances (check out `videos` folder)")
+    parser.add_argument("--no-eval", action='store_true', default=False, help="do not evaluate the agent at the end of training")
 
     # Algorithm specific arguments
-    parser.add_argument("--env-id", type=str, default="AttitudeControlTaskEnv-v0",
+    parser.add_argument("--env-id", type=str, default="AttitudeControlNoVa-v0",
         help="the id of the environment")
     parser.add_argument("--config", type=str, default="config/ppo_caps.yaml",
         help="the config file of the environnement")
@@ -81,16 +84,39 @@ def parse_args():
         help="the maximum norm for the gradient clipping")
     parser.add_argument("--target-kl", type=float, default=None,
         help="the target KL divergence threshold")
+    parser.add_argument('--save-best',type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True,
+                         help='save only the best models')
+
+    # training sim specific arguments
+    parser.add_argument('--rand-targets',type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True, help='set targets randomly')
+    parser.add_argument('--rand-atmo-mag',type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True, help='randomize the wind and turb magnitudes at each episode')
+    parser.add_argument('--turb', type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True, help='add turbulence')
+    parser.add_argument('--wind', type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True, help='add wind')
     args = parser.parse_args()
     args.batch_size = int(args.num_envs * args.num_steps)
     args.minibatch_size = int(args.batch_size // args.num_minibatches)
     # fmt: on
     return args
 
+# TODO: Implement save_model function
+def save_model(save_path, run_name, agent, env, seed):
+    print("saving agent...")
+    train_dict = {}
+    train_dict["norm_obs_rms"] = {"mean": env.get_obs_rms().mean, "var": env.get_obs_rms().var}
+    train_dict["seed"] = seed
+    train_dict["agent"] = agent.state_dict()
+    torch.save(train_dict, f"{save_path}{run_name}.pt")
 
 if __name__ == "__main__":
     args = parse_args()
     args.total_timesteps = int(args.total_timesteps)
+    np.set_printoptions(suppress=True)
+
+    if args.env_id == "AttitudeControl-v0":
+        args.config = "config/ppo_caps.yaml"
+    elif args.env_id == "AttitudeControlNoVa-v0":
+        args.config = "config/ppo_caps_no_va.yaml"
+
     run_name = f"ppo_{args.exp_name}_{args.seed}_{strftime('%d-%m_%H:%M:%S', localtime())}"
 
     save_path: str = "models/train/"
@@ -128,13 +154,18 @@ if __name__ == "__main__":
 
     # env setup
     envs = gym.vector.SyncVectorEnv(
-        [ppo.make_env(args.env_id, args.config, "none", args.gamma, eval=False, idx=i) for i in range(args.num_envs)]
+        [ppo.make_env(args.env_id, args.config, "none", None, eval=False, gamma=args.gamma) for i in range(args.num_envs)]
     )
+    unwr_envs = [envs.envs[i].unwrapped for i in range(args.num_envs)]
+
     assert isinstance(envs.single_action_space, gym.spaces.Box), "only continuous action space is supported"
     agent = ppo.Agent(envs).to(device)
     optimizer = optim.Adam(agent.parameters(), lr=args.learning_rate, eps=1e-5)
     trim_point: TrimPoint = TrimPoint(aircraft_id='x8')
-    trim_acts = torch.tensor([trim_point.elevator, trim_point.aileron, trim_point.throttle]).to(device)
+    if args.env_id == "AttitudeControl-v0":
+        trim_acts = torch.tensor([trim_point.aileron, trim_point.elevator, trim_point.throttle]).to(device)
+    elif args.env_id == "AttitudeControlNoVa-v0":
+        trim_acts = torch.tensor([trim_point.aileron, trim_point.elevator]).to(device)
 
     # ALGO Logic: Storage setup
     obs = torch.zeros((args.num_steps, args.num_envs) + envs.single_observation_space.shape).to(device)
@@ -149,10 +180,18 @@ if __name__ == "__main__":
     # TRY NOT TO MODIFY: start the game
     global_step = 0
     start_time = time.time()
-    next_obs, _ = envs.reset(seed=args.seed)
+    sim_options = {"atmosphere": {"rand_magnitudes": args.rand_atmo_mag, 
+                                  "wind": args.wind,
+                                  "turb": args.turb}}
+    next_obs, _ = envs.reset(options=sim_options)
     next_obs = torch.Tensor(next_obs).to(device)
     next_terminated = torch.zeros(args.num_envs).to(device)
     num_updates = args.total_timesteps // args.batch_size
+
+    # Generate a reference sequence and sample the first steps
+    refSeqs = [RefSequence(num_refs=5) for _ in range(args.num_envs)]
+    for _ in range(args.num_envs):
+        refSeqs[_].sample_steps()
 
     for update in range(1, num_updates + 1):
         # Annealing the rate if instructed to do so.
@@ -167,6 +206,15 @@ if __name__ == "__main__":
             global_step += 1 * args.num_envs
             obs[step] = next_obs
             terminateds[step] = next_terminated
+
+            for i in range(args.num_envs):
+                ith_env_step = unwr_envs[i].sim[unwr_envs[i].current_step]
+                if args.rand_targets:
+                    roll_ref, pitch_ref, airspeed_ref = refSeqs[i].sample_refs(ith_env_step, i)
+                    if args.env_id == "AttitudeControl-v0":
+                        unwr_envs[i].set_target_state(roll_ref, pitch_ref, airspeed_ref)
+                    elif args.env_id == "AttitudeControlNoVa-v0":
+                        unwr_envs[i].set_target_state(roll_ref, pitch_ref)
 
             # ALGO LOGIC: action logic
             with torch.no_grad():
@@ -186,6 +234,7 @@ if __name__ == "__main__":
             for env_i, done in enumerate(dones):
                 if done:
                     obs_t1[step][env_i] = obs[step][env_i]
+                    refSeqs[env_i].sample_steps() # Sample a new sequence of reference steps
                 else:
                     obs_t1[step][env_i] = next_obs[env_i]
 
@@ -200,6 +249,8 @@ if __name__ == "__main__":
                 print(f"global_step={global_step}, episodic_return={info['episode']['r']}, episodic_length={info['episode']['l']} \n" + \
                       f"episode_end={info['final_info']['episode_end']}, out_of_bounds={info['final_info']['out_of_bounds']}\n********")
                 writer.add_scalar("charts/episodic_return", info["episode"]["r"], global_step)
+                r_per_step = info["episode"]["r"]/info["episode"]["l"]
+                writer.add_scalar("charts/reward_per_step", r_per_step, global_step)
                 writer.add_scalar("charts/episodic_length", info["episode"]["l"], global_step)
 
         # bootstrap value if not done
@@ -321,18 +372,55 @@ if __name__ == "__main__":
         writer.add_scalar("losses/clipfrac", np.mean(clipfracs), global_step)
         writer.add_scalar("losses/explained_variance", explained_var, global_step)
         writer.add_scalar("losses/total_loss", loss.item(), global_step)
-        writer.add_scalar("action_std/de", action_std[0], global_step)
-        writer.add_scalar("action_std/da", action_std[1], global_step)
-        writer.add_scalar("action_std/dt", action_std[2], global_step)
+        writer.add_scalar("action_std/da", action_std[0], global_step)
+        writer.add_scalar("action_std/de", action_std[1], global_step)
+        if args.env_id == "AttitudeControl-v0":
+            writer.add_scalar("action_std/dt", action_std[2], global_step)
         print("SPS:", int(global_step / (time.time() - start_time)))
         writer.add_scalar("charts/SPS", int(global_step / (time.time() - start_time)), global_step)
 
-    # save the trained model = agent + observation normalization parameters + seed
-    train_dict = {}
-    train_dict["norm_obs_rms"] = {"mean": envs.envs[0].get_obs_rms().mean, "var": envs.envs[0].get_obs_rms().var}
-    train_dict["seed"] = args.seed
-    train_dict["agent"] = agent.state_dict()
-    torch.save(train_dict, f"{save_path}{run_name}.pt") 
+
+    # Evaluate the agent
+    if not args.no_eval:
+        print("******** Evaluating agent... ***********")
+        e_env = envs.envs[0]
+        e_env.eval = True
+        telemetry_file = f"telemetry/{run_name}.csv"
+        e_obs, _ = e_env.reset(options={"render_mode": "log"})
+        e_env.unwrapped.telemetry_setup(telemetry_file)
+        e_obs = torch.Tensor(e_obs).unsqueeze(0).to(device)
+        e_refSeq = RefSequence(num_refs=5)
+        e_refSeq.sample_steps()
+        for step in range(6000):
+            roll_ref, pitch_ref, airspeed_ref = e_refSeq.sample_refs(step)
+            if args.env_id == "AttitudeControl-v0":
+                e_env.unwrapped.set_target_state(roll_ref, pitch_ref, airspeed_ref)
+            elif args.env_id == "AttitudeControlNoVa-v0":
+                e_env.unwrapped.set_target_state(roll_ref, pitch_ref)
+
+            action = agent.get_action_and_value(e_obs)[1][0].detach().cpu().numpy()
+            e_obs, reward, truncated, terminated, info = e_env.step(action)
+            e_obs = torch.Tensor(e_obs).unsqueeze(0).to(device)
+            done = np.logical_or(truncated, terminated)
+
+            if done:
+                e_refSeq.sample_steps(offset=step)
+                print(f"Episode reward: {info['episode']['r']}")
+                r_per_step = info["episode"]["r"]/info["episode"]["l"]
+                # Save the best agents depending on the env
+                if args.save_best:
+                    if (args.env_id == "AttitudeControl-v0" and r_per_step > -0.20) or \
+                       (args.env_id == "AttitudeControlNoVa-v0" and r_per_step > -0.06):
+                        save_model(save_path, run_name, agent, e_env, args.seed)
+                else:
+                    save_model(save_path, run_name, agent, e_env, args.seed)
+                break
+        telemetry_df = pd.read_csv(telemetry_file)
+        telemetry_table = wandb.Table(dataframe=telemetry_df)
+        wandb.log({"telemetry": telemetry_table})
+    # Even if we don't evaluate, we still want to save the model
+    else:
+        save_model(save_path, run_name, agent, envs.envs[0], args.seed)
 
     envs.close()
     writer.close()

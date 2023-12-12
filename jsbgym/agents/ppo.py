@@ -6,15 +6,15 @@ from torch.distributions.normal import Normal
 from jsbgym.utils.gym_utils import MyNormalizeObservation
 
 
-def make_env(env_id, config, render_mode, gamma, eval=False, run_name='', idx=0):
+def make_env(env_id, config, render_mode, telemetry_file=None, eval=False, gamma=0.99, run_name='', idx=0):
     def thunk():
-        env = gym.make(env_id, config_file=config, render_mode=render_mode)
+        env = gym.make(env_id, config_file=config, telemetry_file=telemetry_file,
+                        render_mode=render_mode)
         env = gym.wrappers.RecordEpisodeStatistics(env)
         env = gym.wrappers.ClipAction(env)
         env = MyNormalizeObservation(env, eval=eval)
-        env = gym.wrappers.TransformObservation(env, lambda obs: np.clip(obs, -10, 10)) # TODO : remove ?
-        env = gym.wrappers.NormalizeReward(env, gamma=gamma) # TODO : remove ?
-        env = gym.wrappers.TransformReward(env, lambda reward: np.clip(reward, -10, 10))
+        if not eval:
+            env = gym.wrappers.NormalizeReward(env, gamma=gamma)
         return env
 
     return thunk
@@ -29,18 +29,24 @@ def layer_init(layer, std=np.sqrt(2), bias_const=0.0):
 class Agent(nn.Module):
     def __init__(self, envs):
         super().__init__()
-        self.single_action_space = envs.single_action_space
-        self.single_obs_space = envs.single_observation_space
+        # if the envs arg is a vector env, we need to get the single env action and obs space
+        # usually used in parallized envs for training
+        if isinstance(envs, gym.vector.SyncVectorEnv):
+            self.single_action_space = envs.single_action_space
+            self.single_obs_space = envs.single_observation_space
+        else: # single env usually used for evaluation
+            self.single_action_space = envs.action_space
+            self.single_obs_space = envs.observation_space
         num_of_filters = 3
         self.conv = nn.Sequential(
             layer_init(nn.Conv2d(in_channels=1, out_channels=num_of_filters, 
-                                 kernel_size=(self.single_obs_space.shape[1], 1), stride=1)), # input ?x5x12x1, output ?x1x12x3
+                                 kernel_size=(self.single_obs_space.shape[1], 1), stride=1)),
             nn.Tanh(),
             nn.Flatten()
         )
         self.critic = nn.Sequential(
             nn.Tanh(),
-            layer_init(nn.Linear(self.single_obs_space.shape[2]*num_of_filters, 64)), # 12 is the number of features extracted by 1 conv * num of conv filters
+            layer_init(nn.Linear(self.single_obs_space.shape[2]*num_of_filters, 64)),
             nn.Tanh(),
             layer_init(nn.Linear(64, 64)),
             nn.Tanh(),
@@ -69,4 +75,4 @@ class Agent(nn.Module):
         probs = Normal(action_mean, action_std)
         if action is None:
             action = probs.sample()
-        return action, action_mean, probs.log_prob(action).sum(1), probs.entropy().sum(1), self.critic(conv_out),
+        return action, action_mean, probs.log_prob(action).sum(1), probs.entropy().sum(1), self.critic(conv_out)

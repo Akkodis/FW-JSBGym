@@ -1,0 +1,94 @@
+<?xml version="1.0"?>
+
+<PropertyList>
+	<sim>
+		<description>Skywalker x8 Fixed Wing UAV</description>
+		<author>David Olivares</author>
+		<authors>
+			<author>
+				<name>Krystofer Gryte</name>
+			</author>
+			<author>
+				<name>Alexander Quessy</name>
+			</author>
+			<author>
+				<name>David Olivares</name>
+			</author>
+		</authors>
+
+		<!-- <urls>
+			<home-page>http://wiki.flightgear.org/UFO_from_the_%27White_Project%27_of_the_UNESCO</home-page>
+			<code-repository>https://sourceforge.net/p/flightgear/fgdata/ci/next/tree/Aircraft/ufo/</code-repository>
+			<support>https://forum.flightgear.org/viewforum.php?f=17</support>
+			<wikipedia>https://en.wikipedia.org/wiki/Unidentified_flying_object</wikipedia>
+		</urls> -->
+
+		<localized>
+			<fr>
+				<description>Fixed Wing UAV</description>
+        	</fr>
+        	<de>
+				<description>Fixed Wing UAV</description>
+        	</de>
+
+		</localized>
+
+        <!-- <long-description>With the UFO you can place 3D objects in the FlightGear scenery,
+            and inspect the scenery without worrying about crashing.</long-description> -->
+       
+        <tags>
+            <tag>UAV</tag>
+            <tag>Flying Wing</tag>
+        </tags>
+
+		<flight-model>x8</flight-model>
+
+		<model>
+			<path>Aircraft/x8/x8.ac</path>
+			<always-show-in-MP type="bool">false</always-show-in-MP>
+
+		</model>
+		
+		<!-- <current-view>
+			<view-number>-100</view-number>
+		</current-view> -->
+
+		<view n="0">
+			<internal type="bool">true</internal>
+			<config>
+				<default-field-of-view-deg type="double">60.0</default-field-of-view-deg>
+				<limits>
+					<enabled type="bool">false</enabled>
+				</limits>
+			</config>
+		</view>
+
+		<view n="100">
+			<name>Camera View</name>
+			<!--
+				same as "Cockpit View", but different index, so that it doesn't hide
+				parts of aircraft that are unselected for view number 0
+			-->
+			<enabled type="bool">false</enabled>
+			<type>lookfrom</type>
+			<internal type="bool">false</internal>
+			<config>
+				<from-model type="bool">true</from-model>
+				<from-model-idx type="int">0</from-model-idx>
+				<ground-level-nearplane-m type="double">0.5f</ground-level-nearplane-m>
+				<default-field-of-view-deg type="double">118.0</default-field-of-view-deg>
+				<default-pitch-deg type="double">0</default-pitch-deg>
+				<default-heading-deg type="double">0</default-heading-deg>
+				<front-direction-deg type="double">0</front-direction-deg>
+				<front-left-direction-deg type="double">45</front-left-direction-deg>
+				<left-direction-deg type="double">90</left-direction-deg>
+				<back-left-direction-deg type="double">135</back-left-direction-deg>
+				<back-direction-deg type="double">180</back-direction-deg>
+				<back-right-direction-deg type="double">225</back-right-direction-deg>
+				<right-direction-deg type="double">270</right-direction-deg>
+				<front-right-direction-deg type="double">315</front-right-direction-deg>
+				<dynamic-view type="bool">true</dynamic-view>
+			</config>
+		</view>
+	</sim>
+</PropertyList>

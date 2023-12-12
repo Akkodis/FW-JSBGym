@@ -1,0 +1,41 @@
+sweep_nova:
+ts-coef: 1.2e-2 | 5e-3 | 1.2e-2
+	min: 0.0
+	max: 1.5e-2
+ss-coef: 1e-2 | 5e-3 | 5e-3
+	min: 0.0
+	max: 6e-2
+pa-coef: 2.7e-5
+	min: 0.0
+	max: 5e-4
+
+
+
+sweep:
+ts-coef:
+	min: 0.0
+	max: 1.5e-2
+ss-coef:
+	min: 0.0
+	max: 6e-2
+pa-coef:
+	min: 0.0
+	max: 5e-4
+
+
+pid:
+	roll_mse: 0.041535369568034886
+	pitch_mse: 0.004972461399138188
+
+agents:
+	ppo_caps_tuned1_allrand_12
+		roll_mse: 0.18511240819743324
+		pitch_mse: 0.09006527883151476
+	
+	ppo_caps_tuned3_allrand_4
+		roll_mse: 0.11201917388804639
+		pitch_mse: 0.08845108323769979
+	
+	ppo_caps_tuned3_allrand_1
+		roll_mse: 0.2905084750941177
+		pitch_mse: 0.14758276461056866
