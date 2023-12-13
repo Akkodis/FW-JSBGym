@@ -104,8 +104,8 @@ if __name__ == '__main__':
 
     # load reference sequence and initialize evaluation arrays
     ref_data = np.load("ref_seq_arr.npy")
-    e_actions = np.ndarray((ref_data.shape[0], 2))
-    e_obs = np.ndarray((ref_data.shape[0], 10))
+    e_actions = np.ndarray((ref_data.shape[0], env.action_space.shape[0]))
+    e_obs = np.ndarray((ref_data.shape[0], env.observation_space.shape[2]))
 
 
 

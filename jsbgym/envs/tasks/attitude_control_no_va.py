@@ -32,6 +32,7 @@ class AttitudeControlNoVaTask(AttitudeControlTask):
             prp.airspeed_kph, # airspeed
             prp.p_radps, prp.q_radps, prp.r_radps, # angular rates
             prp.roll_err, prp.pitch_err, # errors
+            prp.pitch_integ_err, prp.roll_integ_err, # integral errors
             prp.aileron_avg, prp.elevator_avg # average of past 5 fcs commands
         )
 
@@ -57,7 +58,8 @@ class AttitudeControlNoVaTask(AttitudeControlTask):
         ) + self.target_prps # target state variables
 
         self.error_prps: Tuple[BoundedProperty, ...] = (
-            prp.roll_err, prp.pitch_err # errors
+            prp.roll_err, prp.pitch_err, # errors
+            prp.roll_integ_err, prp.pitch_integ_err # integral errors
         )
 
         # set action and observation space from the task
@@ -83,6 +85,10 @@ class AttitudeControlNoVaTask(AttitudeControlTask):
 
         self.sim[prp.roll_err] = self.sim[prp.target_roll_rad] - self.sim[prp.roll_rad]
         self.sim[prp.pitch_err] = self.sim[prp.target_pitch_rad] - self.sim[prp.pitch_rad]
+        self.sim[prp.roll_integ_err] += self.sim[prp.roll_err]
+        self.sim[prp.pitch_integ_err] += self.sim[prp.pitch_err]
+        # print(f"roll_err: {self.sim[prp.roll_err]}, roll_integ_err: {self.sim[prp.roll_integ_err]}")
+        # print(f"pitch_err: {self.sim[prp.pitch_err]}, pitch_integ_err: {self.sim[prp.pitch_integ_err]}")
 
         # fill errors namedtuple with error variable values from the sim properties
         self.errors = self.Errors(*[self.sim[prop] for prop in self.error_prps])
@@ -115,6 +121,10 @@ class AttitudeControlNoVaTask(AttitudeControlTask):
         # reset task class attributes with initial conditions
         self.set_target_state(target_roll_rad=self.sim[prp.initial_roll_rad], 
                               target_pitch_rad=self.sim[prp.initial_pitch_rad])
+
+        # reset integral errors
+        self.sim[prp.roll_integ_err] = 0.0
+        self.sim[prp.pitch_integ_err] = 0.0
 
 
     def get_reward(self, action: np.ndarray) -> float:

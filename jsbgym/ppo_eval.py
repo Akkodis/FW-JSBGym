@@ -84,9 +84,12 @@ if __name__ == '__main__':
 
     # load the reference sequence and initialize the evaluation arrays
     ref_data = np.load("ref_seq_arr.npy")
-    e_actions = np.ndarray((ref_data.shape[0], 2))
-    e_obs = np.ndarray((ref_data.shape[0], 10))
+    e_actions = np.ndarray((ref_data.shape[0], env.action_space.shape[0]))
+    e_obs = np.ndarray((ref_data.shape[0], env.observation_space.shape[2]))
 
+    # start the environment
+    obs, _ = env.reset(options=sim_options)
+    obs = torch.Tensor(obs).unsqueeze_(0).to(device)
 
     # if no render mode, run the simulation for the whole reference sequence given by the .npy file
     if args.render_mode == "none":
