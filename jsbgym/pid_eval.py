@@ -13,9 +13,9 @@ from utils.eval_utils import RefSequence
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", type=str, default="config/ppo_caps.yaml",
+    parser.add_argument("--config", type=str, default="config/ppo_caps_no_va.yaml",
         help="the config file of the environnement")
-    parser.add_argument("--env-id", type=str, default="AttitudeControlNoVa-v0", 
+    parser.add_argument("--env-id", type=str, default="ACNoVa-v0", 
         help="the id of the environment")
     parser.add_argument('--render-mode', type=str, 
         choices=['none','plot_scale', 'plot', 'fgear', 'fgear_plot', 'fgear_plot_scale'],
@@ -41,10 +41,6 @@ def rearrange_obs(obs: np.ndarray) -> tuple[float, float, float, float, float]:
 
 if __name__ == '__main__':
     args = parse_args()
-    if args.env_id == "AttitudeControl-v0":
-        args.config = "config/ppo_caps.yaml"
-    elif args.env_id == "AttitudeControlNoVa-v0":
-        args.config = "config/ppo_caps_no_va.yaml"
 
     # seeding
     seed = 10
@@ -125,20 +121,12 @@ if __name__ == '__main__':
         # apply target values
         roll_pid.set_reference(roll_ref)
         pitch_pid.set_reference(pitch_ref)
-        # if args.env_id == "AttitudeControl-v0":
-        #     env.set_target_state(roll_ref, pitch_ref, airspeed_ref)
-        #     airspeed_pid.set_reference(airspeed_ref)
-        #     throttle_cmd, airspeed_err = airspeed_pid.update(state=Va, saturate=True)
-        if args.env_id == "AttitudeControlNoVa-v0":
-            env.set_target_state(roll_ref, pitch_ref)
+        env.set_target_state(roll_ref, pitch_ref)
 
         elevator_cmd, pitch_err = pitch_pid.update(state=pitch, state_dot=pitch_rate, saturate=True, normalize=True)
         aileron_cmd, roll_err = roll_pid.update(state=roll, state_dot=roll_rate, saturate=True, normalize=True)
 
-        # if args.env_id == "AttitudeControl-v0":
-        #     action = np.array([aileron_cmd, elevator_cmd, throttle_cmd])
-        if args.env_id == "AttitudeControlNoVa-v0":
-            action = np.array([aileron_cmd, elevator_cmd])
+        action = np.array([aileron_cmd, elevator_cmd])
         e_actions[step] = action
         obs, reward, truncated, terminated, info = env.step(action)
         e_obs[step] = obs[0, -1]
@@ -147,6 +135,7 @@ if __name__ == '__main__':
         done = np.logical_or(truncated, terminated)
         if done:
             print(f"Episode reward: {info['episode']['r']}")
+            obs, _ = env.reset()
             # refSeq.sample_steps(offset=step)
 
     # compute mean square error

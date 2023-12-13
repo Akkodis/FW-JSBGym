@@ -7,7 +7,7 @@ from jsbgym.utils.jsbsim_properties import BoundedProperty
 from jsbgym.trim.trim_point import TrimPoint
 
 
-class AttitudeControlNoVaTask(AttitudeControlTask):
+class ACNoVaTask(AttitudeControlTask):
     """
         gym.Env wrapper task. Made for attitude control without airspeed control.
 
@@ -32,7 +32,6 @@ class AttitudeControlNoVaTask(AttitudeControlTask):
             prp.airspeed_kph, # airspeed
             prp.p_radps, prp.q_radps, prp.r_radps, # angular rates
             prp.roll_err, prp.pitch_err, # errors
-            prp.pitch_integ_err, prp.roll_integ_err, # integral errors
             prp.aileron_avg, prp.elevator_avg # average of past 5 fcs commands
         )
 
@@ -59,7 +58,6 @@ class AttitudeControlNoVaTask(AttitudeControlTask):
 
         self.error_prps: Tuple[BoundedProperty, ...] = (
             prp.roll_err, prp.pitch_err, # errors
-            prp.roll_integ_err, prp.pitch_integ_err # integral errors
         )
 
         # set action and observation space from the task
@@ -85,10 +83,6 @@ class AttitudeControlNoVaTask(AttitudeControlTask):
 
         self.sim[prp.roll_err] = self.sim[prp.target_roll_rad] - self.sim[prp.roll_rad]
         self.sim[prp.pitch_err] = self.sim[prp.target_pitch_rad] - self.sim[prp.pitch_rad]
-        self.sim[prp.roll_integ_err] += self.sim[prp.roll_err]
-        self.sim[prp.pitch_integ_err] += self.sim[prp.pitch_err]
-        # print(f"roll_err: {self.sim[prp.roll_err]}, roll_integ_err: {self.sim[prp.roll_integ_err]}")
-        # print(f"pitch_err: {self.sim[prp.pitch_err]}, pitch_integ_err: {self.sim[prp.pitch_integ_err]}")
 
         # fill errors namedtuple with error variable values from the sim properties
         self.errors = self.Errors(*[self.sim[prop] for prop in self.error_prps])
@@ -122,10 +116,6 @@ class AttitudeControlNoVaTask(AttitudeControlTask):
         self.set_target_state(target_roll_rad=self.sim[prp.initial_roll_rad], 
                               target_pitch_rad=self.sim[prp.initial_pitch_rad])
 
-        # reset integral errors
-        self.sim[prp.roll_integ_err] = 0.0
-        self.sim[prp.pitch_integ_err] = 0.0
-
 
     def get_reward(self, action: np.ndarray) -> float:
         """
@@ -145,3 +135,52 @@ class AttitudeControlNoVaTask(AttitudeControlTask):
         self.sim[prp.reward_total] = r_total
 
         return r_total
+
+
+class ACNoVaIntegErrTask(ACNoVaTask):
+    def __init__(self, config_file: str, telemetry_file: str='', render_mode: str='none') -> None:
+        super().__init__(config_file, telemetry_file, render_mode)
+
+        self.state_prps: Tuple[BoundedProperty, ...] = (
+        prp.roll_rad, prp.pitch_rad, # attitude
+        prp.airspeed_kph, # airspeed
+        prp.p_radps, prp.q_radps, prp.r_radps, # angular rates
+        prp.roll_err, prp.pitch_err, # errors
+        prp.pitch_integ_err, prp.roll_integ_err, # integral errors
+        prp.aileron_avg, prp.elevator_avg # average of past 5 fcs commands
+        )
+
+        self.error_prps: Tuple[BoundedProperty, ...] = (
+            prp.roll_err, prp.pitch_err, # errors
+            prp.roll_integ_err, prp.pitch_integ_err # integral errors
+        )
+        # set action and observation space from the task
+        self.action_space = self.get_action_space()
+        self.observation_space = self.get_observation_space()
+
+        self.initialize()
+        self.telemetry_setup(self.telemetry_file)
+
+    def update_errors(self) -> None:
+        """
+            Update the error and integral errors properties of the aircraft, i.e. the difference between the target state and the current state.
+        """
+        # update error sim properties
+        self.sim[prp.roll_err] = self.sim[prp.target_roll_rad] - self.sim[prp.roll_rad]
+        self.sim[prp.pitch_err] = self.sim[prp.target_pitch_rad] - self.sim[prp.pitch_rad]
+        self.sim[prp.roll_integ_err] += self.sim[prp.roll_err]
+        self.sim[prp.pitch_integ_err] += self.sim[prp.pitch_err]
+
+        # fill errors namedtuple with error variable values from the sim properties
+        self.errors = self.Errors(*[self.sim[prop] for prop in self.error_prps])
+
+    def reset_target_state(self) -> None:
+        """
+            Reset the target state of the aircraft, i.e. the target state variables defined in the `target_state_vars` tuple, with initial conditions.
+        """
+        # reset task class attributes with initial conditions (use the parent class method)
+        super().reset_target_state()
+
+        # reset integral errors
+        self.sim[prp.roll_integ_err] = 0.0
+        self.sim[prp.pitch_integ_err] = 0.0

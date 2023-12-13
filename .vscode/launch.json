@@ -11,7 +11,7 @@
             "cwd": "${workspaceFolder}/jsbgym",
             "program": "ppo_eval.py",
             "args": ["--config", "config/ppo_caps.yaml",
-                    "--env-id", "AttitudeControlNoVa-v0",
+                    "--env-id", "ACNoVa-v0",
                     "--train-model", "models/train_saves/ppo_caps_tuned_thr_noVA_4_78323_28-11_18:30:26.pt",
                     "--render-mode", "plot_scale",
                     "--turb", "--wind", "--rand-targets", "--rand-atmo-mag"],
@@ -40,7 +40,7 @@
             "program": "ppo_train.py",
             "args": ["--exp-name", "debug_exp", "--num-envs", "2",
                 "--total-timesteps", "10000", "--track", 
-                "--env-id", "AttitudeControlNoVa-v0",
+                "--env-id", "ACNoVa-v0",
                 "--turb", "--wind", "--rand-atmo-mag", "--rand-targets"
                 // "--config", "config/ppo_caps_no_va.yaml",
                 // "--config", "config/ppo_caps.yaml",

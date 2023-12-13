@@ -5,6 +5,7 @@ import random
 import time
 from time import strftime, localtime
 from distutils.util import strtobool
+from tqdm import tqdm
 from trim.trim_point import TrimPoint
 from agents import ppo
 from utils.eval_utils import RefSequence
@@ -42,9 +43,9 @@ def parse_args():
     parser.add_argument("--no-eval", action='store_true', default=False, help="do not evaluate the agent at the end of training")
 
     # Algorithm specific arguments
-    parser.add_argument("--env-id", type=str, default="AttitudeControlNoVa-v0",
+    parser.add_argument("--env-id", type=str, default="ACNoVa-v0",
         help="the id of the environment")
-    parser.add_argument("--config", type=str, default="config/ppo_caps.yaml",
+    parser.add_argument("--config", type=str, default="config/ppo_caps_no_va.yaml",
         help="the config file of the environnement")
     parser.add_argument("--total-timesteps", type=float, default=1.5e6,
         help="total timesteps of the experiments")
@@ -114,7 +115,7 @@ if __name__ == "__main__":
 
     if args.env_id == "AttitudeControl-v0":
         args.config = "config/ppo_caps.yaml"
-    elif args.env_id == "AttitudeControlNoVa-v0":
+    elif args.env_id == "ACNoVa-v0" or args.env_id == "ACNoVaIntegErr-v0":
         args.config = "config/ppo_caps_no_va.yaml"
 
     run_name = f"ppo_{args.exp_name}_{args.seed}_{strftime('%d-%m_%H:%M:%S', localtime())}"
@@ -164,7 +165,7 @@ if __name__ == "__main__":
     trim_point: TrimPoint = TrimPoint(aircraft_id='x8')
     if args.env_id == "AttitudeControl-v0":
         trim_acts = torch.tensor([trim_point.aileron, trim_point.elevator, trim_point.throttle]).to(device)
-    elif args.env_id == "AttitudeControlNoVa-v0":
+    elif args.env_id == "ACNoVa-v0" or args.env_id == "ACNoVaIntegErr-v0":
         trim_acts = torch.tensor([trim_point.aileron, trim_point.elevator]).to(device)
 
     # ALGO Logic: Storage setup
@@ -193,7 +194,7 @@ if __name__ == "__main__":
     for _ in range(args.num_envs):
         refSeqs[_].sample_steps()
 
-    for update in range(1, num_updates + 1):
+    for update in tqdm(range(1, num_updates + 1)):
         # Annealing the rate if instructed to do so.
         if args.anneal_lr:
             frac = 1.0 - (update - 1.0) / num_updates
@@ -213,7 +214,7 @@ if __name__ == "__main__":
                     roll_ref, pitch_ref, airspeed_ref = refSeqs[i].sample_refs(ith_env_step, i)
                     if args.env_id == "AttitudeControl-v0":
                         unwr_envs[i].set_target_state(roll_ref, pitch_ref, airspeed_ref)
-                    elif args.env_id == "AttitudeControlNoVa-v0":
+                    elif args.env_id == "ACNoVa-v0" or args.env_id == "ACNoVaIntegErr-v0":
                         unwr_envs[i].set_target_state(roll_ref, pitch_ref)
 
             # ALGO LOGIC: action logic
@@ -247,7 +248,7 @@ if __name__ == "__main__":
                 if info is None:
                     continue
                 print(f"global_step={global_step}, episodic_return={info['episode']['r']}, episodic_length={info['episode']['l']} \n" + \
-                      f"episode_end={info['final_info']['episode_end']}, out_of_bounds={info['final_info']['out_of_bounds']}\n********")
+                      f"episode_end={info['episode_end']}, out_of_bounds={info['out_of_bounds']}\n********")
                 writer.add_scalar("charts/episodic_return", info["episode"]["r"], global_step)
                 r_per_step = info["episode"]["r"]/info["episode"]["l"]
                 writer.add_scalar("charts/reward_per_step", r_per_step, global_step)
@@ -395,7 +396,7 @@ if __name__ == "__main__":
             roll_ref, pitch_ref, airspeed_ref = e_refSeq.sample_refs(step)
             if args.env_id == "AttitudeControl-v0":
                 e_env.unwrapped.set_target_state(roll_ref, pitch_ref, airspeed_ref)
-            elif args.env_id == "AttitudeControlNoVa-v0":
+            elif args.env_id == "ACNoVa-v0" or args.env_id == "ACNoVaIntegErr-v0":
                 e_env.unwrapped.set_target_state(roll_ref, pitch_ref)
 
             action = agent.get_action_and_value(e_obs)[1][0].detach().cpu().numpy()
@@ -410,7 +411,7 @@ if __name__ == "__main__":
                 # Save the best agents depending on the env
                 if args.save_best:
                     if (args.env_id == "AttitudeControl-v0" and r_per_step > -0.20) or \
-                       (args.env_id == "AttitudeControlNoVa-v0" and r_per_step > -0.06):
+                       ((args.env_id == "ACNoVa-v0" or args.env_id == "ACNoVaIntegErr-v0") and r_per_step > -0.06):
                         save_model(save_path, run_name, agent, e_env, args.seed)
                 else:
                     save_model(save_path, run_name, agent, e_env, args.seed)

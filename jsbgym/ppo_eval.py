@@ -11,9 +11,9 @@ from utils.eval_utils import RefSequence
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", type=str, default="config/ppo_caps.yaml",
+    parser.add_argument("--config", type=str, default="config/ppo_caps_no_va.yaml",
         help="the config file of the environnement")
-    parser.add_argument("--env-id", type=str, default="AttitudeControl-v0", 
+    parser.add_argument("--env-id", type=str, default="ACNoVa-v0", 
         help="the id of the environment")
     parser.add_argument('--train-model', type=str, required=True, 
         help='agent model file name')
@@ -32,10 +32,6 @@ def parse_args():
 
 if __name__ == '__main__':
     args = parse_args()
-    if args.env_id == "AttitudeControl-v0":
-        args.config = "config/ppo_caps.yaml"
-    elif args.env_id == "AttitudeControlNoVa-v0":
-        args.config = "config/ppo_caps_no_va.yaml"
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
@@ -66,7 +62,7 @@ if __name__ == '__main__':
 
     # setting the observation normalization parameters
     env.set_obs_rms(train_dict['norm_obs_rms']['mean'], 
-                             train_dict['norm_obs_rms']['var'])
+                    train_dict['norm_obs_rms']['var'])
 
     # loading the agent
     ppo_agent = ppo.Agent(env).to(device)
@@ -98,10 +94,6 @@ if __name__ == '__main__':
             # roll_ref, pitch_ref, airspeed_ref = refSeq.sample_refs(step)
             refs = ref_data[step]
             roll_ref, pitch_ref = refs[0], refs[1]
-
-        # if args.env_id == "AttitudeControl-v0":
-        #     unwrapped_env.set_target_state(roll_ref, pitch_ref, airspeed_ref)
-        if args.env_id == "AttitudeControlNoVa-v0":
             env.set_target_state(roll_ref, pitch_ref)
 
         action = ppo_agent.get_action_and_value(obs)[1].squeeze_(0).detach().cpu().numpy()
@@ -113,6 +105,8 @@ if __name__ == '__main__':
         done = np.logical_or(truncated, terminated)
         if done:
             print(f"Episode reward: {info['episode']['r']}")
+            obs, _ = env.reset()
+            obs = torch.Tensor(obs).unsqueeze_(0).to(device)
             # refSeq.sample_steps(offset=step)
 
     env.close()
