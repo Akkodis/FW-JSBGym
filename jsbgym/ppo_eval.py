@@ -58,10 +58,6 @@ if __name__ == '__main__':
                                   "turb": args.turb},
                    "seed": seed}
 
-    # start the environment
-    obs, _ = env.reset(options=sim_options)
-    obs = torch.Tensor(obs).unsqueeze_(0).to(device)
-
     # Generating a reference sequence
     # refSeq = RefSequence(num_refs=5)
     # refSeq.sample_steps()
