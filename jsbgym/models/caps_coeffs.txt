@@ -29,8 +29,8 @@ pid:
 
 agents:
 	ppo_caps_tuned1_allrand_12
-		roll_mse: 0.18511240819743324
-		pitch_mse: 0.09006527883151476
+		roll_mse: 0.18511240819743324 | 0.04083984831195024
+		pitch_mse: 0.09006527883151476 |  0.006668349109132251
 	
 	ppo_caps_tuned3_allrand_4
 		roll_mse: 0.11201917388804639

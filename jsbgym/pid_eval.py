@@ -62,6 +62,9 @@ if __name__ == '__main__':
                                   "turb": args.turb},
                    "seed": seed}
 
+    # start the environment
+    obs, _ = env.reset(options=sim_options)
+    Va, roll, pitch, roll_rate, pitch_rate = rearrange_obs(obs)
 
     # refSeq = RefSequence(num_refs=5)
     # refSeq.sample_steps()
@@ -104,9 +107,7 @@ if __name__ == '__main__':
     e_actions = np.ndarray((ref_data.shape[0], 2))
     e_obs = np.ndarray((ref_data.shape[0], 10))
 
-    # start the environment
-    obs, _ = env.reset(options=sim_options)
-    Va, roll, pitch, roll_rate, pitch_rate = rearrange_obs(obs)
+
 
     # if no render mode, run the simulation for the whole reference sequence given by the .npy file
     if args.render_mode == "none":

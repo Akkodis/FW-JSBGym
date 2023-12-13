@@ -58,7 +58,9 @@ if __name__ == '__main__':
                                   "turb": args.turb},
                    "seed": seed}
 
-
+    # start the environment
+    obs, _ = env.reset(options=sim_options)
+    obs = torch.Tensor(obs).unsqueeze_(0).to(device)
 
     # Generating a reference sequence
     # refSeq = RefSequence(num_refs=5)
@@ -85,9 +87,6 @@ if __name__ == '__main__':
     e_actions = np.ndarray((ref_data.shape[0], 2))
     e_obs = np.ndarray((ref_data.shape[0], 10))
 
-    # start the environment
-    obs, _ = env.reset(options=sim_options)
-    obs = torch.Tensor(obs).unsqueeze_(0).to(device)
 
     # if no render mode, run the simulation for the whole reference sequence given by the .npy file
     if args.render_mode == "none":
@@ -109,7 +108,7 @@ if __name__ == '__main__':
         action = ppo_agent.get_action_and_value(obs)[1].squeeze_(0).detach().cpu().numpy()
         e_actions[step] = action
         obs, reward, truncated, terminated, info = env.step(action)
-        e_obs[step] = obs[0, -1]
+        e_obs[step] = info["non_norm_obs"][0, -1]
         obs = torch.Tensor(obs).unsqueeze_(0).to(device)
 
         done = np.logical_or(truncated, terminated)
