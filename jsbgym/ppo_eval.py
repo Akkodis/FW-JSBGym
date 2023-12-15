@@ -5,8 +5,8 @@ import numpy as np
 from tqdm import tqdm
 
 from agents import ppo
-from trim.trim_point import TrimPoint
-from utils.eval_utils import RefSequence
+from jsbgym.trim.trim_point import TrimPoint
+from jsbgym.eval import metrics
 
 
 def parse_args():
@@ -76,18 +76,20 @@ if __name__ == '__main__':
 
     # load the reference sequence and initialize the evaluation arrays
     ref_data = np.load("ref_seq_arr.npy")
-    e_actions = np.ndarray((ref_data.shape[0], env.action_space.shape[0]))
-    e_obs = np.ndarray((ref_data.shape[0], env.observation_space.shape[2]))
-
-    # start the environment
-    obs, _ = env.reset(options=sim_options)
-    obs = torch.Tensor(obs).unsqueeze_(0).to(device)
+    ref_steps = np.load("step_seq_arr.npy")
 
     # if no render mode, run the simulation for the whole reference sequence given by the .npy file
     if args.render_mode == "none":
         total_steps = ref_data.shape[0]
     else: # otherwise, run the simulation for 8000 steps
-        total_steps = 8000
+        total_steps = 4000
+
+    e_actions = np.ndarray((total_steps, env.action_space.shape[0]))
+    e_obs = np.ndarray((total_steps, env.observation_space.shape[2]))
+
+    # start the environment
+    obs, _ = env.reset(options=sim_options)
+    obs = torch.Tensor(obs).unsqueeze_(0).to(device)
 
     for step in tqdm(range(total_steps)):
         if args.rand_targets:
@@ -104,6 +106,7 @@ if __name__ == '__main__':
 
         done = np.logical_or(truncated, terminated)
         if done:
+            print(step)
             print(f"Episode reward: {info['episode']['r']}")
             obs, _ = env.reset()
             obs = torch.Tensor(obs).unsqueeze_(0).to(device)
@@ -121,3 +124,6 @@ if __name__ == '__main__':
     pitch_errors = e_obs[:, 7]
     pitch_mse = np.mean(np.square(pitch_errors))
     print(f"pitch mse: {pitch_mse}") # pitch mse: 0.06732408213127292
+    # np.save("e_ppo_obs.npy", e_obs)
+    # np.save("e_ppo_actions.npy", e_actions)
+    metrics.compute_metrics(e_obs, ref_data, ref_steps)

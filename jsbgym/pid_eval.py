@@ -100,16 +100,13 @@ if __name__ == '__main__':
 
     # load reference sequence and initialize evaluation arrays
     ref_data = np.load("ref_seq_arr.npy")
-    e_actions = np.ndarray((ref_data.shape[0], env.action_space.shape[0]))
-    e_obs = np.ndarray((ref_data.shape[0], env.observation_space.shape[2]))
-
-
-
     # if no render mode, run the simulation for the whole reference sequence given by the .npy file
     if args.render_mode == "none":
         total_steps = ref_data.shape[0]
     else: # otherwise, run the simulation for 8000 steps
         total_steps = 8000
+    e_actions = np.ndarray((ref_data.shape[0], env.action_space.shape[0]))
+    e_obs = np.ndarray((ref_data.shape[0], env.observation_space.shape[2]))
 
     for step in tqdm(range(total_steps)):
         # set random target values
@@ -148,3 +145,6 @@ if __name__ == '__main__':
     pitch_errors = e_obs[:, 7]
     pitch_mse = np.mean(np.square(pitch_errors))
     print(f"pitch mse: {pitch_mse}") # pitch mse: 0.004513582613148686
+
+    # np.save("e_pid_obs.npy", e_obs)
+    # np.save("e_pid_actions.npy", e_actions)
