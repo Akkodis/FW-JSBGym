@@ -5,7 +5,7 @@ JSBSimEnv:
     fdm_freq: 100.0 # 120 Hz being the default JSBSim freq
     agent_freq: 100.0
     episode_length_s: 20.0
-    viz_time_factor: 5.0
+    viz_time_factor: 50.0
 
 # task specific child class config: AttitudeControlTask
 AttitudeControlTask:
