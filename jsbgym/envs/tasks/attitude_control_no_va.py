@@ -43,6 +43,10 @@ class ACNoVaTask(AttitudeControlTask):
             prp.target_roll_rad, prp.target_pitch_rad # target attitude
         )
 
+        self.error_prps: Tuple[BoundedProperty, ...] = (
+            prp.roll_err, prp.pitch_err, # errors
+        )
+
         self.telemetry_prps: Tuple[BoundedProperty, ...] = (
             prp.lat_gc_deg, prp.lng_gc_deg, prp.altitude_sl_m, # position
             prp.roll_rad, prp.pitch_rad, prp.heading_rad, # attitude
@@ -54,11 +58,7 @@ class ACNoVaTask(AttitudeControlTask):
             prp.total_windspeed_north_kph, prp.total_windspeed_east_kph, prp.total_windspeed_down_kph, # wind speed kph
             prp.turb_north_mps, prp.turb_east_mps, prp.turb_down_mps, # turbulence mps
             prp.turb_north_kph, prp.turb_east_kph, prp.turb_down_kph, # turbulence kph
-        ) + self.target_prps # target state variables
-
-        self.error_prps: Tuple[BoundedProperty, ...] = (
-            prp.roll_err, prp.pitch_err, # errors
-        )
+        ) + self.target_prps + self.error_prps # target state variables
 
         # set action and observation space from the task
         self.action_space = self.get_action_space()
