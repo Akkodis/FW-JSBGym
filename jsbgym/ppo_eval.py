@@ -75,8 +75,8 @@ if __name__ == '__main__':
     airspeed_ref: float = trim_point.Va_kph
 
     # load the reference sequence and initialize the evaluation arrays
-    ref_data = np.load("ref_seq_arr.npy")
-    ref_steps = np.load("step_seq_arr.npy")
+    ref_data = np.load("eval/ref_seq_arr.npy")
+    ref_steps = np.load("eval/step_seq_arr.npy")
 
     # if no render mode, run the simulation for the whole reference sequence given by the .npy file
     if args.render_mode == "none":
@@ -124,6 +124,6 @@ if __name__ == '__main__':
     pitch_errors = e_obs[:, 7]
     pitch_mse = np.mean(np.square(pitch_errors))
     print(f"pitch mse: {pitch_mse}") # pitch mse: 0.06732408213127292
-    # np.save("e_ppo_obs.npy", e_obs)
-    # np.save("e_ppo_actions.npy", e_actions)
-    metrics.compute_metrics(e_obs, ref_data, ref_steps)
+    # np.save("eval/e_ppo_obs.npy", e_obs)
+    # np.save("eval/e_ppo_actions.npy", e_actions)
+    # metrics.compute_metrics(e_obs, ref_data, ref_steps)
