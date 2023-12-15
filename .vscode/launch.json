@@ -11,9 +11,9 @@
             "cwd": "${workspaceFolder}/jsbgym",
             "program": "ppo_eval.py",
             "args": ["--config", "config/ppo_caps.yaml",
-                    "--env-id", "ACNoVa-v0",
-                    "--train-model", "models/train_saves/ppo_caps_tuned_thr_noVA_4_78323_28-11_18:30:26.pt",
-                    "--render-mode", "plot_scale",
+                    "--env-id", "ACNoVaIntegErr-v0",
+                    "--train-model", "models/train/ppo_caps_tuned1_integerr_2_88648_12-12_23:32:52.pt",
+                    "--render-mode", "plot",
                     "--turb", "--wind", "--rand-targets", "--rand-atmo-mag"],
             "console": "integratedTerminal",
             "justMyCode": false,
@@ -67,6 +67,25 @@
             "program": "a.py",
             "console": "integratedTerminal",
             "justMyCode": true,
+        },
+        {
+            "name": "eval utils",
+            "type": "python",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/jsbgym",
+            "program": "utils/eval_utils.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+        },
+        {
+            "name": "metrics",
+            "type": "python",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/jsbgym",
+            "program": "eval/metrics.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+ 
         }
     ]
 }
