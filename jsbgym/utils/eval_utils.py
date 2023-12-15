@@ -64,7 +64,7 @@ def main():
     steps_per_episode = 2000
     n_episodes = total_steps // steps_per_episode
     step_seq_arr: np.ndarray = np.zeros((n_episodes, ref_seq.num_refs, 3), dtype=np.int32)
-    ref_seq_arr: np.ndarray = np.zeros((total_steps, 3), dtype=np.float32)
+    ref_seq_arr: np.ndarray = np.zeros((total_steps+1, 3), dtype=np.float32)
 
     step_seq_arr[0] = ref_seq.ref_steps
 
@@ -79,6 +79,9 @@ def main():
 
     # print(step_seq_arr)
     # print(ref_seq_arr)
+    ref_seq_arr[-1] = ref_seq_arr[-2]
+    ref_seq_arr = ref_seq_arr[1:]
+    step_seq_arr = step_seq_arr - 1
 
     np.save("step_seq_arr.npy", step_seq_arr)
     np.save("ref_seq_arr.npy", ref_seq_arr)
