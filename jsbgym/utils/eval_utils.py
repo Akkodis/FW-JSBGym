@@ -7,6 +7,10 @@ class State(IntEnum):
     PITCH = 1
     AIRSPEED = 2
 
+class StateNoVa(IntEnum):
+    ROLL = 0
+    PITCH = 1
+
 class RefSequence():
     def __init__(self, num_refs: int=5, min_step_bound: int=300, max_step_bound: int=500,
                  roll_bound: float=45.0, pitch_bound: float=15.0, airspeed_bound: float=10.0):
