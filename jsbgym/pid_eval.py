@@ -23,6 +23,9 @@ def parse_args():
     parser.add_argument("--tele-file", type=str, default="telemetry/pid_eval_telemetry.csv", 
         help="telemetry csv file")
     parser.add_argument('--rand-targets', action='store_true', help='set targets randomly')
+    parser.add_argument('--severity', type=str, required=True,
+                        choices=['off', 'light', 'moderate', 'severe', 'all'],
+                        help='severity of the atmosphere (wind and turb)')
     args = parser.parse_args()
     return args
 
@@ -104,11 +107,16 @@ if __name__ == '__main__':
                             "enable": True
                        }
                    }}
-    severity_options = ["off", "light", "moderate", "severe"]
-    pitch_mse_all = np.zeros(len(severity_options))
-    roll_mse_all = np.zeros(len(severity_options))
 
-    for i, severity in enumerate(severity_options):
+    if args.severity == "all":
+        severity_range = ["off", "light", "moderate", "severe"]
+    else:
+        severity_range = [args.severity]
+
+    pitch_mse_all = np.zeros(len(severity_range))
+    roll_mse_all = np.zeros(len(severity_range))
+
+    for i, severity in enumerate(severity_range):
         sim_options["atmosphere"]["severity"] = severity
         e_actions = np.ndarray((total_steps, env.action_space.shape[0]))
         e_obs = np.ndarray((total_steps, env.observation_space.shape[2]))
