@@ -6,9 +6,9 @@ import time
 from time import strftime, localtime
 from distutils.util import strtobool
 from tqdm import tqdm
-from trim.trim_point import TrimPoint
-from agents import ppo
-from utils.eval_utils import RefSequence
+from jsbgym.trim.trim_point import TrimPoint
+from jsbgym.agents import ppo
+from jsbgym.utils.eval_utils import RefSequence
 
 import wandb
 import gymnasium as gym
@@ -90,7 +90,7 @@ def parse_args():
 
     # training sim specific arguments
     parser.add_argument('--rand-targets',type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True, help='set targets randomly')
-    parser.add_argument('--rand-atmo-mag',type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True, help='randomize the wind and turb magnitudes at each episode')
+    parser.add_argument('--wind-rand-cont',type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True, help='randomize the wind magnitude continuously')
     parser.add_argument('--turb', type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True, help='add turbulence')
     parser.add_argument('--wind', type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True, help='add wind')
     args = parser.parse_args()
@@ -181,9 +181,16 @@ if __name__ == "__main__":
     # TRY NOT TO MODIFY: start the game
     global_step = 0
     start_time = time.time()
-    sim_options = {"atmosphere": {"rand_magnitudes": args.rand_atmo_mag, 
-                                  "wind": args.wind,
-                                  "turb": args.turb}}
+    sim_options = {"atmosphere": {
+                        "variable": True,
+                        "wind": {
+                            "enable": args.wind,
+                            "rand_continuous": args.wind_rand_cont
+                        },
+                        "turb": {
+                            "enable": args.turb
+                        }
+                   }}
     next_obs, _ = envs.reset(options=sim_options)
     next_obs = torch.Tensor(next_obs).to(device)
     next_terminated = torch.zeros(args.num_envs).to(device)
