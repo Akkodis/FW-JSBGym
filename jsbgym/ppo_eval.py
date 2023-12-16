@@ -11,7 +11,7 @@ from jsbgym.eval import metrics
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", type=str, default="config/eval/ppo_caps_no_va.yaml",
+    parser.add_argument("--config", type=str, default="config/ppo_caps_no_va.yaml",
         help="the config file of the environnement")
     parser.add_argument("--env-id", type=str, default="ACNoVa-v0", 
         help="the id of the environment")
