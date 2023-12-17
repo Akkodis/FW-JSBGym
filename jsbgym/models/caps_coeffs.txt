@@ -24,8 +24,14 @@ pa-coef:
 
 
 pid:
-	roll_mse: 0.041535369568034886
-	pitch_mse: 0.004972461399138188
+	all:
+		roll_mse: 0.0408939327710726
+		pitch_mse: 0.006831421215648428
+	off:
+	light:
+	moderate:
+	severe:
+
 
 agents:
 	ppo_caps_tuned1_allrand_12
@@ -33,5 +39,10 @@ agents:
 		pitch_mse: 0.09006527883151476 | 0.006668349109132251
 	
 	ppo_caps_tuned1_integerr_2
-		roll_mse:  0.03609589146863321
-		pitch_mse: 0.004584110223200878
+		all:
+			roll_mse:  0.03546929565869607
+			pitch_mse: 0.006571413609803705
+		off:
+		light:
+		moderate:
+		severe:
