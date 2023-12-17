@@ -80,8 +80,8 @@
             "name": "metrics",
             "type": "python",
             "request": "launch",
-            "cwd": "${workspaceFolder}/jsbgym",
-            "program": "eval/metrics.py",
+            "cwd": "${workspaceFolder}/jsbgym/eval",
+            "program": "metrics.py",
             "console": "integratedTerminal",
             "justMyCode": true,
  

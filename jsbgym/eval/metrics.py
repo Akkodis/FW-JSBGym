@@ -86,6 +86,30 @@ def compute_rise_time(errors, ss_errors):
     return np.array(rise_times)
 
 
+# maybe I should find the find local max/min of the error and then compute the overshoot from there
+# because roll / pitch are coupled and when there's a big command in roll, it shows up as a big error in pitch
+# which is here considered as overshoot (metric code from Bohn's repo)
+def compute_overshoot(errors):
+    print("COMPUTING OVERSHOOT")
+    overshoots = [[],[]]
+    for state_id, errors_per_state in zip(StateNoVa, errors):
+        if state_id == StateNoVa.ROLL:
+            print("  ROLL")
+        elif state_id == StateNoVa.PITCH:
+            print("  PITCH")
+        for ref, errors_per_st_per_ref in enumerate(errors_per_state):
+            initial_error = errors_per_st_per_ref[0]
+            op = getattr(np, "min" if initial_error > 0 else "max")
+            max_opposite_error = op(errors_per_st_per_ref, axis=0)
+            if np.sign(max_opposite_error) == np.sign(initial_error):
+                overshoot = np.nan
+                print(f"    ref {ref} overshoot: {overshoot}")
+            else:
+                overshoot = np.abs(max_opposite_error / initial_error)
+                print(f"    ref {ref} overshoot: {overshoot}")
+            overshoots[state_id].append(overshoot)
+
+
 # function to rearrange the errors into a 3D list where each sublist is the errors for a ref
 # output error "shape": (num_states=2, num_refs, ref_length)
 def split_errors(obs, steps): 
@@ -121,6 +145,7 @@ def main():
     compute_success(splitted_errors)
     ss_errors, settling_times = compute_steady_state(splitted_errors)
     compute_rise_time(splitted_errors, ss_errors)
+    compute_overshoot(splitted_errors, ss_errors)
     print(settling_times)
 
     print("********** PID METRICS **********")
@@ -130,7 +155,8 @@ def main():
     splitted_errors, splitted_obs = split_errors(pid_obs, steps)
     # compute_success(splitted_errors)
     ss_errors, settling_times = compute_steady_state(splitted_errors)
-    compute_rise_time(splitted_errors, ss_errors)
+    # compute_rise_time(splitted_errors, ss_errors)
+    compute_overshoot(splitted_errors, ss_errors)
     print(settling_times)
 
 if __name__ == "__main__":
