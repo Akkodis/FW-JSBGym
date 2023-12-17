@@ -1,4 +1,6 @@
+from calendar import c
 from os import error
+from ossaudiodev import control_labels
 import numpy as np
 from jsbgym.utils.eval_utils import State, StateNoVa
 
@@ -110,6 +112,19 @@ def compute_overshoot(errors):
             overshoots[state_id].append(overshoot)
 
 
+def compute_angular_variation(obs):
+    ang_rate = obs[3:6]
+    angular_variance = np.var(ang_rate, axis=1)
+    print(f"    angular variance: {angular_variance}")
+    return angular_variance
+
+
+def compute_control_variation(actions):
+    control_variance = np.var(actions, axis=0)
+    print(f"    control variance: {control_variance}")
+    return control_variance
+
+
 # function to rearrange the errors into a 3D list where each sublist is the errors for a ref
 # output error "shape": (num_states=2, num_refs, ref_length)
 def split_errors(obs, steps): 
@@ -145,19 +160,21 @@ def main():
     compute_success(splitted_errors)
     ss_errors, settling_times = compute_steady_state(splitted_errors)
     compute_rise_time(splitted_errors, ss_errors)
-    compute_overshoot(splitted_errors, ss_errors)
-    print(settling_times)
+    compute_overshoot(splitted_errors)
+    compute_angular_variation(ppo_obs)
+    compute_control_variation(ppo_act)
 
     print("********** PID METRICS **********")
     pid_obs = np.load("e_pid_obs.npy")
     pid_act = np.load("e_pid_actions.npy")
     print(pid_obs.shape)
     splitted_errors, splitted_obs = split_errors(pid_obs, steps)
-    # compute_success(splitted_errors)
+    compute_success(splitted_errors)
     ss_errors, settling_times = compute_steady_state(splitted_errors)
-    # compute_rise_time(splitted_errors, ss_errors)
-    compute_overshoot(splitted_errors, ss_errors)
-    print(settling_times)
+    compute_rise_time(splitted_errors, ss_errors)
+    compute_overshoot(splitted_errors)
+    compute_angular_variation(pid_obs)
+    compute_control_variation(pid_act)
 
 if __name__ == "__main__":
     main()
