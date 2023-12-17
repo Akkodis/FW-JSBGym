@@ -9,6 +9,7 @@ from agents.pid import PID
 from models import aerodynamics
 from trim.trim_point import TrimPoint
 from utils.eval_utils import RefSequence
+from jsbgym.eval import metrics
 
 
 def parse_args():
@@ -41,6 +42,7 @@ def rearrange_obs(obs: np.ndarray) -> tuple[float, float, float, float, float]:
 
 if __name__ == '__main__':
     args = parse_args()
+    np.set_printoptions(precision=3)
 
     # seeding
     seed = 10
@@ -91,6 +93,8 @@ if __name__ == '__main__':
 
     # load reference sequence and initialize evaluation arrays
     ref_data = np.load("eval/ref_seq_arr.npy")
+    ref_steps = np.load("eval/step_seq_arr.npy")
+
     # if no render mode, run the simulation for the whole reference sequence given by the .npy file
     if args.render_mode == "none":
         total_steps = ref_data.shape[0]
@@ -115,6 +119,8 @@ if __name__ == '__main__':
 
     pitch_mse_all = np.zeros(len(severity_range))
     roll_mse_all = np.zeros(len(severity_range))
+
+    all_metrics = []
 
     for i, severity in enumerate(severity_range):
         sim_options["atmosphere"]["severity"] = severity
@@ -149,17 +155,24 @@ if __name__ == '__main__':
                 print(f"Episode reward: {info['episode']['r']}")
                 obs, _ = env.reset()
                 # refSeq.sample_steps(offset=step)
-        # compute roll MSE
-        roll_mse = np.mean(np.square(e_obs[:, 6]))
-        roll_mse_all[i] = roll_mse
-        # print(f"Roll MSE: {roll_mse}")
-        # compute pitch MSE
-        pitch_mse = np.mean(np.square(e_obs[:, 7]))
-        pitch_mse_all[i] = pitch_mse
-        # print(f"Pitch MSE: {pitch_mse}")
+        all_metrics.append({severity: metrics.compute_all_metrics(e_obs, e_actions, ref_steps)})
 
-    print("Roll MSEs: ", roll_mse_all)
-    print("Pitch MSEs: ", pitch_mse_all)
+    for sev_dict in all_metrics:
+        for sev_name, sev_metrics in sev_dict.items():
+            print(f"\nSeverity: {sev_name}")
+            for name, value in sev_metrics.items():
+                if isinstance(value, np.ndarray):
+                    if value.shape[0] == 2: # if the metric has 2 fields: contains roll and pitch
+                        print(f"  {name}:\n"
+                            f"    roll: {value[0]}\n"
+                            f"    pitch: {value[1]}")
+                    elif value.shape[0] == 3: # if the metric has 3 fields: contains r, p, y angular vels
+                        print(f"  {name}:\n"
+                            f"    r: {value[0]}\n"
+                            f"    p: {value[1]}\n"
+                            f"    y: {value[2]}")
+                else:
+                    print(f"  {name}: {value}")
 
-    np.save("eval/e_pid_obs.npy", e_obs)
-    np.save("eval/e_pid_actions.npy", e_actions)
+    # np.save("eval/e_pid_obs.npy", e_obs)
+    # np.save("eval/e_pid_actions.npy", e_actions)

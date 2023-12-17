@@ -32,7 +32,7 @@ def parse_args():
 
 if __name__ == '__main__':
     args = parse_args()
-
+    np.set_printoptions(precision=3)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
 
@@ -100,6 +100,8 @@ if __name__ == '__main__':
     pitch_mse_all = np.zeros(len(severity_range))
     roll_mse_all = np.zeros(len(severity_range))
 
+    all_metrics = []
+
     for i, severity in enumerate(severity_range):
         sim_options["atmosphere"]["severity"] = severity
         e_actions = np.ndarray((total_steps, env.action_space.shape[0]))
@@ -126,19 +128,25 @@ if __name__ == '__main__':
                 obs, _ = env.reset()
                 obs = torch.Tensor(obs).unsqueeze_(0).to(device)
                 # refSeq.sample_steps(offset=step)
-        # compute roll MSE
-        roll_mse = np.mean(np.square(e_obs[:, 6]))
-        roll_mse_all[i] = roll_mse
-        # print(f"Roll MSE: {roll_mse}")
-        # compute pitch MSE
-        pitch_mse = np.mean(np.square(e_obs[:, 7]))
-        pitch_mse_all[i] = pitch_mse
-        # print(f"Pitch MSE: {pitch_mse}")
+        all_metrics.append({severity: metrics.compute_all_metrics(e_obs, e_actions, ref_steps)})
 
-    print("Roll MSEs: ", roll_mse_all)
-    print("Pitch MSEs: ", pitch_mse_all)
+    for sev_dict in all_metrics:
+        for sev_name, sev_metrics in sev_dict.items():
+            print(f"\nSeverity: {sev_name}")
+            for name, value in sev_metrics.items():
+                if isinstance(value, np.ndarray):
+                    if value.shape[0] == 2: # if the metric has 2 fields: contains roll and pitch
+                        print(f"  {name}:\n"
+                            f"    roll: {value[0]}\n"
+                            f"    pitch: {value[1]}")
+                    elif value.shape[0] == 3: # if the metric has 3 fields: contains r, p, y angular vels
+                        print(f"  {name}:\n"
+                            f"    r: {value[0]}\n"
+                            f"    p: {value[1]}\n"
+                            f"    y: {value[2]}")
+                else:
+                    print(f"  {name}: {value}")
 
-    np.save("eval/e_ppo_obs.npy", e_obs)
-    np.save("eval/e_ppo_actions.npy", e_actions)
-
+    # np.save("eval/e_ppo_obs.npy", e_obs)
+    # np.save("eval/e_ppo_actions.npy", e_actions)
     env.close()

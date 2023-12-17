@@ -64,7 +64,7 @@ def main():
     np.set_printoptions(suppress = True)
     ref_seq = RefSequence()
     ref_seq.sample_steps()
-    total_steps = 200_000
+    total_steps = 50_000
     steps_per_episode = 2000
     n_episodes = total_steps // steps_per_episode
     step_seq_arr: np.ndarray = np.zeros((n_episodes, ref_seq.num_refs, 3), dtype=np.int32)
@@ -87,12 +87,12 @@ def main():
     ref_seq_arr = ref_seq_arr[1:]
     step_seq_arr = step_seq_arr - 1
 
-    np.save("step_seq_arr.npy", step_seq_arr)
-    np.save("ref_seq_arr.npy", ref_seq_arr)
+    np.save("eval/step_seq_arr.npy", step_seq_arr)
+    np.save("eval/ref_seq_arr.npy", ref_seq_arr)
 
     # read the reference steps and values from a file
-    step_seq_arr = np.load("step_seq_arr.npy")
-    ref_seq_arr = np.load("ref_seq_arr.npy")
+    step_seq_arr = np.load("eval/step_seq_arr.npy")
+    ref_seq_arr = np.load("eval/ref_seq_arr.npy")
     print(step_seq_arr)
     print(ref_seq_arr)
 
