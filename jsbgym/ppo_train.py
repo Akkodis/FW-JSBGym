@@ -9,6 +9,7 @@ from tqdm import tqdm
 from jsbgym.trim.trim_point import TrimPoint
 from jsbgym.agents import ppo
 from jsbgym.utils.eval_utils import RefSequence
+from jsbgym.eval import metrics
 
 import wandb
 import gymnasium as gym
@@ -41,6 +42,7 @@ def parse_args():
     parser.add_argument("--capture-video", type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True,
         help="whether to capture videos of the agent performances (check out `videos` folder)")
     parser.add_argument("--no-eval", action='store_true', default=False, help="do not evaluate the agent at the end of training")
+    parser.add_argument("--no-eval-plot", action='store_true', default=False, help="do not do a short evaluation plot at the end of training")
 
     # Algorithm specific arguments
     parser.add_argument("--env-id", type=str, default="ACNoVa-v0",
@@ -389,25 +391,25 @@ if __name__ == "__main__":
 
 
     # Evaluate the agent
-    if not args.no_eval:
-        print("******** Evaluating agent... ***********")
-        e_env = envs.envs[0]
-        e_env.eval = True
+    if not args.no_eval_plot:
+        print("******** Plotting... ***********")
+        pe_env = envs.envs[0]
+        pe_env.eval = True
         telemetry_file = f"telemetry/{run_name}.csv"
-        e_obs, _ = e_env.reset(options={"render_mode": "log"})
-        e_env.unwrapped.telemetry_setup(telemetry_file)
+        e_obs, _ = pe_env.reset(options={"render_mode": "log"})
+        pe_env.unwrapped.telemetry_setup(telemetry_file)
         e_obs = torch.Tensor(e_obs).unsqueeze(0).to(device)
         e_refSeq = RefSequence(num_refs=5)
         e_refSeq.sample_steps()
-        for step in range(6000):
+        for step in range(4000):
             roll_ref, pitch_ref, airspeed_ref = e_refSeq.sample_refs(step)
             if args.env_id == "AttitudeControl-v0":
-                e_env.unwrapped.set_target_state(roll_ref, pitch_ref, airspeed_ref)
+                pe_env.unwrapped.set_target_state(roll_ref, pitch_ref, airspeed_ref)
             elif args.env_id == "ACNoVa-v0" or args.env_id == "ACNoVaIntegErr-v0":
-                e_env.unwrapped.set_target_state(roll_ref, pitch_ref)
+                pe_env.unwrapped.set_target_state(roll_ref, pitch_ref)
 
             action = agent.get_action_and_value(e_obs)[1][0].detach().cpu().numpy()
-            e_obs, reward, truncated, terminated, info = e_env.step(action)
+            e_obs, reward, truncated, terminated, info = pe_env.step(action)
             e_obs = torch.Tensor(e_obs).unsqueeze(0).to(device)
             done = np.logical_or(truncated, terminated)
 
@@ -416,19 +418,109 @@ if __name__ == "__main__":
                 print(f"Episode reward: {info['episode']['r']}")
                 r_per_step = info["episode"]["r"]/info["episode"]["l"]
                 # Save the best agents depending on the env
-                if args.save_best:
-                    if (args.env_id == "AttitudeControl-v0" and r_per_step > -0.20) or \
-                       ((args.env_id == "ACNoVa-v0" or args.env_id == "ACNoVaIntegErr-v0") and r_per_step > -0.06):
-                        save_model(save_path, run_name, agent, e_env, args.seed)
-                else:
-                    save_model(save_path, run_name, agent, e_env, args.seed)
-                break
+                # if args.save_best:
+                #     if (args.env_id == "AttitudeControl-v0" and r_per_step > -0.20) or \
+                #        ((args.env_id == "ACNoVa-v0" or args.env_id == "ACNoVaIntegErr-v0") and r_per_step > -0.06):
+                #         save_model(save_path, run_name, agent, pe_env, args.seed)
+                # else:
+                #     save_model(save_path, run_name, agent, pe_env, args.seed)
+                # break
         telemetry_df = pd.read_csv(telemetry_file)
         telemetry_table = wandb.Table(dataframe=telemetry_df)
         wandb.log({"telemetry": telemetry_table})
     # Even if we don't evaluate, we still want to save the model
     else:
         save_model(save_path, run_name, agent, envs.envs[0], args.seed)
+
+
+    if not args.no_eval:
+        # load the reference sequence and initialize the evaluation arrays
+        ref_data = np.load("eval/ref_seq_arr.npy")
+        ref_steps = np.load("eval/step_seq_arr.npy")
+
+        # if no render mode, run the simulation for the whole reference sequence given by the .npy file
+        total_steps = ref_data.shape[0]
+        seed = 10
+        random.seed(seed)
+        np.random.seed(seed)
+        torch.manual_seed(seed)
+        torch.backends.cudnn.deterministic = True
+        sim_options = {"seed": seed,
+                       "atmosphere": {
+                            "variable": False,
+                            "wind": {
+                                "enable": True,
+                                "rand_continuous": False
+                            },
+                            "turb": {
+                                    "enable": True
+                            }
+                        }}
+
+    severity_range = ["off", "light", "moderate", "severe"]
+    all_metrics = [] 
+
+    for i, severity in enumerate(severity_range):
+        e_env = envs.envs[0]
+        sim_options["atmosphere"]["severity"] = severity
+        e_actions = np.ndarray((total_steps, e_env.action_space.shape[0]))
+        e_obs = np.ndarray((total_steps, e_env.observation_space.shape[2]))
+        print(f"********** PPO METRICS {severity} **********")
+        obs, _ = e_env.reset(options=sim_options)
+        obs = torch.Tensor(obs).unsqueeze_(0).to(device)
+        for step in tqdm(range(2000)):
+            # roll_ref, pitch_ref, airspeed_ref = refSeq.sample_refs(step)
+            refs = ref_data[step]
+            roll_ref, pitch_ref = refs[0], refs[1]
+            e_env.set_target_state(roll_ref, pitch_ref)
+
+            action = agent.get_action_and_value(obs)[1].squeeze_(0).detach().cpu().numpy()
+            e_actions[step] = action
+            obs, reward, truncated, terminated, info = e_env.step(action)
+            e_obs[step] = info["non_norm_obs"][0, -1]
+            obs = torch.Tensor(obs).unsqueeze_(0).to(device)
+
+            done = np.logical_or(truncated, terminated)
+            if done:
+                print(f"Episode reward: {info['episode']['r']}")
+                obs, _ = e_env.reset()
+                obs = torch.Tensor(obs).unsqueeze_(0).to(device)
+                # refSeq.sample_steps(offset=step)
+                if args.save_best:
+                       if args.env_id == ("ACNoVa-v0" or args.env_id == "ACNoVaIntegErr-v0") and (r_per_step > -0.06):
+                        save_model(save_path, run_name, agent, e_env, args.seed)
+                else:
+                    save_model(save_path, run_name, agent, e_env, args.seed)
+                break
+        all_metrics.append({severity: metrics.compute_all_metrics(e_obs, e_actions, ref_steps)})
+
+    roll_mses = []
+    pitch_mses = []
+    for sev_dict in all_metrics:
+        for sev_name, sev_metrics in sev_dict.items():
+            print(f"\nSeverity: {sev_name}")
+            for name, value in sev_metrics.items():
+                if isinstance(value, np.ndarray):
+                    if value.shape[0] == 2: # if the metric has 2 fields: contains roll and pitch
+                        print(f"  {name}:\n"
+                            f"    roll: {value[0]}\n"
+                            f"    pitch: {value[1]}")
+                    elif value.shape[0] == 3: # if the metric has 3 fields: contains r, p, y angular vels
+                        print(f"  {name}:\n"
+                            f"    r: {value[0]}\n"
+                            f"    p: {value[1]}\n"
+                            f"    y: {value[2]}")
+                else:
+                    print(f"  {name}: {value}")
+                    if name == "roll_mse":
+                        roll_mses.append(value)
+                    elif name == "pitch_mse":
+                        pitch_mses.append(value)
+
+    roll_mses = np.array(roll_mses)
+    pitch_mses = np.array(pitch_mses)
+    total_mse = np.mean(roll_mses + pitch_mses)
+    wandb.log({"total_mse": total_mse})
 
     envs.close()
     writer.close()

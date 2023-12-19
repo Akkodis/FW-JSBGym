@@ -10,19 +10,19 @@ entity: thesedavid
 
 # Metric to optimize
 metric:
-  name: charts/reward_per_step
-  goal: maximize
+  name: total_mse
+  goal: minimize
 
 # Static parameters to pass to the program
 parameters:
   env-id:
-    value: ACNoVa-v0
+    value: ACNoVaIntegErr-v0
   num-envs:
     value: 6
   total-timesteps:
     value: 1e6
   exp-name:
-    value: "caps_sweep_nova"
+    value: "caps_sweep_mse_ie"
   track:
     value: True
   turb:
@@ -30,6 +30,8 @@ parameters:
   wind:
     value: True
   rand-targets:
+    value: True
+  wind-rand-cont:
     value: True
 
 # Parameter space to sweep over
@@ -40,8 +42,8 @@ parameters:
   ss-coef:
     distribution: uniform
     min: 0.0
-    max: 6e-2
+    max: 3e-2
   pa-coef:
     distribution: uniform
     min: 0.0
-    max: 5e-5
+    max: 4e-5
