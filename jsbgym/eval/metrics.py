@@ -1,10 +1,7 @@
-from calendar import c
-from os import error
-from ossaudiodev import control_labels
 import numpy as np
 from jsbgym.utils.eval_utils import State, StateNoVa
 
-SUCCESS_THR = 200 # probably gotta increase this since I change refs around every 500
+SUCCESS_THR = 100 # probably gotta increase this since I change refs around every 500
 
 def compute_success(errors):
     # print("COMPUTING SUCCESS")
@@ -115,7 +112,7 @@ def compute_overshoot(errors):
                 overshoot = np.nan
                 # print(f"    ref {ref} overshoot: {overshoot}")
             else:
-                overshoot = 1 - np.abs(max_opposite_error / initial_error)
+                overshoot = np.abs(np.abs(max_opposite_error / initial_error)-1) * 100
                 # print(f"    ref {ref} overshoot: {overshoot}")
             overshoots[state_id].append(overshoot)
     overshoots = np.array(overshoots)
