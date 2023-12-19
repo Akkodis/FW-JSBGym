@@ -192,7 +192,7 @@ if __name__ == '__main__':
                                     f"    p: {value[1]}\n"
                                     f"    y: {value[2]}\n")
                         else:
-                            f.write(f"  {name}: {value}")
+                            f.write(f"  {name}: {value}\n")
 
     # np.save("eval/e_pid_obs.npy", e_obs)
     # np.save("eval/e_pid_actions.npy", e_actions)
