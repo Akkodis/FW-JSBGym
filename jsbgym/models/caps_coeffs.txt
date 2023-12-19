@@ -1,8 +1,8 @@
 sweep_nova:
-ts-coef: 1.2e-2 | 5e-3 | 1.2e-2
+ts-coef: 1.2e-2 | 5e-3 | 1.2e-2 | 1.2e-2
 	min: 0.0
 	max: 1.5e-2
-ss-coef: 1e-2 | 5e-3 | 5e-3
+ss-coef: 1e-2 | 5e-3 | 5e-3 | 1e-3
 	min: 0.0
 	max: 6e-2
 pa-coef: 2.7e-5
