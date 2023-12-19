@@ -26,6 +26,7 @@ def parse_args():
     parser.add_argument('--severity', type=str, required=True,
                         choices=['off', 'light', 'moderate', 'severe', 'all'],
                         help='severity of the atmosphere (wind and turb)')
+    parser.add_argument('--save-res-file', action='store_true',default=False, help='save results to file')
     args = parser.parse_args()
     return args
 
@@ -146,6 +147,25 @@ if __name__ == '__main__':
                             f"    y: {value[2]}")
                 else:
                     print(f"  {name}: {value}")
+
+    if args.save_res_file:
+        with open("eval/outputs/metrics_ppo.txt", "w") as f:
+            for sev_dict in all_metrics:
+                for sev_name, sev_metrics in sev_dict.items():
+                    f.write(f"\nSeverity: {sev_name}\n")
+                    for name, value in sev_metrics.items():
+                        if isinstance(value, np.ndarray):
+                            if value.shape[0] == 2: # if the metric has 2 fields: contains roll and pitch
+                                f.write(f"  {name}:\n"
+                                    f"    roll: {value[0]}\n"
+                                    f"    pitch: {value[1]}\n")
+                            elif value.shape[0] == 3: # if the metric has 3 fields: contains r, p, y angular vels
+                                f.write(f"  {name}:\n"
+                                    f"    r: {value[0]}\n"
+                                    f"    p: {value[1]}\n"
+                                    f"    y: {value[2]}\n")
+                        else:
+                            f.write(f"  {name}: {value}")
 
     # np.save("eval/e_ppo_obs.npy", e_obs)
     # np.save("eval/e_ppo_actions.npy", e_actions)
