@@ -13,7 +13,7 @@ class StateNoVa(IntEnum):
 
 class RefSequence():
     def __init__(self, num_refs: int=5, min_step_bound: int=300, max_step_bound: int=500,
-                 roll_bound: float=45.0, pitch_bound: float=15.0, airspeed_bound: float=10.0):
+                 roll_bound: float=60.0, pitch_bound: float=30.0, airspeed_bound: float=10.0):
         self.num_refs = num_refs
         self.min_step_bound = min_step_bound
         self.max_step_bound = max_step_bound
