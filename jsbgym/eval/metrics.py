@@ -11,21 +11,38 @@ def compute_success(errors):
         #     print("  ROLL")
         # elif state_id == StateNoVa.PITCH:
         #     print("  PITCH")
+        # for ref, errors_per_st_per_ref in enumerate(errors_per_state):
+        #     success_streak = 0
+        #     for step, error in enumerate(np.flipud(errors_per_st_per_ref)):
+        #         ref_len = len(errors_per_st_per_ref)
+        #         if abs(error) < np.deg2rad(5):
+        #             success_streak += 1
+        #         else:
+        #             success_streak = 0
+        #             successes[state_id].append(False)
+        #             # print(f"    ref {ref} failed at step {ref_len - step}")
+        #             break
+        #         if success_streak >= SUCCESS_THR:
+        #             successes[state_id].append(True)
+        #             # print(f"    ref {ref} success at step {ref_len - step}")
+        #             break
         for ref, errors_per_st_per_ref in enumerate(errors_per_state):
             success_streak = 0
-            for step, error in enumerate(np.flipud(errors_per_st_per_ref)):
+            for step, error in enumerate(errors_per_st_per_ref):
                 ref_len = len(errors_per_st_per_ref)
                 if abs(error) < np.deg2rad(5):
                     success_streak += 1
-                else:
-                    success_streak = 0
-                    successes[state_id].append(False)
-                    # print(f"    ref {ref} failed at step {ref_len - step}")
-                    break
                 if success_streak >= SUCCESS_THR:
                     successes[state_id].append(True)
-                    # print(f"    ref {ref} success at step {ref_len - step}")
+                    print(f"    ref {ref} success at step {step}")
+                    success_streak = 0
                     break
+                if step == ref_len - 1 and success_streak < SUCCESS_THR:
+                    successes[state_id].append(False)
+                    print(f"    ref {ref} failed at step {step}")
+                    success_streak = 0
+                    break
+
     successes = np.array(successes)
     successes_metric = np.nanmean(successes, axis=1)
     return successes, successes_metric
