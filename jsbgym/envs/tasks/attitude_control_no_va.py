@@ -158,8 +158,33 @@ class ACNoVaIntegErrTask(ACNoVaTask):
         self.action_space = self.get_action_space()
         self.observation_space = self.get_observation_space()
 
+        self.prev_target_roll: float = 0.0
+        self.prev_target_pitch: float = 0.0
+
         self.initialize()
         self.telemetry_setup(self.telemetry_file)
+
+
+    def set_target_state(self, target_roll_rad: float, target_pitch_rad: float) -> None:
+        """
+            Set the target state of the aircraft, i.e. the target state variables defined in the `target_state_vars` tuple.
+        """
+        # if there's a change in target state, reset integral errors
+        if target_roll_rad != self.prev_target_roll:
+            # print("resetting roll integ err")
+            self.sim[prp.roll_integ_err] = 0.0
+        if target_pitch_rad != self.prev_target_pitch:
+            # print("resetting pitch integ err")
+            self.sim[prp.pitch_integ_err] = 0.0
+
+        self.sim[prp.target_roll_rad] = target_roll_rad
+        self.sim[prp.target_pitch_rad] = target_pitch_rad
+        self.prev_target_roll = target_roll_rad
+        self.prev_target_pitch = target_pitch_rad
+
+        # fill target state namedtuple with target state attributes
+        self.target = self.TargetState(str(target_roll_rad), str(target_pitch_rad))
+
 
     def update_errors(self) -> None:
         """
@@ -168,11 +193,14 @@ class ACNoVaIntegErrTask(ACNoVaTask):
         # update error sim properties
         self.sim[prp.roll_err] = self.sim[prp.target_roll_rad] - self.sim[prp.roll_rad]
         self.sim[prp.pitch_err] = self.sim[prp.target_pitch_rad] - self.sim[prp.pitch_rad]
-        self.sim[prp.roll_integ_err] += self.sim[prp.roll_err]
-        self.sim[prp.pitch_integ_err] += self.sim[prp.pitch_err]
+        self.sim[prp.roll_integ_err] = 0.99 * self.sim[prp.roll_integ_err] + self.sim[prp.roll_err]
+        self.sim[prp.pitch_integ_err] = 0.99 * self.sim[prp.pitch_integ_err] + self.sim[prp.pitch_err]
+        # print(f"roll integ err: {self.sim[prp.roll_integ_err]}")
+        # print(f"pitch integ err: {self.sim[prp.pitch_integ_err]}")
 
         # fill errors namedtuple with error variable values from the sim properties
         self.errors = self.Errors(*[self.sim[prop] for prop in self.error_prps])
+
 
     def reset_target_state(self) -> None:
         """
