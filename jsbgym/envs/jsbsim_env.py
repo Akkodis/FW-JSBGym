@@ -124,7 +124,7 @@ class JSBSimEnv(gym.Env, ABC):
 
         self.reward: float = None
 
-        self.sim_options: dict = None
+        self.sim_options: dict = {}
 
 
     def initialize(self) -> None:
@@ -175,8 +175,10 @@ class JSBSimEnv(gym.Env, ABC):
             # Get options dict and store in as an attribute to keep it across resets
             # (the options argument is set to None when SyncVectorEnv autoresets the envs)
             # setup wind and turbulence
-            if self.sim_options is None:
-                self.sim_options = options
+            if "seed" in options:
+                self.sim_options["seed"] = options["seed"]
+            if "atmosphere" in options:
+                self.sim_options["atmosphere"] = options["atmosphere"]
 
         # TODO add curriculum learning with a bool in args.config yaml file and change
         # the sim_options dict accordingly
@@ -190,7 +192,7 @@ class JSBSimEnv(gym.Env, ABC):
         # set the atmospehere (wind and turbulences)
         self.set_atmosphere(self.sim_options["atmosphere"])
 
-    def set_atmosphere(self, atmo_options: dict=None) -> None:
+    def set_atmosphere(self, atmo_options: dict={}) -> None:
         """
             Set the atmosphere (wind and turbulences) of the environment.
         """
@@ -199,11 +201,13 @@ class JSBSimEnv(gym.Env, ABC):
         turb_type, turb_w20_fps, turb_severity, severity = 3, 0, 0, 0
         severity_options = ["off", "light", "moderate", "severe"]
         wind_vec = np.zeros(3)
-        if atmo_options is not None:
+        if len(atmo_options) != 0:
             if atmo_options.get("variable", False): # random wind and turbulence magnitudes
                 severity = random.choice(severity_options)
+                print(f"Variable Severity")
             else: # fixed wind and turbulence magnitudes
                 severity = atmo_options.get("severity", None)
+                print(f"Fixed Severity")
             if atmo_options.get("wind", False): # if there's a wind key in dict
                 if atmo_options["wind"].get("enable", False): # if wind is enabled
                     if atmo_options["wind"].get("rand_continuous", False): # if continuous random wind
@@ -275,6 +279,17 @@ class JSBSimEnv(gym.Env, ABC):
                     turb_w20_fps = 0
                     turb_severity = 0
                     print("No Turbulence")
+            if atmo_options.get("gust", False): # if gust key in dict
+                if atmo_options["gust"].get("enable", False):
+                    self.sim[prp.gust_startup_duration_sec] = 5
+                    self.sim[prp.gust_steady_duration_sec] = 1
+                    self.sim[prp.gust_end_duration_sec] = 5
+                    self.sim[prp.gust_mag_fps] = 30 # ft/s
+                    self.sim[prp.gust_frame] = 2 # 1: Body frame, 2: Wind frame, 3: inertial NED frame
+                    self.sim[prp.gust_dir_x_fps] = -1
+                    self.sim[prp.gust_dir_y_fps] = 0
+                    self.sim[prp.gust_dir_z_fps] = 0
+                    print("Setting Gust")
             else: # if there's no turb key in dict
                 turb_type = 3
                 turb_w20_fps = 0
@@ -292,6 +307,8 @@ class JSBSimEnv(gym.Env, ABC):
                   f"  E: {self.sim[prp.windspeed_east_kph]} kph\n"
                   f"  D: {self.sim[prp.windspeed_down_kph]} kph\n"
                   f" Magnitude: {np.linalg.norm(wind_vec)} kph\n")
+        else:
+            print(f"WARNING: No Atmosphere Options Found")
 
 
     def random_wind_vector(self, windspeed_limit = 82.8):
@@ -305,6 +322,11 @@ class JSBSimEnv(gym.Env, ABC):
         rand_vec = np.random.uniform(-1, 1, size=(3))
         unit_vector = rand_vec / np.linalg.norm(rand_vec)
         return unit_vector
+
+
+    def gust_start(self):
+        self.sim[prp.gust_start] = 1
+        print("Gust Start")
 
 
     @abstractmethod

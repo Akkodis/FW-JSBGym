@@ -70,6 +70,9 @@ airspeed_mps = BoundedHelperProperty('velocities/vt-mps', 'True aircraft airspee
 airspeed_kph = BoundedHelperProperty('velocities/vt-kph', 'True aircraft airspeed [m/s]', 0, 190) # 53 m/s = 190 km/h = 102 kts
 alpha = Property('aero/alpha-rad', 'aircraft angle of attack [rad]')
 ci2vel = Property('aero/ci2vel', 'chord/2*airspeed')
+
+# atmospherical properties
+# windspeeds
 total_windspeed_north_fps = Property('atmosphere/total-wind-north-fps', 'total wind speed north [ft/s]')
 total_windspeed_north_mps = HelperProperty('atmosphere/total-wind-north-mps', 'total wind speed north [m/s]')
 total_windspeed_north_kph = HelperProperty('atmosphere/total-wind-north-kph', 'total wind speed north [km/h]')
@@ -88,6 +91,8 @@ windspeed_east_kph = HelperProperty('atmosphere/wind-east-kph', 'wind speed east
 windspeed_down_fps = Property('atmosphere/wind-down-fps', 'wind speed down [ft/s]')
 windspeed_down_mps = HelperProperty('atmosphere/wind-down-mps', 'wind speed down [m/s]')
 windspeed_down_kph = HelperProperty('atmosphere/wind-down-kph', 'wind speed down [km/h]')
+
+# turbulences
 turb_north_fps = Property('atmosphere/turb-north-fps', 'turbulence wind speed north [ft/s]')
 turb_north_mps = HelperProperty('atmosphere/turb-north-mps', 'turbulence wind speed north [m/s]')
 turb_north_kph = HelperProperty('atmosphere/turb-north-fps', 'turbulence wind speed north [km/h]')
@@ -100,6 +105,17 @@ turb_down_kph = HelperProperty('atmosphere/turb-down-kph', 'turbulence wind spee
 turb_type = Property('atmosphere/turb-type', 'turbulence type')
 turb_severity = Property('atmosphere/turbulence/milspec/severity', 'turbulence severity')
 turb_w20_fps = Property('atmosphere/turbulence/milspec/windspeed_at_20ft_AGL-fps', 'turbulence wind speed at 20ft AGL [ft/s]')
+
+# gusts
+gust_startup_duration_sec = Property('atmosphere/cosine-gust/startup-duration-sec', 'time it takes for the gust to reach its max value [s]')
+gust_steady_duration_sec = Property('atmosphere/cosine-gust/steady-duration-sec', 'duration of the gust at its max value [s]')
+gust_end_duration_sec = Property('atmosphere/cosine-gust/end-duration-sec', 'time it takes for the gust go back to 0 [s]')
+gust_mag_fps =  Property('atmosphere/cosine-gust/magnitude-ft_sec', 'magnitude of the gust [ft/s]')
+gust_frame = Property('atmosphere/cosine-gust/frame', 'frame where the gust is applied, 0: None, 1: Body, 2: Wind, 3: Local NED')
+gust_dir_x_fps  = Property('atmosphere/cosine-gust/X-velocity-ft_sec', 'X component of the gust direction vector [ft/s]')
+gust_dir_y_fps  = Property('atmosphere/cosine-gust/Y-velocity-ft_sec', 'Y component of the gust direction vector [ft/s]')
+gust_dir_z_fps  = Property('atmosphere/cosine-gust/Z-velocity-ft_sec', 'Z component of the gust direction vector [ft/s]')
+gust_start = Property('atmosphere/cosine-gust/start', 'set to 1 to start the gust')
 
 # controls state
 aileron_left = BoundedProperty('fcs/left-aileron-pos-norm', 'left aileron position, normalised', -1, 1)
