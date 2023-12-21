@@ -7,7 +7,7 @@ gymnasium.register(
 )
 
 gymnasium.register(
-    id='AttitudeControl-v0',
+    id='AC-v0',
     entry_point='jsbgym.envs.tasks.attitude_control:AttitudeControlTask',
     # autoreset=True
 )
