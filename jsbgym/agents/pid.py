@@ -17,7 +17,18 @@ class PID:
         self.ref: float = 0.0
         self.last_time = time.monotonic()
 
+    def reset(self):
+        self.integral = 0.0
+        self.prev_error = 0.0
+        self.ref = 0.0
+        self.last_time = time.monotonic()
+
     def set_reference(self, ref: float) -> None:
+        # reset integral and prev_error if reference changes
+        if self.ref != ref:
+            print("resetting integral")
+            self.integral = 0.0
+            self.prev_error = 0.0
         self.ref = ref
 
     def _saturate(self, u):
@@ -64,7 +75,7 @@ class PID:
         if normalize:
             u = self._normalize(u)
         self.last_time = now
-        return u, error
+        return u, error, self.integral
 
     def _normalize(self, u: float) -> float:
         t_min: float # target min
