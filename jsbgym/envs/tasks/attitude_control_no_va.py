@@ -5,6 +5,8 @@ from jsbgym.envs.tasks.attitude_control import AttitudeControlTask
 from jsbgym.utils import jsbsim_properties as prp
 from jsbgym.utils.jsbsim_properties import BoundedProperty
 from jsbgym.trim.trim_point import TrimPoint
+from jsbgym.agents.pid import PID
+from jsbgym.models.aerodynamics import AeroModel
 
 
 class ACNoVaTask(AttitudeControlTask):
@@ -60,6 +62,11 @@ class ACNoVaTask(AttitudeControlTask):
             prp.turb_north_kph, prp.turb_east_kph, prp.turb_down_kph, # turbulence kph
         ) + self.target_prps + self.error_prps # target state variables
 
+        self.pid_airspeed = PID(kp=0.5, ki=0.1, kd=0.0,
+                           dt=0.01, trim=TrimPoint(), # TODO: make setting of dt more modulable (read from config file)
+                           limit=AeroModel().throttle_limit, is_throttle=True
+        )
+
         # set action and observation space from the task
         self.action_space = self.get_action_space()
         self.observation_space = self.get_observation_space()
@@ -72,7 +79,11 @@ class ACNoVaTask(AttitudeControlTask):
         # apply the action to the simulation
         for prop, command in zip(self.action_prps, action):
             self.sim[prop] = command
-        self.sim[prp.throttle_cmd] = TrimPoint().throttle # set throttle to trim point throttle
+        # self.sim[prp.throttle_cmd] = TrimPoint().throttle # set throttle to trim point throttle
+        # maintain airspeed at 55 kph with PI controller
+        self.pid_airspeed.set_reference(55)
+        throttle_cmd, airspeed_err, _ = self.pid_airspeed.update(state=self.sim[prp.airspeed_kph], saturate=True)
+        self.sim[prp.throttle_cmd] = throttle_cmd
 
 
     def update_errors(self) -> None:
@@ -112,6 +123,9 @@ class ACNoVaTask(AttitudeControlTask):
         """
             Reset the target state of the aircraft, i.e. the target state variables defined in the `target_state_vars` tuple, with initial conditions.
         """
+        # reset airspeed pid integral error
+        self.pid_airspeed.reset()
+
         # reset task class attributes with initial conditions
         self.set_target_state(target_roll_rad=self.sim[prp.initial_roll_rad], 
                               target_pitch_rad=self.sim[prp.initial_pitch_rad])
@@ -154,6 +168,20 @@ class ACNoVaIntegErrTask(ACNoVaTask):
             prp.roll_err, prp.pitch_err, # errors
             prp.roll_integ_err, prp.pitch_integ_err # integral errors
         )
+
+        self.telemetry_prps: Tuple[BoundedProperty, ...] = (
+            prp.lat_gc_deg, prp.lng_gc_deg, prp.altitude_sl_m, # position
+            prp.roll_rad, prp.pitch_rad, prp.heading_rad, # attitude
+            prp.p_radps, prp.q_radps, prp.r_radps, # angular rates and airspeed
+            prp.aileron_cmd, prp.elevator_cmd, prp.throttle_cmd, # control surface commands
+            prp.reward_total, prp.reward_roll, prp.reward_pitch, # rewards
+            prp.airspeed_mps, prp.airspeed_kph, # airspeed
+            prp.total_windspeed_north_mps, prp.total_windspeed_east_mps, prp.total_windspeed_down_mps, # wind speed mps
+            prp.total_windspeed_north_kph, prp.total_windspeed_east_kph, prp.total_windspeed_down_kph, # wind speed kph
+            prp.turb_north_mps, prp.turb_east_mps, prp.turb_down_mps, # turbulence mps
+            prp.turb_north_kph, prp.turb_east_kph, prp.turb_down_kph, # turbulence kph
+        ) + self.target_prps + self.error_prps # target state variables
+
         # set action and observation space from the task
         self.action_space = self.get_action_space()
         self.observation_space = self.get_observation_space()
@@ -171,10 +199,8 @@ class ACNoVaIntegErrTask(ACNoVaTask):
         """
         # if there's a change in target state, reset integral errors
         if target_roll_rad != self.prev_target_roll:
-            # print("resetting roll integ err")
             self.sim[prp.roll_integ_err] = 0.0
         if target_pitch_rad != self.prev_target_pitch:
-            # print("resetting pitch integ err")
             self.sim[prp.pitch_integ_err] = 0.0
 
         self.sim[prp.target_roll_rad] = target_roll_rad
@@ -208,7 +234,7 @@ class ACNoVaIntegErrTask(ACNoVaTask):
         """
         # reset task class attributes with initial conditions (use the parent class method)
         super().reset_target_state()
-
+        print("resetting agent integral errors")
         # reset integral errors
         self.sim[prp.roll_integ_err] = 0.0
         self.sim[prp.pitch_integ_err] = 0.0
