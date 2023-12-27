@@ -88,8 +88,8 @@ if __name__ == '__main__':
     )
 
     # set default target values
-    roll_ref: float = 0.0
-    pitch_ref: float = 0.0
+    roll_ref: float = np.deg2rad(15) 
+    pitch_ref: float = np.deg2rad(10) 
     airspeed_ref: float = trim_point.Va_kph
 
     # load reference sequence and initialize evaluation arrays
@@ -100,7 +100,7 @@ if __name__ == '__main__':
     if args.render_mode == "none":
         total_steps = ref_data.shape[0]
     else: # otherwise, run the simulation for 8000 steps
-        total_steps = 4000
+        total_steps = 2000
     sim_options = {"seed": seed,
                    "atmosphere": {
                        "variable": False,
@@ -110,6 +110,9 @@ if __name__ == '__main__':
                        },
                        "turb": {
                             "enable": True
+                       },
+                       "gust": {
+                            "enable": False
                        }
                    }}
 
@@ -142,8 +145,8 @@ if __name__ == '__main__':
             pitch_pid.set_reference(pitch_ref)
             env.set_target_state(roll_ref, pitch_ref)
 
-            elevator_cmd, pitch_err = pitch_pid.update(state=pitch, state_dot=pitch_rate, saturate=True, normalize=True)
-            aileron_cmd, roll_err = roll_pid.update(state=roll, state_dot=roll_rate, saturate=True, normalize=True)
+            elevator_cmd, pitch_err, _ = pitch_pid.update(state=pitch, state_dot=pitch_rate, saturate=True, normalize=True)
+            aileron_cmd, roll_err, _ = roll_pid.update(state=roll, state_dot=roll_rate, saturate=True, normalize=True)
 
             action = np.array([aileron_cmd, elevator_cmd])
             e_actions[step] = action
@@ -151,10 +154,17 @@ if __name__ == '__main__':
             e_obs[step] = obs[0, -1]
             Va, roll, pitch, roll_rate, pitch_rate = rearrange_obs(obs)
 
+            # if step == 1300:
+            #     env.gust_start()
+            # if step == 1600:
+            #     env.gust_start()
+
             done = np.logical_or(truncated, terminated)
             if done:
                 print(f"Episode reward: {info['episode']['r']}")
                 obs, _ = env.reset()
+                pitch_pid.reset()
+                roll_pid.reset()
                 # refSeq.sample_steps(offset=step)
         all_metrics.append({severity: metrics.compute_all_metrics(e_obs, e_actions, ref_steps)})
 
@@ -176,7 +186,7 @@ if __name__ == '__main__':
                     print(f"  {name}: {value}")
 
     if args.save_res_file:
-        with open("eval/outputs/metrics_ppo.txt", "w") as f:
+        with open("eval/outputs/metrics_pid.txt", "w") as f:
             for sev_dict in all_metrics:
                 for sev_name, sev_metrics in sev_dict.items():
                     f.write(f"\nSeverity: {sev_name}\n")

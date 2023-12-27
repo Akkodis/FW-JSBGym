@@ -33,7 +33,7 @@ def parse_args():
 
 if __name__ == '__main__':
     args = parse_args()
-    np.set_printoptions(precision=3)
+    np.set_printoptions(suppress=True)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
 
@@ -66,8 +66,8 @@ if __name__ == '__main__':
     ppo_agent.eval()
 
     # set default target values
-    roll_ref: float = 0.0
-    pitch_ref: float = 0.0
+    roll_ref: float = np.deg2rad(15)
+    pitch_ref: float = np.deg2rad(10)
     airspeed_ref: float = trim_point.Va_kph
 
     # load the reference sequence and initialize the evaluation arrays
@@ -113,8 +113,8 @@ if __name__ == '__main__':
         for step in tqdm(range(total_steps)):
             if args.rand_targets:
                 # roll_ref, pitch_ref, airspeed_ref = refSeq.sample_refs(step)
-                refs = ref_data[step]
-                roll_ref, pitch_ref = refs[0], refs[1]
+                # refs = ref_data[step]
+                # roll_ref, pitch_ref = refs[0], refs[1]
                 env.set_target_state(roll_ref, pitch_ref)
 
             action = ppo_agent.get_action_and_value(obs)[1].squeeze_(0).detach().cpu().numpy()
