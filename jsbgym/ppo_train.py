@@ -73,7 +73,7 @@ def parse_args():
         help="the surrogate clipping coefficient")
     parser.add_argument("--clip-vloss", type=lambda x: bool(strtobool(x)), default=True, nargs="?", const=True,
         help="Toggles whether or not to use a clipped loss for the value function, as per the paper.")
-    parser.add_argument("--ent-coef", type=float, default=0.0,
+    parser.add_argument("--ent-coef", type=float, default=0.013, # default 0.0, bohn 0.01
         help="coefficient of the entropy")
     parser.add_argument("--vf-coef", type=float, default=0.5,
         help="coefficient of the value function")
@@ -206,8 +206,8 @@ if __name__ == "__main__":
     # initial roll and pitch references
     roll_ref = np.random.uniform(np.deg2rad(-30), np.deg2rad(30))
     pitch_ref = np.random.uniform(np.deg2rad(-20), np.deg2rad(20))
-    roll_refs = np.ones(args.num_envs)
-    pitch_refs = np.ones(args.num_envs)
+    roll_refs = np.ones(args.num_envs) * roll_ref
+    pitch_refs = np.ones(args.num_envs) * pitch_ref
 
     for update in tqdm(range(1, num_updates + 1)):
         # Annealing the rate if instructed to do so.
@@ -456,7 +456,7 @@ if __name__ == "__main__":
         ref_steps = np.load("eval/step_seq_arr.npy")
 
         # if no render mode, run the simulation for the whole reference sequence given by the .npy file
-        total_steps = ref_data.shape[0]
+        # total_steps = ref_data.shape[0]
         seed = 10
         random.seed(seed)
         np.random.seed(seed)
@@ -479,7 +479,7 @@ if __name__ == "__main__":
         all_metrics = [] 
         roll_mses = []
         pitch_mses = []
-        total_steps = 4000
+        total_steps = 200_000
 
         for i, severity in enumerate(severity_range):
             e_env = envs.envs[0]
