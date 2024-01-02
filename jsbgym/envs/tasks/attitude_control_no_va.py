@@ -139,6 +139,8 @@ class ACNoVaTask(AttitudeControlTask):
         r_w: dict = self.task_cfg["reward_weights"] # reward weights for each reward component
         r_roll = np.clip(abs(self.sim[prp.roll_err]) / r_w["roll"]["scaling"], r_w["roll"]["clip_min"], r_w["roll"].get("clip_max", None)) # roll reward component
         r_pitch = np.clip(abs(self.sim[prp.pitch_err]) / r_w["pitch"]["scaling"], r_w["pitch"]["clip_min"], r_w["pitch"].get("clip_max", None)) # pitch reward component
+        # r_roll = 0.5 * np.exp(-9 * abs(self.sim[prp.roll_err]))
+        # r_pitch = 0.5 * np.exp(-9 * abs(self.sim[prp.pitch_err]))
 
         # return the negative sum of all reward components
         r_total: float = -(r_roll + r_pitch)
@@ -160,7 +162,7 @@ class ACNoVaIntegErrTask(ACNoVaTask):
         prp.airspeed_kph, # airspeed
         prp.p_radps, prp.q_radps, prp.r_radps, # angular rates
         prp.roll_err, prp.pitch_err, # errors
-        prp.pitch_integ_err, prp.roll_integ_err, # integral errors
+        prp.roll_integ_err, prp.pitch_integ_err, # integral errors
         prp.aileron_avg, prp.elevator_avg # average of past 5 fcs commands
         )
 
@@ -219,8 +221,8 @@ class ACNoVaIntegErrTask(ACNoVaTask):
         # update error sim properties
         self.sim[prp.roll_err] = self.sim[prp.target_roll_rad] - self.sim[prp.roll_rad]
         self.sim[prp.pitch_err] = self.sim[prp.target_pitch_rad] - self.sim[prp.pitch_rad]
-        self.sim[prp.roll_integ_err] = 0.99 * self.sim[prp.roll_integ_err] + self.sim[prp.roll_err]
-        self.sim[prp.pitch_integ_err] = 0.99 * self.sim[prp.pitch_integ_err] + self.sim[prp.pitch_err]
+        self.sim[prp.roll_integ_err] = 1.00 * self.sim[prp.roll_integ_err] + self.sim[prp.roll_err] * 0.01
+        self.sim[prp.pitch_integ_err] = 1.00 * self.sim[prp.pitch_integ_err] + self.sim[prp.pitch_err] * 0.01
         # print(f"roll integ err: {self.sim[prp.roll_integ_err]}")
         # print(f"pitch integ err: {self.sim[prp.pitch_integ_err]}")
 
@@ -238,3 +240,28 @@ class ACNoVaIntegErrTask(ACNoVaTask):
         # reset integral errors
         self.sim[prp.roll_integ_err] = 0.0
         self.sim[prp.pitch_integ_err] = 0.0
+
+
+    def get_reward(self, action: np.ndarray) -> float:
+        """
+            Reward function
+            Based on the bohn PPO paper reward func no airspeed control.
+        """
+        r_w: dict = self.task_cfg["reward_weights"] # reward weights for each reward component
+        r_roll = np.clip(abs(self.sim[prp.roll_err]) / r_w["roll"]["scaling"], r_w["roll"]["clip_min"], r_w["roll"].get("clip_max", None)) # roll reward component
+        r_pitch = np.clip(abs(self.sim[prp.pitch_err]) / r_w["pitch"]["scaling"], r_w["pitch"]["clip_min"], r_w["pitch"].get("clip_max", None)) # pitch reward component
+        r_integral_roll = np.clip(abs(self.sim[prp.roll_integ_err]), 0, 1.5)
+        r_integral_pitch = np.clip(abs(self.sim[prp.pitch_integ_err]), 0, 1.5)
+        r_integral = r_integral_roll + r_integral_pitch
+
+        # return the negative sum of all reward components
+        r_total: float = -(r_roll + r_pitch + r_integral)
+
+        # populate properties
+        self.sim[prp.reward_roll] = r_roll
+        self.sim[prp.reward_pitch] = r_pitch
+        self.sim[prp.reward_int_roll] = r_integral_roll
+        self.sim[prp.reward_int_pitch] = r_integral_pitch
+        self.sim[prp.reward_total] = r_total
+
+        return r_total

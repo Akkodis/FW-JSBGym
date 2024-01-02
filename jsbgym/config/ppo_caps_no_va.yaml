@@ -10,15 +10,15 @@ JSBSimEnv:
 # task specific child class config: AttitudeControlTask
 AttitudeControlTask:
     obs_is_matrix: True
-    obs_history_size: 5
+    obs_history_size: 5 # default 5
     act_history_size: 5
 
-    reward_weights:
+    reward_weights: # bohn code | bohn paper | / max_error | unit
         roll:
-            scaling: 3.2
+            scaling: 3.3 # 3.2 | 3.3 | 1.047198 | 1.0
             clip_min: 0.0
             clip_max: 0.5
         pitch:
-            scaling: 3.2
+            scaling: 2.25 # 3.2 | 2.25 | 0.698132 | 1.0
             clip_min: 0.0
             clip_max: 0.5
