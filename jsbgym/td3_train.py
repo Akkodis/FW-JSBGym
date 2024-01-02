@@ -9,6 +9,7 @@ import jsbgym
 
 import gymnasium as gym
 import numpy as np
+import pandas as pd
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -30,13 +31,13 @@ class Args:
     """if toggled, cuda will be enabled by default"""
     track: bool = False
     """if toggled, this experiment will be tracked with Weights and Biases"""
-    wandb_project_name: str = "ppo_uav"
+    wandb_project_name: str = "uav_rl"
     """the wandb's project name"""
     wandb_entity: str = None
     """the entity (team) of wandb's project"""
     capture_video: bool = False
     """whether to capture videos of the agent performances (check out `videos` folder)"""
-    save_model: bool = False
+    save_model: bool = True
     """whether to save model into the `runs/{run_name}` folder"""
     upload_model: bool = False
     """whether to upload the saved model to huggingface"""
@@ -191,6 +192,7 @@ poetry run pip install "stable_baselines3==2.0.0a1"
     # env setup
     envs = gym.vector.SyncVectorEnv([make_env(args.env_id, args.seed, args.config, "none", None)])
     assert isinstance(envs.single_action_space, gym.spaces.Box), "only continuous action space is supported"
+    unwr_envs = envs.envs[0].unwrapped
 
     actor = Actor(envs).to(device)
     qf1 = QNetwork(envs).to(device)
@@ -224,9 +226,13 @@ poetry run pip install "stable_baselines3==2.0.0a1"
                         }
                    }}
     # TRY NOT TO MODIFY: start the game
+    roll_ref = np.random.uniform(np.deg2rad(-30), np.deg2rad(30))
+    pitch_ref = np.random.uniform(np.deg2rad(-20), np.deg2rad(20))
+    print(f"Initial refs : roll = {roll_ref}, pitch = {pitch_ref}")
     obs, _ = envs.reset(options=sim_options)
     for global_step in range(args.total_timesteps):
         # ALGO LOGIC: put action logic here
+        unwr_envs.set_target_state(roll_ref, pitch_ref)
         if global_step < args.learning_starts:
             actions = np.array([envs.single_action_space.sample() for _ in range(envs.num_envs)])
         else:
@@ -250,6 +256,9 @@ poetry run pip install "stable_baselines3==2.0.0a1"
         real_next_obs = next_obs.copy()
         for idx, trunc in enumerate(truncations):
             if trunc:
+                roll_ref = np.random.uniform(np.deg2rad(-30), np.deg2rad(30))
+                pitch_ref = np.random.uniform(np.deg2rad(-20), np.deg2rad(20))
+                print(f"Env Done, new ref : roll = {roll_ref}, pitch = {pitch_ref} sampled")
                 real_next_obs[idx] = infos["final_observation"][idx]
         rb.add(obs, real_next_obs, actions, rewards, terminations, infos)
 
@@ -308,7 +317,10 @@ poetry run pip install "stable_baselines3==2.0.0a1"
                 writer.add_scalar("charts/SPS", int(global_step / (time.time() - start_time)), global_step)
 
     if args.save_model:
-        model_path = f"runs/{run_name}/{args.exp_name}.cleanrl_model"
+        save_path: str = "models/train/"
+        if not os.path.exists(save_path):
+            os.makedirs(save_path)
+        model_path = f"{save_path}{run_name}.cleanrl_model"
         torch.save((actor.state_dict(), qf1.state_dict(), qf2.state_dict()), model_path)
         print(f"model saved to {model_path}")
         # from cleanrl_utils.evals.td3_eval import evaluate
@@ -332,6 +344,34 @@ poetry run pip install "stable_baselines3==2.0.0a1"
         #     repo_name = f"{args.env_id}-{args.exp_name}-seed{args.seed}"
         #     repo_id = f"{args.hf_entity}/{repo_name}" if args.hf_entity else repo_name
         #     push_to_hub(args, episodic_returns, repo_id, "TD3", f"runs/{run_name}", f"videos/{run_name}-eval")
+
+
+    print("******** Plotting... ***********")
+    actor.eval()
+    qf1.eval()
+    qf2.eval()
+
+    telemetry_file = f"telemetry/{run_name}.csv"
+    obs, _ = envs.reset(options={"render_mode": "log"})
+    envs.envs[0].unwrapped.telemetry_setup(telemetry_file)
+    roll_ref = np.deg2rad(20)
+    pitch_ref = np.deg2rad(15)
+    for step in range(4000):
+        envs.envs[0].unwrapped.set_target_state(roll_ref, pitch_ref)
+        with torch.no_grad():
+            e_actions = actor(torch.Tensor(obs).to(device))
+            e_actions += torch.normal(0, actor.action_scale * args.exploration_noise)
+            e_actions = e_actions.cpu().numpy().clip(envs.action_space.low, envs.action_space.high)
+
+        next_obs, _, term, trunc, _ = envs.step(e_actions)
+        done = np.logical_or(term, trunc)
+        if done:
+            break
+        obs = next_obs
+
+    telemetry_df = pd.read_csv(telemetry_file)
+    telemetry_table = wandb.Table(dataframe=telemetry_df)
+    wandb.log({"telemetry": telemetry_table})
 
     envs.close()
     writer.close()
