@@ -98,9 +98,10 @@ if __name__ == '__main__':
 
     # if no render mode, run the simulation for the whole reference sequence given by the .npy file
     if args.render_mode == "none":
-        total_steps = ref_data.shape[0]
+        # total_steps = ref_data.shape[0]
+        total_steps = 200_000
     else: # otherwise, run the simulation for 8000 steps
-        total_steps = 2000
+        total_steps = 6000
     sim_options = {"seed": seed,
                    "atmosphere": {
                        "variable": False,
@@ -135,10 +136,6 @@ if __name__ == '__main__':
         Va, roll, pitch, roll_rate, pitch_rate = rearrange_obs(obs)
         for step in tqdm(range(total_steps)):
             # set random target values
-            if args.rand_targets:
-                # roll_ref, pitch_ref = refSeq.sample_refs(step)
-                refs = ref_data[step]
-                roll_ref, pitch_ref = refs[0], refs[1]
 
             # apply target values
             roll_pid.set_reference(roll_ref)
@@ -165,6 +162,8 @@ if __name__ == '__main__':
                 obs, _ = env.reset()
                 pitch_pid.reset()
                 roll_pid.reset()
+                roll_ref = np.random.uniform(np.deg2rad(-30), np.deg2rad(30))
+                pitch_ref = np.random.uniform(np.deg2rad(-20), np.deg2rad(20))
                 # refSeq.sample_steps(offset=step)
         all_metrics.append({severity: metrics.compute_all_metrics(e_obs, e_actions, ref_steps)})
 

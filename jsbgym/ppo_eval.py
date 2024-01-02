@@ -128,6 +128,8 @@ if __name__ == '__main__':
                 print(f"Episode reward: {info['episode']['r']}")
                 obs, _ = env.reset()
                 obs = torch.Tensor(obs).unsqueeze_(0).to(device)
+                roll_ref = np.random.uniform(np.deg2rad(-30), np.deg2rad(30))
+                pitch_ref = np.random.uniform(np.deg2rad(-20), np.deg2rad(20))
                 # refSeq.sample_steps(offset=step)
         all_metrics.append({severity: metrics.compute_all_metrics(e_obs, e_actions, ref_steps)})
 

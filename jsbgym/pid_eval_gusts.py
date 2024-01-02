@@ -178,8 +178,8 @@ if __name__ == '__main__':
     # roll_ref = np.random.uniform(np.deg2rad(-60), np.deg2rad(60))
     # pitch_ref = np.random.uniform(np.deg2rad(-30), np.deg2rad(30))
     airspeed_ref = 55
-    roll_ref = np.deg2rad(15)
-    pitch_ref = np.deg2rad(10)
+    roll_ref = np.deg2rad(20)
+    pitch_ref = np.deg2rad(15)
     pitch_errs = []
     pitch_integerrs = []
     roll_errs = []
