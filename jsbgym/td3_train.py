@@ -3,6 +3,9 @@ import os
 import random
 import time
 from dataclasses import dataclass
+from time import strftime, localtime
+
+import jsbgym
 
 import gymnasium as gym
 import numpy as np
@@ -27,7 +30,7 @@ class Args:
     """if toggled, cuda will be enabled by default"""
     track: bool = False
     """if toggled, this experiment will be tracked with Weights and Biases"""
-    wandb_project_name: str = "cleanRL"
+    wandb_project_name: str = "ppo_uav"
     """the wandb's project name"""
     wandb_entity: str = None
     """the entity (team) of wandb's project"""
@@ -66,30 +69,56 @@ class Args:
     noise_clip: float = 0.5
     """noise clip parameter of the Target Policy Smoothing Regularization"""
 
+    # Environment specific arguments
+    config: str = "config/ppo_caps_no_va.yaml"
+    """the configuration file of the environment"""
+    wind: bool = False
+    """add wind"""
+    turb: bool = False
+    """add turbulence"""
+    wind_rand_cont: bool = True
+    """randomize the wind magnitude continuously"""
+    rand_targets: bool = False
+    """set targets randomly"""
 
-def make_env(env_id, seed, idx, capture_video, run_name):
+
+def make_env(env_id, seed, config, render_mode, telemetry_file=None):
     def thunk():
-        if capture_video and idx == 0:
-            env = gym.make(env_id, render_mode="rgb_array")
-            env = gym.wrappers.RecordVideo(env, f"videos/{run_name}")
-        else:
-            env = gym.make(env_id)
+        env = gym.make(env_id, config_file=config, telemetry_file=telemetry_file,
+                           render_mode=render_mode)
+        #TODO: add reward and obs normalization ?
         env = gym.wrappers.RecordEpisodeStatistics(env)
         env.action_space.seed(seed)
         return env
 
     return thunk
 
+class CNN_extractor(nn.Module): # one separate CNN for each actor and critic
+    def __init__(self, env, n_cnn_filters):
+        super().__init__()
+        self.n_cnn_filters = n_cnn_filters
+        self.conv = nn.Sequential(
+            nn.Conv2d(in_channels=1, out_channels=self.n_cnn_filters,
+                      kernel_size=(env.single_observation_space.shape[1], 1), stride=1),
+            nn.Tanh(),
+            nn.Flatten()
+        )
+
+    def forward(self, x):
+        x = self.conv(x)
+        return x
 
 # ALGO LOGIC: initialize agent here:
 class QNetwork(nn.Module):
     def __init__(self, env):
         super().__init__()
-        self.fc1 = nn.Linear(np.array(env.single_observation_space.shape).prod() + np.prod(env.single_action_space.shape), 256)
+        self.cnn_extractor = CNN_extractor(env, n_cnn_filters=3)
+        self.fc1 = nn.Linear(env.single_observation_space.shape[2]*self.cnn_extractor.n_cnn_filters + np.prod(env.single_action_space.shape), 256)
         self.fc2 = nn.Linear(256, 256)
         self.fc3 = nn.Linear(256, 1)
 
     def forward(self, x, a):
+        x = self.cnn_extractor(x)
         x = torch.cat([x, a], 1)
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
@@ -100,7 +129,8 @@ class QNetwork(nn.Module):
 class Actor(nn.Module):
     def __init__(self, env):
         super().__init__()
-        self.fc1 = nn.Linear(np.array(env.single_observation_space.shape).prod(), 256)
+        self.cnn_extractor = CNN_extractor(env, n_cnn_filters=3)
+        self.fc1 = nn.Linear(env.single_observation_space.shape[2]*self.cnn_extractor.n_cnn_filters, 256)
         self.fc2 = nn.Linear(256, 256)
         self.fc_mu = nn.Linear(256, np.prod(env.single_action_space.shape))
         # action rescaling
@@ -112,6 +142,7 @@ class Actor(nn.Module):
         )
 
     def forward(self, x):
+        x = self.cnn_extractor(x)
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
         x = torch.tanh(self.fc_mu(x))
@@ -129,7 +160,7 @@ poetry run pip install "stable_baselines3==2.0.0a1"
         )
 
     args = tyro.cli(Args)
-    run_name = f"{args.env_id}__{args.exp_name}__{args.seed}__{int(time.time())}"
+    run_name = f"{args.env_id}__{args.exp_name}__{args.seed}__{strftime('%d-%m_%H:%M:%S', localtime())}"
     if args.track:
         import wandb
 
@@ -155,9 +186,10 @@ poetry run pip install "stable_baselines3==2.0.0a1"
     torch.backends.cudnn.deterministic = args.torch_deterministic
 
     device = torch.device("cuda" if torch.cuda.is_available() and args.cuda else "cpu")
+    print(f"**** Using Device: {device} ****")
 
     # env setup
-    envs = gym.vector.SyncVectorEnv([make_env(args.env_id, args.seed, 0, args.capture_video, run_name)])
+    envs = gym.vector.SyncVectorEnv([make_env(args.env_id, args.seed, args.config, "none", None)])
     assert isinstance(envs.single_action_space, gym.spaces.Box), "only continuous action space is supported"
 
     actor = Actor(envs).to(device)
@@ -181,9 +213,18 @@ poetry run pip install "stable_baselines3==2.0.0a1"
         handle_timeout_termination=False,
     )
     start_time = time.time()
-
+    sim_options = {"atmosphere": {
+                        "variable": True,
+                        "wind": {
+                            "enable": args.wind,
+                            "rand_continuous": args.wind_rand_cont
+                        },
+                        "turb": {
+                            "enable": args.turb
+                        }
+                   }}
     # TRY NOT TO MODIFY: start the game
-    obs, _ = envs.reset(seed=args.seed)
+    obs, _ = envs.reset(options=sim_options)
     for global_step in range(args.total_timesteps):
         # ALGO LOGIC: put action logic here
         if global_step < args.learning_starts:
@@ -270,27 +311,27 @@ poetry run pip install "stable_baselines3==2.0.0a1"
         model_path = f"runs/{run_name}/{args.exp_name}.cleanrl_model"
         torch.save((actor.state_dict(), qf1.state_dict(), qf2.state_dict()), model_path)
         print(f"model saved to {model_path}")
-        from cleanrl_utils.evals.td3_eval import evaluate
+        # from cleanrl_utils.evals.td3_eval import evaluate
 
-        episodic_returns = evaluate(
-            model_path,
-            make_env,
-            args.env_id,
-            eval_episodes=10,
-            run_name=f"{run_name}-eval",
-            Model=(Actor, QNetwork),
-            device=device,
-            exploration_noise=args.exploration_noise,
-        )
-        for idx, episodic_return in enumerate(episodic_returns):
-            writer.add_scalar("eval/episodic_return", episodic_return, idx)
+        # episodic_returns = evaluate(
+        #     model_path,
+        #     make_env,
+        #     args.env_id,
+        #     eval_episodes=10,
+        #     run_name=f"{run_name}-eval",
+        #     Model=(Actor, QNetwork),
+        #     device=device,
+        #     exploration_noise=args.exploration_noise,
+        # )
+        # for idx, episodic_return in enumerate(episodic_returns):
+        #     writer.add_scalar("eval/episodic_return", episodic_return, idx)
 
-        if args.upload_model:
-            from cleanrl_utils.huggingface import push_to_hub
+        # if args.upload_model:
+        #     from cleanrl_utils.huggingface import push_to_hub
 
-            repo_name = f"{args.env_id}-{args.exp_name}-seed{args.seed}"
-            repo_id = f"{args.hf_entity}/{repo_name}" if args.hf_entity else repo_name
-            push_to_hub(args, episodic_returns, repo_id, "TD3", f"runs/{run_name}", f"videos/{run_name}-eval")
+        #     repo_name = f"{args.env_id}-{args.exp_name}-seed{args.seed}"
+        #     repo_id = f"{args.hf_entity}/{repo_name}" if args.hf_entity else repo_name
+        #     push_to_hub(args, episodic_returns, repo_id, "TD3", f"runs/{run_name}", f"videos/{run_name}-eval")
 
     envs.close()
     writer.close()
