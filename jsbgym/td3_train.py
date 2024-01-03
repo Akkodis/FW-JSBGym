@@ -69,6 +69,9 @@ class Args:
     """the frequency of training policy (delayed)"""
     noise_clip: float = 0.5
     """noise clip parameter of the Target Policy Smoothing Regularization"""
+    ts_coef: float = 0.1
+    """CAPS: temporal smoothing coefficient"""
+
 
     # Environment specific arguments
     config: str = "config/ppo_caps_no_va.yaml"
@@ -293,7 +296,13 @@ poetry run pip install "stable_baselines3==2.0.0a1"
             q_optimizer.step()
 
             if global_step % args.policy_frequency == 0:
-                actor_loss = -qf1(data.observations, actor(data.observations)).mean()
+                # CAPS:
+                # Temporal Smoothing:
+                act = data.actions # act at time t
+                next_act = actor(data.next_observations) # act at time t+1
+                ts_loss = torch.linalg.norm(act - next_act, ord=2)
+
+                actor_loss = -qf1(data.observations, actor(data.observations)).mean() + args.ts_coef * ts_loss
                 actor_optimizer.zero_grad()
                 actor_loss.backward()
                 actor_optimizer.step()
