@@ -45,7 +45,6 @@ class Agent(nn.Module):
             nn.Flatten()
         )
         self.critic = nn.Sequential(
-            nn.Tanh(),
             layer_init(nn.Linear(self.single_obs_space.shape[2]*num_of_filters, 64)),
             nn.Tanh(),
             layer_init(nn.Linear(64, 64)),
