@@ -16,6 +16,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 import tyro
 from stable_baselines3.common.buffers import ReplayBuffer
+from torch.distributions.normal import Normal
 from torch.utils.tensorboard import SummaryWriter
 
 
@@ -69,8 +70,10 @@ class Args:
     """the frequency of training policy (delayed)"""
     noise_clip: float = 0.5
     """noise clip parameter of the Target Policy Smoothing Regularization"""
-    ts_coef: float = 0.1
+    ts_coef: float = 0.01
     """CAPS: temporal smoothing coefficient"""
+    ss_coef: float = 0.1
+    """CAPS: spatial smoothing coefficient"""
 
 
     # Environment specific arguments
@@ -302,7 +305,13 @@ poetry run pip install "stable_baselines3==2.0.0a1"
                 next_act = actor(data.next_observations) # act at time t+1
                 ts_loss = torch.linalg.norm(act - next_act, ord=2)
 
-                actor_loss = -qf1(data.observations, actor(data.observations)).mean() + args.ts_coef * ts_loss
+                # Spatial Smoothing:
+                state_problaw = Normal(data.observations, 0.01)
+                state_sampled = state_problaw.sample()
+                act_bar = actor(state_sampled)
+                ss_loss = torch.linalg.norm(act - act_bar, ord=2)
+
+                actor_loss = -qf1(data.observations, actor(data.observations)).mean() + args.ts_coef * ts_loss + args.ss_coef * ss_loss
                 actor_optimizer.zero_grad()
                 actor_loss.backward()
                 actor_optimizer.step()
