@@ -177,6 +177,7 @@ class ACNoVaIntegErrTask(ACNoVaTask):
             prp.p_radps, prp.q_radps, prp.r_radps, # angular rates and airspeed
             prp.aileron_cmd, prp.elevator_cmd, prp.throttle_cmd, # control surface commands
             prp.reward_total, prp.reward_roll, prp.reward_pitch, # rewards
+            # prp.reward_int_roll, prp.reward_int_pitch, # integral rewards
             prp.airspeed_mps, prp.airspeed_kph, # airspeed
             prp.total_windspeed_north_mps, prp.total_windspeed_east_mps, prp.total_windspeed_down_mps, # wind speed mps
             prp.total_windspeed_north_kph, prp.total_windspeed_east_kph, prp.total_windspeed_down_kph, # wind speed kph
@@ -242,26 +243,26 @@ class ACNoVaIntegErrTask(ACNoVaTask):
         self.sim[prp.pitch_integ_err] = 0.0
 
 
-    def get_reward(self, action: np.ndarray) -> float:
-        """
-            Reward function
-            Based on the bohn PPO paper reward func no airspeed control.
-        """
-        r_w: dict = self.task_cfg["reward_weights"] # reward weights for each reward component
-        r_roll = np.clip(abs(self.sim[prp.roll_err]) / r_w["roll"]["scaling"], r_w["roll"]["clip_min"], r_w["roll"].get("clip_max", None)) # roll reward component
-        r_pitch = np.clip(abs(self.sim[prp.pitch_err]) / r_w["pitch"]["scaling"], r_w["pitch"]["clip_min"], r_w["pitch"].get("clip_max", None)) # pitch reward component
-        r_integral_roll = np.clip(abs(self.sim[prp.roll_integ_err]), 0, 1.5)
-        r_integral_pitch = np.clip(abs(self.sim[prp.pitch_integ_err]), 0, 1.5)
-        r_integral = r_integral_roll + r_integral_pitch
+    # def get_reward(self, action: np.ndarray) -> float:
+    #     """
+    #         Reward function
+    #         Based on the bohn PPO paper reward func no airspeed control.
+    #     """
+    #     r_w: dict = self.task_cfg["reward_weights"] # reward weights for each reward component
+    #     r_roll = np.clip(abs(self.sim[prp.roll_err]) / r_w["roll"]["scaling"], r_w["roll"]["clip_min"], r_w["roll"].get("clip_max", None)) # roll reward component
+    #     r_pitch = np.clip(abs(self.sim[prp.pitch_err]) / r_w["pitch"]["scaling"], r_w["pitch"]["clip_min"], r_w["pitch"].get("clip_max", None)) # pitch reward component
+    #     r_integral_roll = np.clip(abs(self.sim[prp.roll_integ_err]), 0, 0.3)
+    #     r_integral_pitch = np.clip(abs(self.sim[prp.pitch_integ_err]), 0, 0.3)
+    #     r_integral = r_integral_roll + r_integral_pitch
 
-        # return the negative sum of all reward components
-        r_total: float = -(r_roll + r_pitch + r_integral)
+    #     # return the negative sum of all reward components
+    #     r_total: float = -(r_roll + r_pitch + r_integral)
 
-        # populate properties
-        self.sim[prp.reward_roll] = r_roll
-        self.sim[prp.reward_pitch] = r_pitch
-        self.sim[prp.reward_int_roll] = r_integral_roll
-        self.sim[prp.reward_int_pitch] = r_integral_pitch
-        self.sim[prp.reward_total] = r_total
+    #     # populate properties
+    #     self.sim[prp.reward_roll] = r_roll
+    #     self.sim[prp.reward_pitch] = r_pitch
+    #     self.sim[prp.reward_int_roll] = r_integral_roll
+    #     self.sim[prp.reward_int_pitch] = r_integral_pitch
+    #     self.sim[prp.reward_total] = r_total
 
-        return r_total
+    #     return r_total
