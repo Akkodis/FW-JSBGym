@@ -167,7 +167,7 @@ poetry run pip install "stable_baselines3==2.0.0a1"
         )
 
     args = tyro.cli(Args)
-    run_name = f"{args.env_id}__{args.exp_name}__{args.seed}__{strftime('%d-%m_%H:%M:%S', localtime())}"
+    run_name = f"{args.exp_name}_{args.seed}_{strftime('%d-%m_%H:%M:%S', localtime())}"
     if args.track:
         import wandb
 
