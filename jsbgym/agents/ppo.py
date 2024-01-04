@@ -12,7 +12,7 @@ def make_env(env_id, config, render_mode, telemetry_file=None, eval=False, gamma
                         render_mode=render_mode)
         env = gym.wrappers.RecordEpisodeStatistics(env)
         env = gym.wrappers.ClipAction(env)
-        env = MyNormalizeObservation(env, eval=eval)
+        # env = MyNormalizeObservation(env, eval=eval)
         if not eval:
             env = gym.wrappers.NormalizeReward(env, gamma=gamma)
         return env
