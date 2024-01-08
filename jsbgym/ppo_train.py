@@ -483,7 +483,7 @@ if __name__ == "__main__":
 
         for i, severity in enumerate(severity_range):
             e_env = envs.envs[0]
-            e_env.eval = True
+            # e_env.eval = True
             sim_options["atmosphere"]["severity"] = severity
             e_actions = np.ndarray((total_steps, e_env.action_space.shape[0]))
             e_obs = np.ndarray((total_steps, e_env.observation_space.shape[2]))

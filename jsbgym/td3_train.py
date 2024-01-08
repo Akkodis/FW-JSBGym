@@ -4,6 +4,7 @@ import random
 import time
 from dataclasses import dataclass
 from time import strftime, localtime
+from collections import deque
 
 import jsbgym
 
@@ -24,7 +25,7 @@ from torch.utils.tensorboard import SummaryWriter
 class Args:
     exp_name: str = os.path.basename(__file__)[: -len(".py")]
     """the name of this experiment"""
-    seed: int = 1
+    seed: int = random.randint(0, 10000)
     """seed of the experiment"""
     torch_deterministic: bool = True
     """if toggled, `torch.backends.cudnn.deterministic=False`"""
@@ -52,7 +53,7 @@ class Args:
     """total timesteps of the experiments"""
     learning_rate: float = 3e-4
     """the learning rate of the optimizer"""
-    buffer_size: int = int(1e6)
+    buffer_size: int = int(5e4) # 50k
     """the replay memory buffer size"""
     gamma: float = 0.99
     """the discount factor gamma"""
@@ -100,6 +101,7 @@ def make_env(env_id, seed, config, render_mode, telemetry_file=None):
 
     return thunk
 
+
 class CNN_extractor(nn.Module): # one separate CNN for each actor and critic
     def __init__(self, env, n_cnn_filters):
         super().__init__()
@@ -114,6 +116,7 @@ class CNN_extractor(nn.Module): # one separate CNN for each actor and critic
     def forward(self, x):
         x = self.conv(x)
         return x
+
 
 # ALGO LOGIC: initialize agent here:
 class QNetwork(nn.Module):
@@ -162,12 +165,12 @@ if __name__ == "__main__":
     if sb3.__version__ < "2.0":
         raise ValueError(
             """Ongoing migration: run the following command to install the new dependencies:
-poetry run pip install "stable_baselines3==2.0.0a1"
-"""
+            poetry run pip install "stable_baselines3==2.0.0a1"
+            """
         )
 
     args = tyro.cli(Args)
-    run_name = f"{args.exp_name}_{args.seed}_{strftime('%d-%m_%H:%M:%S', localtime())}"
+    run_name = f"td3_{args.exp_name}_{args.seed}_{strftime('%d-%m_%H:%M:%S', localtime())}"
     if args.track:
         import wandb
 
@@ -180,6 +183,9 @@ poetry run pip install "stable_baselines3==2.0.0a1"
             monitor_gym=True,
             save_code=True,
         )
+        wandb.define_metric("global_step")
+        wandb.define_metric("charts/*", step_metric="global_step")
+        wandb.define_metric("losses/*", step_metric="global_step")
     writer = SummaryWriter(f"runs/{run_name}")
     writer.add_text(
         "hyperparameters",
@@ -237,6 +243,9 @@ poetry run pip install "stable_baselines3==2.0.0a1"
     print(f"Initial refs : roll = {roll_ref}, pitch = {pitch_ref}")
     obs, _ = envs.reset(options=sim_options)
     for global_step in range(args.total_timesteps):
+        if args.track:
+                wandb.log({"global_step": global_step})
+
         # ALGO LOGIC: put action logic here
         unwr_envs.set_target_state(roll_ref, pitch_ref)
         if global_step < args.learning_starts:
@@ -301,19 +310,23 @@ poetry run pip install "stable_baselines3==2.0.0a1"
             if global_step % args.policy_frequency == 0:
                 # CAPS:
                 # Temporal Smoothing:
-                act = data.actions # act at time t
+                # act = data.actions
+                act = actor(data.observations) # act at time t
                 next_act = actor(data.next_observations) # act at time t+1
-                ts_loss = torch.linalg.norm(act - next_act, ord=2)
+                # ts_loss = torch.linalg.norm(act - next_act, ord=2)
+                ts_loss = F.mse_loss(next_act, act)
 
                 # Spatial Smoothing:
                 state_problaw = Normal(data.observations, 0.01)
                 state_sampled = state_problaw.sample()
                 act_bar = actor(state_sampled)
-                ss_loss = torch.linalg.norm(act - act_bar, ord=2)
+                # ss_loss = torch.linalg.norm(act - act_bar, ord=2)
+                ss_loss = F.mse_loss(act_bar, act)
 
-                actor_loss = -qf1(data.observations, actor(data.observations)).mean() + args.ts_coef * ts_loss + args.ss_coef * ss_loss
+                td3_actor_loss = -qf1(data.observations, actor(data.observations)).mean()
+                total_actor_loss = td3_actor_loss + args.ts_coef * ts_loss + args.ss_coef * ss_loss
                 actor_optimizer.zero_grad()
-                actor_loss.backward()
+                total_actor_loss.backward()
                 actor_optimizer.step()
 
                 # update the target network
@@ -330,7 +343,12 @@ poetry run pip install "stable_baselines3==2.0.0a1"
                 writer.add_scalar("losses/qf1_loss", qf1_loss.item(), global_step)
                 writer.add_scalar("losses/qf2_loss", qf2_loss.item(), global_step)
                 writer.add_scalar("losses/qf_loss", qf_loss.item() / 2.0, global_step)
-                writer.add_scalar("losses/actor_loss", actor_loss.item(), global_step)
+                writer.add_scalar("losses/total_actor_loss", total_actor_loss.item(), global_step)
+                writer.add_scalar("losses/td3_actor_loss", td3_actor_loss.item(), global_step)
+                writer.add_scalar("losses/ts", ts_loss.item(), global_step)
+                writer.add_scalar("losses/ts_term", args.ts_coef * ts_loss.item(), global_step)
+                writer.add_scalar("losses/ss", ss_loss.item(), global_step)
+                writer.add_scalar("losses/ss_term", args.ss_coef * ss_loss.item(), global_step)
                 print("SPS:", int(global_step / (time.time() - start_time)))
                 writer.add_scalar("charts/SPS", int(global_step / (time.time() - start_time)), global_step)
 
@@ -378,7 +396,7 @@ poetry run pip install "stable_baselines3==2.0.0a1"
         envs.envs[0].unwrapped.set_target_state(roll_ref, pitch_ref)
         with torch.no_grad():
             e_actions = actor(torch.Tensor(obs).to(device))
-            e_actions += torch.normal(0, actor.action_scale * args.exploration_noise)
+            # e_actions += torch.normal(0, actor.action_scale * args.exploration_noise)
             e_actions = e_actions.cpu().numpy().clip(envs.action_space.low, envs.action_space.high)
 
         next_obs, _, term, trunc, _ = envs.step(e_actions)
