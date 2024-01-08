@@ -12,7 +12,7 @@ def make_env(env_id, config, render_mode, telemetry_file=None, eval=False, gamma
                         render_mode=render_mode)
         env = gym.wrappers.RecordEpisodeStatistics(env)
         env = gym.wrappers.ClipAction(env)
-        env = MyNormalizeObservation(env, eval=eval)
+        # env = MyNormalizeObservation(env, eval=eval)
         if not eval:
             env = gym.wrappers.NormalizeReward(env, gamma=gamma)
         return env
@@ -37,7 +37,7 @@ class Agent(nn.Module):
         else: # single env usually used for evaluation
             self.single_action_space = envs.action_space
             self.single_obs_space = envs.observation_space
-        num_of_filters = 3
+        num_of_filters = 3 # default 3
         self.conv = nn.Sequential(
             layer_init(nn.Conv2d(in_channels=1, out_channels=num_of_filters, 
                                  kernel_size=(self.single_obs_space.shape[1], 1), stride=1)),
@@ -45,7 +45,6 @@ class Agent(nn.Module):
             nn.Flatten()
         )
         self.critic = nn.Sequential(
-            nn.Tanh(),
             layer_init(nn.Linear(self.single_obs_space.shape[2]*num_of_filters, 64)),
             nn.Tanh(),
             layer_init(nn.Linear(64, 64)),

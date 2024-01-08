@@ -116,10 +116,12 @@ class AttitudeControlTask(JSBSimEnv):
 
         # reset observation and return the first observation of the episode
         self.observation_deque.clear()
-        obs: np.ndarray = self.observe_state(first_obs=True)
+        self.observation: np.ndarray = self.observe_state(first_obs=True)
+
+        info: Dict = {"non_norm_obs": self.observation}
 
         self.render() # render the simulation
-        return obs, {}
+        return self.observation, info
 
 
     def step(self, action: np.ndarray) -> Tuple[np.ndarray, float, bool, bool, dict]:

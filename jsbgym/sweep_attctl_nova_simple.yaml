@@ -26,13 +26,13 @@ parameters:
   track:
     value: True
   turb:
-    value: True
+    value: False
   wind:
-    value: True
+    value: False
   rand-targets:
     value: True
   wind-rand-cont:
-    value: True
+    value: False
 
 # Parameter space to sweep over
   ts-coef:

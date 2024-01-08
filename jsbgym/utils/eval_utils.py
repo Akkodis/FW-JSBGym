@@ -7,9 +7,13 @@ class State(IntEnum):
     PITCH = 1
     AIRSPEED = 2
 
+class StateNoVa(IntEnum):
+    ROLL = 0
+    PITCH = 1
+
 class RefSequence():
     def __init__(self, num_refs: int=5, min_step_bound: int=300, max_step_bound: int=500,
-                 roll_bound: float=45.0, pitch_bound: float=15.0, airspeed_bound: float=10.0):
+                 roll_bound: float=60.0, pitch_bound: float=30.0, airspeed_bound: float=10.0):
         self.num_refs = num_refs
         self.min_step_bound = min_step_bound
         self.max_step_bound = max_step_bound
@@ -60,11 +64,11 @@ def main():
     np.set_printoptions(suppress = True)
     ref_seq = RefSequence()
     ref_seq.sample_steps()
-    total_steps = 200_000
+    total_steps = 50_000
     steps_per_episode = 2000
     n_episodes = total_steps // steps_per_episode
     step_seq_arr: np.ndarray = np.zeros((n_episodes, ref_seq.num_refs, 3), dtype=np.int32)
-    ref_seq_arr: np.ndarray = np.zeros((total_steps, 3), dtype=np.float32)
+    ref_seq_arr: np.ndarray = np.zeros((total_steps+1, 3), dtype=np.float32)
 
     step_seq_arr[0] = ref_seq.ref_steps
 
@@ -79,13 +83,16 @@ def main():
 
     # print(step_seq_arr)
     # print(ref_seq_arr)
+    ref_seq_arr[-1] = ref_seq_arr[-2]
+    ref_seq_arr = ref_seq_arr[1:]
+    step_seq_arr = step_seq_arr - 1
 
-    np.save("step_seq_arr.npy", step_seq_arr)
-    np.save("ref_seq_arr.npy", ref_seq_arr)
+    np.save("eval/step_seq_arr.npy", step_seq_arr)
+    np.save("eval/ref_seq_arr.npy", ref_seq_arr)
 
     # read the reference steps and values from a file
-    step_seq_arr = np.load("step_seq_arr.npy")
-    ref_seq_arr = np.load("ref_seq_arr.npy")
+    step_seq_arr = np.load("eval/step_seq_arr.npy")
+    ref_seq_arr = np.load("eval/ref_seq_arr.npy")
     print(step_seq_arr)
     print(ref_seq_arr)
 

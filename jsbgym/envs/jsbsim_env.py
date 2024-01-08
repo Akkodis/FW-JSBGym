@@ -1,5 +1,6 @@
 import gymnasium as gym
 import numpy as np
+import random
 import os
 import csv
 from math import ceil
@@ -123,7 +124,7 @@ class JSBSimEnv(gym.Env, ABC):
 
         self.reward: float = None
 
-        self.sim_options: dict = None
+        self.sim_options: dict = {}
 
 
     def initialize(self) -> None:
@@ -174,8 +175,10 @@ class JSBSimEnv(gym.Env, ABC):
             # Get options dict and store in as an attribute to keep it across resets
             # (the options argument is set to None when SyncVectorEnv autoresets the envs)
             # setup wind and turbulence
-            if self.sim_options is None:
-                self.sim_options = options
+            if "seed" in options:
+                self.sim_options["seed"] = options["seed"]
+            if "atmosphere" in options:
+                self.sim_options["atmosphere"] = options["atmosphere"]
 
         # TODO add curriculum learning with a bool in args.config yaml file and change
         # the sim_options dict accordingly
@@ -184,77 +187,146 @@ class JSBSimEnv(gym.Env, ABC):
                 self.sim["simulation/randomseed"] = self.sim_options["seed"]
             else:
                 self.sim["simulation/randomseed"] = np.random.randint(0, 10000)
-            if "atmosphere" in self.sim_options:
-                self.set_atmosphere(self.sim_options["atmosphere"])
+        print(f"Seed: {self.sim['simulation/randomseed']}")
 
+        # set the atmospehere (wind and turbulences)
+        self.set_atmosphere(self.sim_options["atmosphere"])
 
-    def set_atmosphere(self, atmo_options: dict=None) -> None:
+    def set_atmosphere(self, atmo_options: dict={}) -> None:
         """
             Set the atmosphere (wind and turbulences) of the environment.
         """
-        # set atmosphere
-        if atmo_options is not None:
-            if atmo_options["rand_magnitudes"]: # random wind and turbulence magnitudes
-                if atmo_options["wind"]:
-                    wind_vector = self.random_wind_vec(wspeed_limit=90)
-                    self.sim[prp.windspeed_north_fps] = wind_vector[0] * 0.9115 # kmh to fps
-                    self.sim[prp.windspeed_east_fps] = wind_vector[1] * 0.9115 # kmh to fps
-                    self.sim[prp.windspeed_down_fps] = wind_vector[2] * 0.9115 # kmh to fps
-                    print(f"Wind: \n"
-                            f"  N: {self.sim[prp.windspeed_north_kph]} kph\n" \
-                            f"  E: {self.sim[prp.windspeed_east_kph]} kph\n" \
-                            f"  D: {self.sim[prp.windspeed_down_kph]} kph\n" \
-                            f"  Magnitude: {np.linalg.norm(wind_vector)} kph")
-                if atmo_options["turb"]:
-                    turb_severity = np.random.randint(0, 4)
-                    match turb_severity:
-                        case 0: # no turbulence
-                            self.sim[prp.turb_type] = 3
-                            self.sim[prp.turb_w20_fps] = 0
-                            self.sim[prp.turb_severity] = 0
-                            print("No Turbulence")
-                        case 1: # light turbulence
-                            self.sim[prp.turb_type] = 3
-                            self.sim[prp.turb_w20_fps] = 25
-                            self.sim[prp.turb_severity] = 3
-                            print("Light Turbulence")
-                        case 2: # moderate turbulence
-                            self.sim[prp.turb_type] = 3
-                            self.sim[prp.turb_w20_fps] = 50
-                            self.sim[prp.turb_severity] = 4
-                            print("Moderate Turbulence")
-                        case 3: # severe turbulence
-                            self.sim[prp.turb_type] = 3
-                            self.sim[prp.turb_w20_fps] = 75
-                            self.sim[prp.turb_severity] = 6
-                            print("Severe Turbulence")
-                else:
-                    self.sim[prp.turb_type] = 3
-                    self.sim[prp.turb_w20_fps] = 0
-                    self.sim[prp.turb_severity] = 0
-                    print("No Turbulence") 
-            else: # fixed wind and turbulence magnitudes : 58 kmh wind and severe turbulence
-                if atmo_options["wind"]:
-                    print("Fixed wind : 82 kph N/E")
-                    self.sim[prp.windspeed_north_fps] = 58 * 0.9115 # kmh to fps
-                    self.sim[prp.windspeed_east_fps] = 58 * 0.9115 # kmh to fps
-                else:
+        # set default wind and turb values
+        wspeed_n, wspeed_e, wspeed_d = 0.0, 0.0, 0.0
+        turb_type, turb_w20_fps, turb_severity, severity = 3, 0, 0, 0
+        severity_options = ["off", "light", "moderate", "severe"]
+        wind_vec = np.zeros(3)
+        if len(atmo_options) != 0:
+            if atmo_options.get("variable", False): # random wind and turbulence magnitudes
+                severity = random.choice(severity_options)
+                print(f"Variable Severity")
+            else: # fixed wind and turbulence magnitudes
+                severity = atmo_options.get("severity", None)
+                print(f"Fixed Severity")
+            if atmo_options.get("wind", False): # if there's a wind key in dict
+                if atmo_options["wind"].get("enable", False): # if wind is enabled
+                    if atmo_options["wind"].get("rand_continuous", False): # if continuous random wind
+                        wind_vec = self.random_wind_vector(windspeed_limit=82.8)
+                        wspeed_n = wind_vec[0] * 0.9115 # kmh to fps
+                        wspeed_e = wind_vec[1] * 0.9115 # kmh to fps
+                        wspeed_d = wind_vec[2] * 0.9115 # kmh to fps
+                    else: # if discrete wind parameters
+                        wind_dir = self.random_wind_direction()
+                        match severity:
+                            case "off": # no wind
+                                wspeed_n= 0.0
+                                wspeed_e = 0.0
+                                wspeed_d = 0.0
+                                print("No Wind")
+                            case "light": # light wind
+                                wind_vec = wind_dir * 25.2 # 7 mps = 25.2 kph
+                                wspeed_n = wind_vec[0] * 0.9115 # kph to fps
+                                wspeed_e = wind_vec[1] * 0.9115 # kph to fps
+                                wspeed_d = wind_vec[2] * 0.9115 # kph to fps
+                                print("Light Wind")
+                            case "moderate": # moderate wind
+                                wind_vec = wind_dir * 54 # 15 mps = 54 kph
+                                wspeed_n = wind_vec[0] * 0.9115 # kph to fps
+                                wspeed_e = wind_vec[1] * 0.9115 # kph to fps
+                                wspeed_d = wind_vec[2] * 0.9115 # kph to fps
+                                print("Moderate Wind")
+                            case "severe": # strong wind
+                                wind_vec = wind_dir * 82.8 # 23 mps = 82.8 kph
+                                wspeed_n = wind_vec[0] * 0.9115 # kph to fps
+                                wspeed_e = wind_vec[1] * 0.9115 # kph to fps
+                                wspeed_d = wind_vec[2] * 0.9115 # kph to fps
+                                print("Severe Wind")
+                else: # if wind is disabled
+                    wspeed_n = 0.0
+                    wspeed_e = 0.0
+                    wspeed_d = 0.0
                     print("No Wind")
-                if atmo_options["turb"]:
-                    print("Fixed turbulence : Severe, W20 = 75 fps")
-                    self.sim[prp.turb_type] = 3
-                    self.sim[prp.turb_w20_fps] = 75
-                    self.sim[prp.turb_severity] = 6
-                else:
+            else: # if there's no wind key in dict
+                wspeed_n = 0.0
+                wspeed_e = 0.0
+                wspeed_d = 0.0
+                print("No Wind")
+            if atmo_options.get("turb", False): # if turb key in dict
+                if atmo_options["turb"].get("enable", False): # if turbulence is enabled
+                    match severity:
+                        case "off": # no turbulence
+                            turb_type = 3
+                            turb_w20_fps = 0
+                            turb_severity = 0
+                            print("No Turbulence")
+                        case "light": # light turbulence
+                            turb_type = 3
+                            turb_w20_fps = 25
+                            turb_severity = 3
+                            print("Light Turbulence")
+                        case "moderate": # moderate turbulence
+                            turb_type = 3
+                            turb_w20_fps = 50
+                            turb_severity = 4
+                            print("Moderate Turbulence")
+                        case "severe": # severe turbulence
+                            turb_type = 3
+                            turb_w20_fps = 75
+                            turb_severity = 6
+                            print("Severe Turbulence")
+                else: # if turbulence is disabled
+                    turb_type = 3
+                    turb_w20_fps = 0
+                    turb_severity = 0
                     print("No Turbulence")
+            if atmo_options.get("gust", False): # if gust key in dict
+                if atmo_options["gust"].get("enable", False):
+                    self.sim[prp.gust_startup_duration_sec] = 5
+                    self.sim[prp.gust_steady_duration_sec] = 1
+                    self.sim[prp.gust_end_duration_sec] = 5
+                    self.sim[prp.gust_mag_fps] = 30 # ft/s
+                    self.sim[prp.gust_frame] = 2 # 1: Body frame, 2: Wind frame, 3: inertial NED frame
+                    self.sim[prp.gust_dir_x_fps] = -1
+                    self.sim[prp.gust_dir_y_fps] = 0
+                    self.sim[prp.gust_dir_z_fps] = 0
+                    print("Setting Gust")
+            else: # if there's no turb key in dict
+                turb_type = 3
+                turb_w20_fps = 0
+                turb_severity = 0
+                print("No Turbulence")
+
+            self.sim[prp.windspeed_north_fps] = wspeed_n
+            self.sim[prp.windspeed_east_fps] = wspeed_e
+            self.sim[prp.windspeed_down_fps] = wspeed_d
+            self.sim[prp.turb_type] = turb_type
+            self.sim[prp.turb_w20_fps] = turb_w20_fps
+            self.sim[prp.turb_severity] = turb_severity
+            print(f"Wind: \n"
+                  f"  N: {self.sim[prp.windspeed_north_kph]} kph\n"
+                  f"  E: {self.sim[prp.windspeed_east_kph]} kph\n"
+                  f"  D: {self.sim[prp.windspeed_down_kph]} kph\n"
+                  f" Magnitude: {np.linalg.norm(wind_vec)} kph\n")
+        else:
+            print(f"WARNING: No Atmosphere Options Found")
 
 
-    def random_wind_vec(self, wspeed_limit: int = 30):
+    def random_wind_vector(self, windspeed_limit = 82.8):
+        wind_dir = self.random_wind_direction()
+        wind_norm = np.random.uniform(0, windspeed_limit)
+        wind_vec = wind_dir * wind_norm
+        return wind_vec
+
+
+    def random_wind_direction(self):
         rand_vec = np.random.uniform(-1, 1, size=(3))
         unit_vector = rand_vec / np.linalg.norm(rand_vec)
-        wind_norm = np.random.uniform(0, wspeed_limit)
-        wind_vector = unit_vector * wind_norm
-        return wind_vector
+        return unit_vector
+
+
+    def gust_start(self):
+        self.sim[prp.gust_start] = 1
+        print("Gust Start")
 
 
     @abstractmethod

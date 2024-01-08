@@ -22,28 +22,26 @@ parameters:
   total-timesteps:
     value: 1e6
   exp-name:
-    value: "caps_sweep_mse_ie2"
+    value: "caps_t5_r3_sweep_ent"
   track:
     value: True
   turb:
-    value: True
+    value: False
   wind:
-    value: True
+    value: False
   rand-targets:
     value: True
   wind-rand-cont:
-    value: True
-
-# Parameter space to sweep over
+    value: False
   ts-coef:
-    distribution: uniform
-    min: 0.0
-    max: 1.2e-2
+    value: 0.011838844296925794
   ss-coef:
-    distribution: uniform
-    min: 0.0
-    max: 1e-2
+    value: 0.00803895790609287
   pa-coef:
+    value: 2.439815625528273e-05
+
+  # Parameter space to sweep over
+  ent-coef:
     distribution: uniform
     min: 0.0
-    max: 2.7e-5
+    max: 0.1

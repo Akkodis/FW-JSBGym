@@ -3,17 +3,23 @@ import gymnasium
 gymnasium.register(
     id='JSBSimEnv-v0',
     entry_point='jsbgym.envs.jsbsim_env:JSBSimEnv',
-    autoreset=True
+    # autoreset=True
 )
 
 gymnasium.register(
-    id='AttitudeControl-v0',
+    id='AC-v0',
     entry_point='jsbgym.envs.tasks.attitude_control:AttitudeControlTask',
-    autoreset=True
+    # autoreset=True
 )
 
 gymnasium.register(
-    id='AttitudeControlNoVa-v0',
-    entry_point='jsbgym.envs.tasks.attitude_control_no_va:AttitudeControlNoVaTask',
-    autoreset=True
+    id='ACNoVa-v0',
+    entry_point='jsbgym.envs.tasks.attitude_control_no_va:ACNoVaTask',
+    # autoreset=True
+)
+
+gymnasium.register(
+    id='ACNoVaIntegErr-v0',
+    entry_point='jsbgym.envs.tasks.attitude_control_no_va:ACNoVaIntegErrTask',
+    # autoreset=True
 )
