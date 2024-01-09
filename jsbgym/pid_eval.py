@@ -98,10 +98,10 @@ if __name__ == '__main__':
 
     # if no render mode, run the simulation for the whole reference sequence given by the .npy file
     if args.render_mode == "none":
-        # total_steps = ref_data.shape[0]
-        total_steps = 200_000
+        total_steps = ref_data.shape[0]
+        # total_steps = 200_000
     else: # otherwise, run the simulation for 8000 steps
-        total_steps = 6000
+        total_steps = 4000
     sim_options = {"seed": seed,
                    "atmosphere": {
                        "variable": False,
@@ -113,7 +113,7 @@ if __name__ == '__main__':
                             "enable": True
                        },
                        "gust": {
-                            "enable": False
+                            "enable": True
                        }
                    }}
 
@@ -151,10 +151,6 @@ if __name__ == '__main__':
             e_obs[step] = obs[0, -1]
             Va, roll, pitch, roll_rate, pitch_rate = rearrange_obs(obs)
 
-            # if step == 1300:
-            #     env.gust_start()
-            # if step == 1600:
-            #     env.gust_start()
 
             done = np.logical_or(truncated, terminated)
             if done:
@@ -162,8 +158,8 @@ if __name__ == '__main__':
                 obs, _ = env.reset()
                 pitch_pid.reset()
                 roll_pid.reset()
-                roll_ref = np.random.uniform(np.deg2rad(-30), np.deg2rad(30))
-                pitch_ref = np.random.uniform(np.deg2rad(-20), np.deg2rad(20))
+                roll_ref = np.random.uniform(np.deg2rad(-60), np.deg2rad(60))
+                pitch_ref = np.random.uniform(np.deg2rad(-30), np.deg2rad(30))
                 # refSeq.sample_steps(offset=step)
         all_metrics.append({severity: metrics.compute_all_metrics(e_obs, e_actions, ref_steps)})
 

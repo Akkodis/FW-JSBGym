@@ -7,7 +7,7 @@ from tqdm import tqdm
 from agents import ppo
 from jsbgym.trim.trim_point import TrimPoint
 from jsbgym.eval import metrics
-
+from jsbgym.utils import jsbsim_properties as prp
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -50,15 +50,11 @@ if __name__ == '__main__':
     # unwrapped_env = envs.envs[0].unwrapped
     trim_point = TrimPoint('x8')
 
-    # Generating a reference sequence
-    # refSeq = RefSequence(num_refs=5)
-    # refSeq.sample_steps()
-
     train_dict = torch.load(args.train_model, map_location=device)
 
     # setting the observation normalization parameters
-    env.set_obs_rms(train_dict['norm_obs_rms']['mean'], 
-                    train_dict['norm_obs_rms']['var'])
+    # env.set_obs_rms(train_dict['norm_obs_rms']['mean'], 
+    #                 train_dict['norm_obs_rms']['var'])
 
     # loading the agent
     ppo_agent = ppo.Agent(env).to(device)
@@ -73,7 +69,6 @@ if __name__ == '__main__':
     # load the reference sequence and initialize the evaluation arrays
     ref_data = np.load("eval/ref_seq_arr.npy")
     ref_steps = np.load("eval/step_seq_arr.npy")
-
 
     # if no render mode, run the simulation for the whole reference sequence given by the .npy file
     if args.render_mode == "none":
@@ -90,6 +85,9 @@ if __name__ == '__main__':
                        },
                        "turb": {
                             "enable": True
+                       },
+                       "gust": {
+                           "enable": True
                        }
                    }}
 
