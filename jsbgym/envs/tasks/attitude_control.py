@@ -128,6 +128,9 @@ class AttitudeControlTask(JSBSimEnv):
         """
             Steps the task forward.
         """
+        # step the parent class JSBSimEnv where gusts are generated
+        super().step(action)
+
         # check if the action is valid
         if action.shape != self.action_space.shape:
             raise ValueError("Action shape is not valid.")
