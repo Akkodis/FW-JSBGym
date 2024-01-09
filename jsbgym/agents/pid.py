@@ -18,7 +18,6 @@ class PID:
         self.last_time = time.monotonic()
 
     def reset(self):
-        print("resetting PID")
         self.integral = 0.0
         self.prev_error = 0.0
         self.ref = 0.0
@@ -27,7 +26,6 @@ class PID:
     def set_reference(self, ref: float) -> None:
         # reset integral and prev_error if reference changes
         if self.ref != ref:
-            print("resetting PID integral")
             self.integral = 0.0
             self.prev_error = 0.0
         self.ref = ref
