@@ -251,50 +251,57 @@ class JSBSimEnv(gym.Env, ABC):
                 wspeed_e = 0.0
                 wspeed_d = 0.0
                 print("No Wind")
-            if atmo_options.get("turb", False): # if turb key in dict
-                if atmo_options["turb"].get("enable", False): # if turbulence is enabled
-                    match severity:
-                        case "off": # no turbulence
-                            turb_type = 3
-                            turb_w20_fps = 0
-                            turb_severity = 0
-                            print("No Turbulence")
-                        case "light": # light turbulence
-                            turb_type = 3
-                            turb_w20_fps = 25
-                            turb_severity = 3
-                            print("Light Turbulence")
-                        case "moderate": # moderate turbulence
-                            turb_type = 3
-                            turb_w20_fps = 50
-                            turb_severity = 4
-                            print("Moderate Turbulence")
-                        case "severe": # severe turbulence
-                            turb_type = 3
-                            turb_w20_fps = 75
-                            turb_severity = 6
-                            print("Severe Turbulence")
-                else: # if turbulence is disabled
-                    turb_type = 3
-                    turb_w20_fps = 0
-                    turb_severity = 0
-                    print("No Turbulence")
-            if atmo_options.get("gust", False): # if gust key in dict
-                if atmo_options["gust"].get("enable", False):
-                    self.sim[prp.gust_startup_duration_sec] = 5
-                    self.sim[prp.gust_steady_duration_sec] = 1
-                    self.sim[prp.gust_end_duration_sec] = 5
-                    self.sim[prp.gust_mag_fps] = 30 # ft/s
-                    self.sim[prp.gust_frame] = 2 # 1: Body frame, 2: Wind frame, 3: inertial NED frame
-                    self.sim[prp.gust_dir_x_fps] = -1
-                    self.sim[prp.gust_dir_y_fps] = 0
-                    self.sim[prp.gust_dir_z_fps] = 0
-                    print("Setting Gust")
-            else: # if there's no turb key in dict
+            if atmo_options["turb"].get("enable", False): # if turbulence is enabled
+                match severity:
+                    case "off": # no turbulence
+                        turb_type = 3
+                        turb_w20_fps = 0
+                        turb_severity = 0
+                        print("No Turbulence")
+                    case "light": # light turbulence
+                        turb_type = 3
+                        turb_w20_fps = 25
+                        turb_severity = 3
+                        print("Light Turbulence")
+                    case "moderate": # moderate turbulence
+                        turb_type = 3
+                        turb_w20_fps = 50
+                        turb_severity = 4
+                        print("Moderate Turbulence")
+                    case "severe": # severe turbulence
+                        turb_type = 3
+                        turb_w20_fps = 75
+                        turb_severity = 6
+                        print("Severe Turbulence")
+            else: # if turbulence is disabled
                 turb_type = 3
                 turb_w20_fps = 0
                 turb_severity = 0
                 print("No Turbulence")
+            if atmo_options["gust"].get("enable", False): # if gust key in dict
+                if atmo_options["gust"].get("enable", False):
+                    gust_startup_duration_sec = 0.25
+                    gust_steady_duration_sec = 0.5
+                    gust_end_duration_sec = 0.25
+                    gust_frame = 2 # 1: Body frame, 2: Wind frame, 3: inertial NED frame
+                    match severity:
+                        case "off": # no gust
+                            gust_mag_fps = 0
+                            print("No Gust")
+                        case "light": # light gust
+                            gust_mag_fps = 25.2 * 0.9115 # 7 mps = 25.2 kph
+                            print("Light Gust")
+                        case "moderate": # moderate gust
+                            gust_mag_fps = 54 * 0.9115 # 15 mps = 54 kph
+                            print("Moderate Gust")
+                        case "severe":
+                            gust_mag_fps = 82.8 * 0.9115 # 23 mps = 82.8 kph
+                            print("Severe Gust")
+                    self.sim[prp.gust_startup_duration_sec] = gust_startup_duration_sec
+                    self.sim[prp.gust_steady_duration_sec] = gust_steady_duration_sec
+                    self.sim[prp.gust_end_duration_sec] = gust_end_duration_sec
+                    self.sim[prp.gust_mag_fps] = gust_mag_fps # ft/s
+                    self.sim[prp.gust_frame] = gust_frame 
 
             self.sim[prp.windspeed_north_fps] = wspeed_n
             self.sim[prp.windspeed_east_fps] = wspeed_e
@@ -325,6 +332,10 @@ class JSBSimEnv(gym.Env, ABC):
 
 
     def gust_start(self):
+        gust_dir = self.random_wind_direction()
+        self.sim[prp.gust_dir_x_fps] = gust_dir[0]
+        self.sim[prp.gust_dir_y_fps] = gust_dir[1]
+        self.sim[prp.gust_dir_z_fps] = gust_dir[2]
         self.sim[prp.gust_start] = 1
         print("Gust Start")
 
@@ -341,7 +352,12 @@ class JSBSimEnv(gym.Env, ABC):
             Returns:
                 - The `obs` of the environment after the action, the `reward` obtained, whether the episode of terminated - `done`, and additional `info`
         """
-        raise NotImplementedError
+        atmo_options = self.sim_options["atmosphere"]
+        if len(atmo_options) != 0:
+            if atmo_options["gust"].get("enable"):
+                curr_step = self.sim[self.current_step]
+                if curr_step == 500 or curr_step == 1500:
+                    self.gust_start()
 
 
     def render(self) -> None:

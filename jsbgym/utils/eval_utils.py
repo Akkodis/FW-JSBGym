@@ -69,6 +69,7 @@ def main():
     n_episodes = total_steps // steps_per_episode
     step_seq_arr: np.ndarray = np.zeros((n_episodes, ref_seq.num_refs, 3), dtype=np.int32)
     ref_seq_arr: np.ndarray = np.zeros((total_steps+1, 3), dtype=np.float32)
+    simple_ref_seq_arr: np.ndarray = np.zeros((n_episodes, 3), dtype=np.float32)
 
     step_seq_arr[0] = ref_seq.ref_steps
 
@@ -80,6 +81,13 @@ def main():
             ref_seq.sample_steps(i)
             print(i // 2000)
             step_seq_arr[i // 2000] = ref_seq.ref_steps # save the reference steps
+    
+    # simple refs
+    for i in range(total_steps // 2000):
+        roll_ref = np.random.uniform(np.deg2rad(-30), np.deg2rad(30))
+        pitch_ref = np.random.uniform(np.deg2rad(-20), np.deg2rad(20))
+        airspeed_ref = np.random.uniform(TrimPoint().Va_kph - 10, TrimPoint().Va_kph + 10)
+        simple_ref_seq_arr[i] = np.array([roll_ref, pitch_ref, airspeed_ref])
 
     # print(step_seq_arr)
     # print(ref_seq_arr)
@@ -89,12 +97,16 @@ def main():
 
     np.save("eval/step_seq_arr.npy", step_seq_arr)
     np.save("eval/ref_seq_arr.npy", ref_seq_arr)
+    np.save("eval/simple_ref_seq_arr.npy", simple_ref_seq_arr)
 
     # read the reference steps and values from a file
     step_seq_arr = np.load("eval/step_seq_arr.npy")
     ref_seq_arr = np.load("eval/ref_seq_arr.npy")
+    simple_ref_seq_arr = np.load("eval/simple_ref_seq_arr.npy")
+
     print(step_seq_arr)
     print(ref_seq_arr)
+    print(simple_ref_seq_arr)
 
 if __name__ == "__main__":
     main()

@@ -73,7 +73,7 @@ def parse_args():
         help="the surrogate clipping coefficient")
     parser.add_argument("--clip-vloss", type=lambda x: bool(strtobool(x)), default=True, nargs="?", const=True,
         help="Toggles whether or not to use a clipped loss for the value function, as per the paper.")
-    parser.add_argument("--ent-coef", type=float, default=0.013, # default 0.0, bohn 0.01
+    parser.add_argument("--ent-coef", type=float, default=0.01, # default 0.0, bohn 0.01
         help="coefficient of the entropy")
     parser.add_argument("--vf-coef", type=float, default=0.5,
         help="coefficient of the value function")
@@ -95,20 +95,22 @@ def parse_args():
     parser.add_argument('--wind-rand-cont',type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True, help='randomize the wind magnitude continuously')
     parser.add_argument('--turb', type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True, help='add turbulence')
     parser.add_argument('--wind', type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True, help='add wind')
+    parser.add_argument('--gust', type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True, help='add gust')
     args = parser.parse_args()
     args.batch_size = int(args.num_envs * args.num_steps)
     args.minibatch_size = int(args.batch_size // args.num_minibatches)
     # fmt: on
     return args
 
+
 # TODO: Implement save_model function
 def save_model(save_path, run_name, agent, env, seed):
     print("saving agent...")
     train_dict = {}
-    train_dict["norm_obs_rms"] = {"mean": env.get_obs_rms().mean, "var": env.get_obs_rms().var}
     train_dict["seed"] = seed
     train_dict["agent"] = agent.state_dict()
     torch.save(train_dict, f"{save_path}{run_name}.pt")
+
 
 if __name__ == "__main__":
     args = parse_args()
@@ -191,6 +193,9 @@ if __name__ == "__main__":
                         },
                         "turb": {
                             "enable": args.turb
+                        },
+                        "gust": {
+                            "enable": args.gust
                         }
                    }}
     next_obs, _ = envs.reset(options=sim_options)
@@ -204,8 +209,8 @@ if __name__ == "__main__":
         refSeqs[_].sample_steps()
 
     # initial roll and pitch references
-    roll_ref = np.random.uniform(np.deg2rad(-30), np.deg2rad(30))
-    pitch_ref = np.random.uniform(np.deg2rad(-20), np.deg2rad(20))
+    roll_ref = np.random.uniform(np.deg2rad(-60), np.deg2rad(60)) # TODO change to +- 60 
+    pitch_ref = np.random.uniform(np.deg2rad(-30), np.deg2rad(30)) # TODO change to +- 30
     roll_refs = np.ones(args.num_envs) * roll_ref
     pitch_refs = np.ones(args.num_envs) * pitch_ref
 
@@ -255,8 +260,8 @@ if __name__ == "__main__":
                     obs_t1[step][env_i] = obs[step][env_i]
                     # refSeqs[env_i].sample_steps() # Sample a new sequence of reference steps
                     # sample new references
-                    roll_refs[env_i] = np.random.uniform(np.deg2rad(-30), np.deg2rad(30))
-                    pitch_refs[env_i] = np.random.uniform(np.deg2rad(-20), np.deg2rad(20))
+                    roll_refs[env_i] = np.random.uniform(np.deg2rad(-60), np.deg2rad(60))
+                    pitch_refs[env_i] = np.random.uniform(np.deg2rad(-30), np.deg2rad(30))
                     print(f"Env Done, new refs : roll = {roll_refs[env_i]}, pitch = {pitch_refs[env_i]} sampled for env {env_i}")
                 else:
                     obs_t1[step][env_i] = next_obs[env_i]
@@ -467,19 +472,22 @@ if __name__ == "__main__":
                             "variable": False,
                             "wind": {
                                 "enable": True,
-                                "rand_continuous": False
+                                "rand_continuous": True
                             },
                             "turb": {
                                     "enable": True
+                            },
+                            "gust": {
+                                "enable": True
                             }
                         }}
 
-        # severity_range = ["off", "light", "moderate", "severe"]
-        severity_range = ["off"]
+        severity_range = ["off", "light", "moderate", "severe"]
+        # severity_range = ["off"]
         all_metrics = [] 
         roll_mses = []
         pitch_mses = []
-        total_steps = 200_000
+        total_steps = 50_000
 
         for i, severity in enumerate(severity_range):
             e_env = envs.envs[0]
@@ -490,8 +498,8 @@ if __name__ == "__main__":
             print(f"********** PPO METRICS {severity} **********")
             obs, _ = e_env.reset(options=sim_options)
             obs = torch.Tensor(obs).unsqueeze_(0).to(device)
-            roll_ref = np.random.uniform(np.deg2rad(-30), np.deg2rad(30))
-            pitch_ref = np.random.uniform(np.deg2rad(-20), np.deg2rad(20))
+            roll_ref = np.random.uniform(np.deg2rad(-60), np.deg2rad(60))
+            pitch_ref = np.random.uniform(np.deg2rad(-30), np.deg2rad(30))
 
             for step in tqdm(range(total_steps)):
                 # roll_ref, pitch_ref, airspeed_ref = refSeq.sample_refs(step)
@@ -508,8 +516,8 @@ if __name__ == "__main__":
                     print(f"Episode reward: {info['episode']['r']}")
                     obs, _ = e_env.reset()
                     obs = torch.Tensor(obs).unsqueeze_(0).to(device)
-                    roll_ref = np.random.uniform(np.deg2rad(-30), np.deg2rad(30))
-                    pitch_ref = np.random.uniform(np.deg2rad(-20), np.deg2rad(20))
+                    roll_ref = np.random.uniform(np.deg2rad(-60), np.deg2rad(60))
+                    pitch_ref = np.random.uniform(np.deg2rad(-30), np.deg2rad(30))
                     # refSeq.sample_steps(offset=step)
                     # if args.save_best:
                     #        if args.env_id == ("ACNoVa-v0" or args.env_id == "ACNoVaIntegErr-v0") and (r_per_step > -0.09):
