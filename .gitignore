@@ -10,6 +10,7 @@ a.py
 # ignore those folders
 jsbgym/fdm_descriptions/aircraft/*
 jsbgym/fdm_descriptions/engine/*
+jsbgym/eval/outputs/*.csv
 runs/
 jsbgym/models/train/*
 
@@ -19,3 +20,4 @@ jsbgym/models/train/*
 !jsbgym/fdm_descriptions/engine/electric800W.xml
 !jsbgym/fdm_descriptions/engine/eng_io320.xml
 !jsbgym/fdm_descriptions/engine/direct.xml
+!jsbgym/eval/outputs/saves/
