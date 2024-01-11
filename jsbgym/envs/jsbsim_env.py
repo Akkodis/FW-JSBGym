@@ -124,6 +124,8 @@ class JSBSimEnv(gym.Env, ABC):
 
         self.reward: float = None
 
+        self.fcs_pos_hist = []
+
         self.sim_options: dict = {}
 
 

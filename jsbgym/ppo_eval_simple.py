@@ -2,6 +2,8 @@ import argparse
 import random
 import torch
 import numpy as np
+import os
+import csv
 from tqdm import tqdm
 
 from agents import ppo
@@ -26,7 +28,6 @@ def parse_args():
     parser.add_argument('--severity', type=str, required=True,
                         choices=['off', 'light', 'moderate', 'severe', 'all'],
                         help='severity of the atmosphere (wind and turb)')
-    parser.add_argument('--save-res-file', action='store_true',default=False, help='save results to file')
     args = parser.parse_args()
     return args
 
@@ -67,13 +68,12 @@ if __name__ == '__main__':
     # set default target values
     roll_ref: float = simple_ref_data[0, 0]
     pitch_ref: float = simple_ref_data[0, 1]
-    airspeed_ref: float = trim_point.Va_kph
 
     # if no render mode, run the simulation for the whole reference sequence given by the .npy file
     if args.render_mode == "none":
         total_steps = 50_000
     else: # otherwise, run the simulation for 8000 steps
-        total_steps = 8000
+        total_steps = 4000
 
     sim_options = {"seed": seed,
                    "atmosphere": {
@@ -96,11 +96,25 @@ if __name__ == '__main__':
         severity_range = [args.severity]
 
     all_mse = []
+    all_rmse = []
+    all_fcs_fluct = []
+
+    if not os.path.exists("eval/outputs"):
+        os.makedirs("eval/outputs")
+
+    eval_res_csv = f"eval/outputs/eval_res_{os.path.basename(args.train_model)}.csv"
+    eval_fieldnames = ["severity", "roll_mse", "pitch_mse", "roll_rmse", 
+                        "pitch_rmse", "roll_fcs_fluct", "pitch_fcs_fluct"]
+
+    with open(eval_res_csv, "w") as csvfile:
+        csv_writer = csv.DictWriter(csvfile, fieldnames=eval_fieldnames)
+        csv_writer.writeheader()
 
     for i, severity in enumerate(severity_range):
         sim_options["atmosphere"]["severity"] = severity
         e_actions = np.ndarray((total_steps, env.action_space.shape[0]))
         e_obs = np.ndarray((total_steps, env.observation_space.shape[2]))
+        eps_fcs_fluct = []
         print(f"********** PPO METRICS {severity} **********")
         obs, _ = env.reset(options=sim_options)
         obs = torch.Tensor(obs).unsqueeze_(0).to(device)
@@ -117,18 +131,31 @@ if __name__ == '__main__':
             if done:
                 ep_cnt += 1
                 print(f"Episode reward: {info['episode']['r']}")
-                obs, _ = env.reset()
+                obs, last_info = env.reset()
                 obs = torch.Tensor(obs).unsqueeze_(0).to(device)
+                ep_fcs_pos_hist = np.array(last_info["fcs_pos_hist"]) # get fcs pos history of the finished episode
+                eps_fcs_fluct.append(np.mean(np.abs(np.diff(ep_fcs_pos_hist, axis=0)), axis=0)) # get fcs fluctuation of the episode and append it to the list of all fcs fluctuations
                 if ep_cnt < len(simple_ref_data):
                     refs = simple_ref_data[ep_cnt]
                 roll_ref, pitch_ref = refs[0], refs[1]
+        all_fcs_fluct.append(np.mean(np.array(eps_fcs_fluct), axis=0))
         roll_mse = np.mean(np.square(e_obs[:, 6]))
         pitch_mse = np.mean(np.square(e_obs[:, 7]))
         all_mse.append([roll_mse, pitch_mse])
+        roll_rmse = np.sqrt(roll_mse)
+        pitch_rmse = np.sqrt(pitch_mse)
+        all_rmse.append([roll_rmse, pitch_rmse])
 
-    for mse, severity in zip(all_mse, severity_range):
+    for mse, rmse, fcs_fluct, severity in zip(all_mse, all_rmse, all_fcs_fluct, severity_range):
         print("\nSeverity: ", severity)
         print(f"  Roll MSE: {mse[0]:.4f}\n  Pitch MSE: {mse[1]:.4f}")
+        print(f"  Roll RMSE: {rmse[0]:.4f}\n  Pitch RMSE: {rmse[1]:.4f}")
+        print(f"  Roll fluctuation: {fcs_fluct[0]:.4f}\n  Pitch fluctuation: {fcs_fluct[1]:.4f}")
+        with open(eval_res_csv, "a") as csvfile:
+            csv_writer = csv.DictWriter(csvfile, fieldnames=eval_fieldnames)
+            csv_writer.writerow({"severity": severity, "roll_mse": mse[0], "pitch_mse": mse[1], 
+                                "roll_rmse": rmse[0], "pitch_rmse": rmse[1], 
+                                "roll_fcs_fluct": fcs_fluct[0], "pitch_fcs_fluct": fcs_fluct[1]})
 
     # np.save("eval/e_ppo_obs.npy", e_obs)
     # np.save("eval/e_ppo_actions.npy", e_actions)

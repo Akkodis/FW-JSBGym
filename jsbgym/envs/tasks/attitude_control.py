@@ -111,6 +111,8 @@ class AttitudeControlTask(JSBSimEnv):
         self.update_errors() # reset task errors
         self.update_action_history() # reset action history
         self.update_action_avg() # reset action avg
+        last_fcs_pos_hist = self.fcs_pos_hist.copy() # copy the fcs position history of the last episode about to be reset
+        self.fcs_pos_hist.clear() # clear the fcs position history list (start a new episode)
         self.sim[self.steps_left] = self.steps_left.max # reset the number of steps left in the episode to the max
         self.sim[self.current_step] = self.current_step.min # reset the number of steps left in the episode to 
 
@@ -118,7 +120,8 @@ class AttitudeControlTask(JSBSimEnv):
         self.observation_deque.clear()
         self.observation: np.ndarray = self.observe_state(first_obs=True)
 
-        info: Dict = {"non_norm_obs": self.observation}
+        info: Dict = {"non_norm_obs": self.observation,
+                      "fcs_pos_hist": last_fcs_pos_hist}
 
         self.render() # render the simulation
         return self.observation, info
@@ -148,6 +151,9 @@ class AttitudeControlTask(JSBSimEnv):
             self.sim[self.steps_left] -= 1
             self.sim[self.current_step] += 1
 
+        # append the fcs commands to the fcs history for this episode
+        self.fcs_pos_hist.append([self.sim[prp.aileron_combined_rad], self.sim[prp.elevator_rad]])
+
         # update the action_avg
         self.update_action_avg()
 
@@ -173,7 +179,8 @@ class AttitudeControlTask(JSBSimEnv):
                       "non_norm_obs": self.observation,
                       "non_norm_reward": self.reward,
                       "episode_end": episode_end,
-                      "out_of_bounds": out_of_bounds
+                      "out_of_bounds": out_of_bounds,
+                      "fcs_pos_hist": self.fcs_pos_hist
                     }
 
         return self.observation, self.reward, terminated, truncated, info

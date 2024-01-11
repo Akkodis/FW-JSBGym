@@ -457,8 +457,7 @@ if __name__ == "__main__":
 
     if not args.no_eval:
         # load the reference sequence and initialize the evaluation arrays
-        ref_data = np.load("eval/ref_seq_arr.npy")
-        ref_steps = np.load("eval/step_seq_arr.npy")
+        simple_ref_data = np.load("eval/simple_ref_seq_arr.npy")
 
         # if no render mode, run the simulation for the whole reference sequence given by the .npy file
         # total_steps = ref_data.shape[0]
@@ -472,7 +471,7 @@ if __name__ == "__main__":
                             "variable": False,
                             "wind": {
                                 "enable": True,
-                                "rand_continuous": True
+                                "rand_continuous": False
                             },
                             "turb": {
                                     "enable": True
@@ -484,25 +483,25 @@ if __name__ == "__main__":
 
         severity_range = ["off", "light", "moderate", "severe"]
         # severity_range = ["off"]
-        all_metrics = [] 
-        roll_mses = []
-        pitch_mses = []
+        all_mse = []
+        all_rmse = []
+        all_fcs_fluct = []
         total_steps = 50_000
 
         for i, severity in enumerate(severity_range):
             e_env = envs.envs[0]
-            # e_env.eval = True
             sim_options["atmosphere"]["severity"] = severity
             e_actions = np.ndarray((total_steps, e_env.action_space.shape[0]))
             e_obs = np.ndarray((total_steps, e_env.observation_space.shape[2]))
+            eps_fcs_fluct = []
             print(f"********** PPO METRICS {severity} **********")
             obs, _ = e_env.reset(options=sim_options)
             obs = torch.Tensor(obs).unsqueeze_(0).to(device)
             roll_ref = np.random.uniform(np.deg2rad(-60), np.deg2rad(60))
             pitch_ref = np.random.uniform(np.deg2rad(-30), np.deg2rad(30))
+            ep_cnt = 0 # episode counter
 
             for step in tqdm(range(total_steps)):
-                # roll_ref, pitch_ref, airspeed_ref = refSeq.sample_refs(step)
                 e_env.set_target_state(roll_ref, pitch_ref)
 
                 action = agent.get_action_and_value(obs)[1].squeeze_(0).detach().cpu().numpy()
@@ -513,46 +512,31 @@ if __name__ == "__main__":
 
                 done = np.logical_or(truncated, terminated)
                 if done:
+                    ep_cnt += 1
                     print(f"Episode reward: {info['episode']['r']}")
-                    obs, _ = e_env.reset()
+                    obs, last_info = e_env.reset()
                     obs = torch.Tensor(obs).unsqueeze_(0).to(device)
-                    roll_ref = np.random.uniform(np.deg2rad(-60), np.deg2rad(60))
-                    pitch_ref = np.random.uniform(np.deg2rad(-30), np.deg2rad(30))
-                    # refSeq.sample_steps(offset=step)
-                    # if args.save_best:
-                    #        if args.env_id == ("ACNoVa-v0" or args.env_id == "ACNoVaIntegErr-v0") and (r_per_step > -0.09):
-                    #         save_model(save_path, run_name, agent, e_env, args.seed)
-                    # else:
-                    # save_model(save_path, run_name, agent, e_env, args.seed)
-                    # break
-            roll_mses.append(np.mean(np.square(e_obs[:, 6])))
-            pitch_mses.append(np.mean(np.square(e_obs[:, 7])))
-            # all_metrics.append({severity: metrics.compute_all_metrics(e_obs, e_actions, ref_steps)})
+                    ep_fcs_pos_hist = np.array(last_info["fcs_pos_hist"]) # get fcs pos history of the finished episode
+                    eps_fcs_fluct.append(np.mean(np.abs(np.diff(ep_fcs_pos_hist, axis=0)), axis=0)) # get fcs fluctuation of the episode and append it to the list of all fcs fluctuations
+                    if ep_cnt < len(simple_ref_data):
+                        refs = simple_ref_data[ep_cnt]
+                    roll_ref, pitch_ref = refs[0], refs[1]
+            all_fcs_fluct.append(np.mean(np.array(eps_fcs_fluct), axis=0))
+            roll_mse = np.mean(np.square(e_obs[:, 6]))
+            pitch_mse = np.mean(np.square(e_obs[:, 7]))
+            all_mse.append([roll_mse, pitch_mse])
+            roll_rmse = np.sqrt(roll_mse)
+            pitch_rmse = np.sqrt(pitch_mse)
+            all_rmse.append([roll_rmse, pitch_rmse])
 
-        # for sev_dict in all_metrics:
-        #     for sev_name, sev_metrics in sev_dict.items():
-        #         print(f"\nSeverity: {sev_name}")
-        #         for name, value in sev_metrics.items():
-        #             if isinstance(value, np.ndarray):
-        #                 if value.shape[0] == 2: # if the metric has 2 fields: contains roll and pitch
-        #                     print(f"  {name}:\n"
-        #                         f"    roll: {value[0]}\n"
-        #                         f"    pitch: {value[1]}")
-        #                 elif value.shape[0] == 3: # if the metric has 3 fields: contains r, p, y angular vels
-        #                     print(f"  {name}:\n"
-        #                         f"    r: {value[0]}\n"
-        #                         f"    p: {value[1]}\n"
-        #                         f"    y: {value[2]}")
-        #             else:
-        #                 print(f"  {name}: {value}")
+        for mse, rmse, fcs_fluct, severity in zip(all_mse, all_rmse, all_fcs_fluct, severity_range):
+            print("\nSeverity: ", severity)
+            print(f"  Roll MSE: {mse[0]:.4f}\n  Pitch MSE: {mse[1]:.4f}")
+            print(f"  Roll RMSE: {rmse[0]:.4f}\n  Pitch RMSE: {rmse[1]:.4f}")
+            print(f"  Roll fluctuation: {fcs_fluct[0]:.4f}\n  Pitch fluctuation: {fcs_fluct[1]:.4f}") 
 
-        roll_mses = np.array(roll_mses)
-        pitch_mses = np.array(pitch_mses)
-        total_mse = np.mean(roll_mses + pitch_mses)
-        print(f"  Roll MSE: {roll_mses}\n"
-              f"  Pitch MSE: {pitch_mses}\n"
-              f" Total MSE: {total_mse}\n"
-              )
+        total_mse = np.mean(all_mse)
+        print(f"Total MSE: {total_mse}")
         wandb.log({"total_mse": total_mse})
 
     save_model(save_path, run_name, agent, envs.envs[0], args.seed)
