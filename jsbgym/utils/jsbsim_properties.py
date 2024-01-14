@@ -218,3 +218,30 @@ reward_actvar = BoundedProperty("reward/act_var", "action variation reward", flo
 reward_act_bounds = BoundedProperty("reward/act_bounds", "action bound reward", float('-inf'), 0)
 reward_int_roll = BoundedProperty("reward/int_roll", "roll integral reward", float('-inf'), 0)
 reward_int_pitch = BoundedProperty("reward/int_pitch", "pitch integral reward", float('-inf'), 0)
+
+# PID-RL properties no stability ensured
+kp_roll = BoundedProperty("pidrl/roll/kp", "roll kp", float('-inf'), float('+inf'))
+ki_roll = BoundedProperty("pidrl/roll/ki", "roll ki", float('-inf'), float('+inf'))
+kd_roll = BoundedProperty("pidrl/roll/kd", "roll kd", float('-inf'), float('+inf'))
+
+kp_pitch = BoundedProperty("pidrl/pitch/kp", "pitch kp", float('-inf'), float('+inf'))
+ki_pitch = BoundedProperty("pidrl/pitch/ki", "pitch ki", float('-inf'), float('+inf'))
+kd_pitch = BoundedProperty("pidrl/pitch/kd", "pitch kd", float('-inf'), float('+inf'))
+
+kp_roll_avg = BoundedProperty("pidrl/roll/kp_avg", "roll kp average", kp_roll.min, kp_roll.max)
+ki_roll_avg = BoundedProperty("pidrl/roll/ki_avg", "roll ki average", ki_roll.min, ki_roll.max)
+kd_roll_avg = BoundedProperty("pidrl/roll/kd_avg", "roll kd average", kd_roll.min, kd_roll.max)
+
+kp_pitch_avg = BoundedProperty("pidrl/pitch/kp_avg", "pitch kp average", kp_pitch.min, kp_pitch.max)
+ki_pitch_avg = BoundedProperty("pidrl/pitch/ki_avg", "pitch ki average", ki_pitch.min, ki_pitch.max)
+kd_pitch_avg = BoundedProperty("pidrl/pitch/kd_avg", "pitch kd average", kd_pitch.min, kd_pitch.max)
+
+
+# PID-RL properties stability ensured parametrized version
+roll_tau_1 = BoundedProperty("pidrl/roll/tau_1", "roll tau 1", float(0), float('+inf'))
+roll_tau_2 = BoundedProperty("pidrl/roll/tau_2", "roll tau 2", float(0), float('+inf'))
+roll_tau_3 = BoundedProperty("pidrl/roll/tau_3", "roll tau 3", float(0), float('+inf'))
+
+pitch_tau_1 = BoundedProperty("pidrl/pitch/tau_1", "pitch tau 1", float(0), float('+inf'))
+pitch_tau_2 = BoundedProperty("pidrl/pitch/tau_2", "pitch tau 2", float(0), float('+inf'))
+pitch_tau_3 = BoundedProperty("pidrl/pitch/tau_3", "pitch tau 3", float(0), float('+inf'))

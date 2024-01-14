@@ -86,3 +86,12 @@ class PID:
             t_min = -1
             t_max = 1
         return (u - (-self.limit)) / (self.limit - (-self.limit)) * (t_max - t_min) + t_min
+
+
+    def set_gains(self, kp: float = None, ki: float = None, kd: float = None) -> None:
+        if kp is not None:
+            self.kp = kp
+        if ki is not None:
+            self.ki = ki
+        if kd is not None:
+            self.kd = kd

@@ -107,14 +107,11 @@ class AttitudeControlTask(JSBSimEnv):
         """
         super().reset(seed=seed, options=options)
 
-        self.reset_target_state() # reset task target state
-        self.update_errors() # reset task errors
-        self.update_action_history() # reset action history
-        self.update_action_avg() # reset action avg
+        # reset task specific properties
+        self.reset_props()
+
         last_fcs_pos_hist = self.fcs_pos_hist.copy() # copy the fcs position history of the last episode about to be reset
         self.fcs_pos_hist.clear() # clear the fcs position history list (start a new episode)
-        self.sim[self.steps_left] = self.steps_left.max # reset the number of steps left in the episode to the max
-        self.sim[self.current_step] = self.current_step.min # reset the number of steps left in the episode to 
 
         # reset observation and return the first observation of the episode
         self.observation_deque.clear()
@@ -125,6 +122,18 @@ class AttitudeControlTask(JSBSimEnv):
 
         self.render() # render the simulation
         return self.observation, info
+
+
+    def reset_props(self) -> None:
+        """
+            Reset some of the properties (target, errors, action history, action averages, fcs position history etc...)
+        """
+        self.reset_target_state() # reset task target state
+        self.update_errors() # reset task errors
+        self.update_action_history() # reset action history
+        self.update_action_avg() # reset action avg
+        self.sim[self.steps_left] = self.steps_left.max # reset the number of steps left in the episode to the max
+        self.sim[self.current_step] = self.current_step.min # reset the number of steps left in the episode to 
 
 
     def step(self, action: np.ndarray) -> Tuple[np.ndarray, float, bool, bool, dict]:

@@ -71,6 +71,7 @@ class JSBSimEnv(gym.Env, ABC):
         self.episode_length_s: float = self.jsbsim_cfg["episode_length_s"]
         self.agent_frequency: float = self.jsbsim_cfg["agent_freq"]
         self.fdm_frequency: float = self.jsbsim_cfg["fdm_freq"]
+        self.fdm_dt: float = 1 / self.fdm_frequency
         self.sim_steps_after_agent_action: int = int(self.fdm_frequency // self.agent_frequency)
         self.aircraft_id: str = aircraft_id
         self.telemetry_file: str = telemetry_file
