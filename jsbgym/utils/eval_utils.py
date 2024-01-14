@@ -60,7 +60,7 @@ class RefSequence():
 
 
 def main():
-    np.random.seed(1)
+    np.random.seed(42)
     np.set_printoptions(suppress = True)
     ref_seq = RefSequence()
     ref_seq.sample_steps()
@@ -84,8 +84,8 @@ def main():
     
     # simple refs
     for i in range(total_steps // 2000):
-        roll_ref = np.random.uniform(np.deg2rad(-30), np.deg2rad(30))
-        pitch_ref = np.random.uniform(np.deg2rad(-20), np.deg2rad(20))
+        roll_ref = np.deg2rad(np.random.uniform(-60, 60))
+        pitch_ref = np.deg2rad(np.random.uniform(-30, 30))
         airspeed_ref = np.random.uniform(TrimPoint().Va_kph - 10, TrimPoint().Va_kph + 10)
         simple_ref_seq_arr[i] = np.array([roll_ref, pitch_ref, airspeed_ref])
 
