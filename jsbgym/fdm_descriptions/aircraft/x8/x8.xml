@@ -174,11 +174,11 @@
             <aerosurface_scale name="fcs/left-aileron-control">
                 <description>The port aileron output is in radians</description>
                 <input>fcs/roll-sum</input>
-                <gain>0.01745</gain>
                 <range>
                     <min>-30</min>
                     <max>30</max>
                 </range>
+                <gain>0.01745</gain>
             </aerosurface_scale>
             
             <!-- Not sure it's doing anything -->
@@ -191,11 +191,11 @@
             <aerosurface_scale name="fcs/right-aileron-control">
                 <description>The Starboard aileron output is in radians</description>
                 <input>fcs/roll-sum</input>
-                <gain>0.01745</gain>
                 <range>
                     <min>-30</min>
                     <max>30</max>
                 </range>
+                <gain>0.01745</gain>
             </aerosurface_scale>
 
             <second_order_filter name="fcs/left-aileron-filter">
@@ -544,7 +544,7 @@
                     <property>aero/qbar-area</property>
                     <property>metrics/bw-ft</property>
                     <property>fcs/effective-aileron-pos</property>
-                    <value>0.1202</value>
+                    <value>-0.00339</value> <!--0.1202-->
                 </product>
             </function>
 
