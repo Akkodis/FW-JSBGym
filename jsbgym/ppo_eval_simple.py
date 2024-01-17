@@ -28,6 +28,8 @@ def parse_args():
     parser.add_argument('--severity', type=str, required=True,
                         choices=['off', 'light', 'moderate', 'severe', 'all'],
                         help='severity of the atmosphere (wind and turb)')
+    parser.add_argument('--out-file', type=str, default='eval_res_ppo.csv', 
+                        help='save results to file')
     args = parser.parse_args()
     return args
 
@@ -53,10 +55,6 @@ if __name__ == '__main__':
 
     train_dict = torch.load(args.train_model, map_location=device)
 
-    # setting the observation normalization parameters
-    # env.set_obs_rms(train_dict['norm_obs_rms']['mean'], 
-    #                 train_dict['norm_obs_rms']['var'])
-
     # loading the agent
     ppo_agent = ppo.Agent(env).to(device)
     ppo_agent.load_state_dict(train_dict['agent'])
@@ -69,11 +67,14 @@ if __name__ == '__main__':
     roll_ref: float = simple_ref_data[0, 0]
     pitch_ref: float = simple_ref_data[0, 1]
 
+    roll_ref: float = np.deg2rad(50)
+    pitch_ref: float = np.deg2rad(20)
+
     # if no render mode, run the simulation for the whole reference sequence given by the .npy file
     if args.render_mode == "none":
         total_steps = 50_000
     else: # otherwise, run the simulation for 8000 steps
-        total_steps = 4000
+        total_steps = 16000
 
     sim_options = {"seed": seed,
                    "atmosphere": {
@@ -102,7 +103,7 @@ if __name__ == '__main__':
     if not os.path.exists("eval/outputs"):
         os.makedirs("eval/outputs")
 
-    eval_res_csv = f"eval/outputs/eval_res_{os.path.basename(args.train_model)}.csv"
+    eval_res_csv = f"eval/outputs/{args.out_file}.csv"
     eval_fieldnames = ["severity", "roll_mse", "pitch_mse", "roll_rmse", 
                         "pitch_rmse", "roll_fcs_fluct", "pitch_fcs_fluct"]
 
@@ -126,11 +127,13 @@ if __name__ == '__main__':
             obs, reward, truncated, terminated, info = env.step(action)
             e_obs[step] = info["non_norm_obs"][0, -1] # take the last obs of the history
             obs = torch.Tensor(obs).unsqueeze_(0).to(device)
+            # print(env.sim["aero/coefficient/Cnda"])
 
             done = np.logical_or(truncated, terminated)
             if done:
                 ep_cnt += 1
                 print(f"Episode reward: {info['episode']['r']}")
+                break
                 obs, last_info = env.reset()
                 obs = torch.Tensor(obs).unsqueeze_(0).to(device)
                 ep_fcs_pos_hist = np.array(last_info["fcs_pos_hist"]) # get fcs pos history of the finished episode

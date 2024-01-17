@@ -64,31 +64,34 @@ if __name__ == '__main__':
 
     x8 = aerodynamics.AeroModel()
     trim_point = TrimPoint('x8')
+
     # setting handtunes PID gains
     # lateral dynamics
-    kp_roll: float = 1.0
-    ki_roll: float = 0.0
-    kd_roll: float = 0.5
+    kp_roll: float = 1.5
+    ki_roll: float = 0.1
+    kd_roll: float = 0.1
+
+    # kp_roll: float = 1.0
+    # ki_roll: float = 0.0
+    # kd_roll: float = 0.5
     roll_pid = PID(
         kp=kp_roll, ki=ki_roll, kd=kd_roll,
         dt=0.01, limit=x8.aileron_limit
     )
 
     # longitudinal dynamics
-    kp_pitch: float = -4.0
-    ki_pitch: float = -0.75
+    kp_pitch: float = -2.0
+    ki_pitch: float = -0.3
     kd_pitch: float = -0.1
-    pitch_pid = PID(kp=kp_pitch, ki=ki_pitch, kd=kd_pitch,
-                    dt=0.01, limit=x8.aileron_limit)
 
-    kp_airspeed: float = 0.5
-    ki_airspeed: float = 0.1
-    kd_airspeed: float = 0.0
-    airspeed_pid = PID(
-        kp=kp_airspeed, ki=ki_airspeed, kd=kd_airspeed,
-        dt=0.01, trim=trim_point,
-        limit=x8.throttle_limit, is_throttle=True
-    )
+    # kp_pitch: float = -4.0
+    # ki_pitch: float = -0.75
+    # kd_pitch: float = -0.1
+
+    pitch_pid = PID(kp=kp_pitch, ki=ki_pitch, kd=kd_pitch,
+                    dt=0.01, limit=x8.elevator_limit
+                    )
+
     # load reference sequence and initialize evaluation arrays
     simple_ref_data = np.load("eval/simple_ref_seq_arr.npy")
 
@@ -96,11 +99,14 @@ if __name__ == '__main__':
     roll_ref: float = simple_ref_data[0, 0]
     pitch_ref: float = simple_ref_data[0, 1]
 
+    roll_ref: float = np.deg2rad(55)
+    pitch_ref: float = np.deg2rad(25)
+
     # if no render mode, run the simulation for the whole reference sequence given by the .npy file
     if args.render_mode == "none":
         total_steps = 50_000
     else: # otherwise, run the simulation for 8000 steps
-        total_steps = 4000
+        total_steps = 16000
     sim_options = {"seed": seed,
                    "atmosphere": {
                        "variable": False,
@@ -128,13 +134,16 @@ if __name__ == '__main__':
     if not os.path.exists("eval/outputs"):
         os.makedirs("eval/outputs")
 
-    eval_res_csv = f"eval/outputs/{args.out_file}"
+    eval_res_csv = f"eval/outputs/{args.out_file}.csv"
     eval_fieldnames = ["severity", "roll_mse", "pitch_mse", "roll_rmse", 
                         "pitch_rmse", "roll_fcs_fluct", "pitch_fcs_fluct"]
 
     with open(eval_res_csv, "w") as csvfile:
         csv_writer = csv.DictWriter(csvfile, fieldnames=eval_fieldnames)
         csv_writer.writeheader()
+
+    print(f"min roll: {np.min(simple_ref_data[:, 0])}, max roll: {np.max(simple_ref_data[:, 0])}")
+    print(f"min pitch: {np.min(simple_ref_data[:, 1])}, max pitch: {np.max(simple_ref_data[:, 1])}")
 
     for i, severity in enumerate(severity_range):
         sim_options["atmosphere"]["severity"] = severity
@@ -151,8 +160,8 @@ if __name__ == '__main__':
             pitch_pid.set_reference(pitch_ref)
             env.set_target_state(roll_ref, pitch_ref)
 
-            elevator_cmd, pitch_err, _ = pitch_pid.update(state=pitch, state_dot=pitch_rate, saturate=True, normalize=True)
             aileron_cmd, roll_err, _ = roll_pid.update(state=roll, state_dot=roll_rate, saturate=True, normalize=True)
+            elevator_cmd, pitch_err, _ = pitch_pid.update(state=pitch, state_dot=pitch_rate, saturate=True, normalize=True)
 
             action = np.array([aileron_cmd, elevator_cmd])
             e_actions[step] = action
@@ -164,6 +173,7 @@ if __name__ == '__main__':
             if done:
                 ep_cnt += 1
                 print(f"Episode reward: {info['episode']['r']}")
+                break
                 obs, last_info = env.reset()
                 ep_fcs_pos_hist = np.array(last_info["fcs_pos_hist"]) # get fcs pos history of the finished episode
                 eps_fcs_fluct.append(np.mean(np.abs(np.diff(ep_fcs_pos_hist, axis=0)), axis=0)) # get fcs fluctuation of the episode and append it to the list of all fcs fluctuations
