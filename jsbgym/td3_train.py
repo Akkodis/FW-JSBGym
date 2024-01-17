@@ -88,6 +88,8 @@ class Args:
     """randomize the wind magnitude continuously"""
     rand_targets: bool = False
     """set targets randomly"""
+    gust: bool = False
+    """add gust"""
 
 
 def make_env(env_id, seed, config, render_mode, telemetry_file=None):
@@ -235,11 +237,16 @@ if __name__ == "__main__":
                         },
                         "turb": {
                             "enable": args.turb
+                        },
+                        "gust": {
+                            "enable": args.gust
                         }
                    }}
     # TRY NOT TO MODIFY: start the game
-    roll_ref = np.random.uniform(np.deg2rad(-30), np.deg2rad(30))
-    pitch_ref = np.random.uniform(np.deg2rad(-20), np.deg2rad(20))
+    roll_limit = np.deg2rad(60)
+    pitch_limit = np.deg2rad(30)
+    roll_ref = np.random.uniform(-roll_limit, roll_limit)
+    pitch_ref = np.random.uniform(-pitch_limit, pitch_limit)
     print(f"Initial refs : roll = {roll_ref}, pitch = {pitch_ref}")
     obs, _ = envs.reset(options=sim_options)
     for global_step in range(args.total_timesteps):
@@ -271,8 +278,8 @@ if __name__ == "__main__":
         real_next_obs = next_obs.copy()
         for idx, trunc in enumerate(truncations):
             if trunc:
-                roll_ref = np.random.uniform(np.deg2rad(-30), np.deg2rad(30))
-                pitch_ref = np.random.uniform(np.deg2rad(-20), np.deg2rad(20))
+                roll_ref = np.random.uniform(-roll_limit, roll_limit)
+                pitch_ref = np.random.uniform(-pitch_limit, pitch_limit)
                 print(f"Env Done, new ref : roll = {roll_ref}, pitch = {pitch_ref} sampled")
                 real_next_obs[idx] = infos["final_observation"][idx]
         rb.add(obs, real_next_obs, actions, rewards, terminations, infos)
@@ -390,8 +397,8 @@ if __name__ == "__main__":
     telemetry_file = f"telemetry/{run_name}.csv"
     obs, _ = envs.reset(options={"render_mode": "log"})
     envs.envs[0].unwrapped.telemetry_setup(telemetry_file)
-    roll_ref = np.deg2rad(20)
-    pitch_ref = np.deg2rad(15)
+    roll_ref = np.deg2rad(55)
+    pitch_ref = np.deg2rad(25)
     for step in range(4000):
         envs.envs[0].unwrapped.set_target_state(roll_ref, pitch_ref)
         with torch.no_grad():
