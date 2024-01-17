@@ -68,7 +68,8 @@ airspeed_fps = BoundedProperty('velocities/vt-fps', 'True aircraft airspeed [ft/
 airspeed_kts = BoundedProperty('velocities/vtrue-kts', 'True aircraft airspeed [kts]', float('-inf'), float('+inf'))
 airspeed_mps = BoundedHelperProperty('velocities/vt-mps', 'True aircraft airspeed [m/s]', 0, 53) # 53 m/s = 190 km/h = 102 kts
 airspeed_kph = BoundedHelperProperty('velocities/vt-kph', 'True aircraft airspeed [m/s]', 0, 190) # 53 m/s = 190 km/h = 102 kts
-alpha = Property('aero/alpha-rad', 'aircraft angle of attack [rad]')
+alpha_rad = BoundedProperty('aero/alpha-rad', 'aircraft angle of attack [rad]', float('-inf'), float('+inf'))
+beta_rad = BoundedProperty('aero/beta-rad', 'aircraft sideslip angle [rad]', float('-inf'), float('+inf'))
 ci2vel = Property('aero/ci2vel', 'chord/2*airspeed')
 
 # atmospherical properties
@@ -220,13 +221,13 @@ reward_int_roll = BoundedProperty("reward/int_roll", "roll integral reward", flo
 reward_int_pitch = BoundedProperty("reward/int_pitch", "pitch integral reward", float('-inf'), 0)
 
 # PID-RL properties no stability ensured
-kp_roll = BoundedProperty("pidrl/roll/kp", "roll kp", float('-inf'), float('+inf'))
-ki_roll = BoundedProperty("pidrl/roll/ki", "roll ki", float('-inf'), float('+inf'))
-kd_roll = BoundedProperty("pidrl/roll/kd", "roll kd", float('-inf'), float('+inf'))
+kp_roll = BoundedProperty("pidrl/roll/kp", "roll kp", 0, float('+inf'))
+ki_roll = BoundedProperty("pidrl/roll/ki", "roll ki", 0, float('+inf'))
+kd_roll = BoundedProperty("pidrl/roll/kd", "roll kd", 0, float('+inf'))
 
-kp_pitch = BoundedProperty("pidrl/pitch/kp", "pitch kp", float('-inf'), float('+inf'))
-ki_pitch = BoundedProperty("pidrl/pitch/ki", "pitch ki", float('-inf'), float('+inf'))
-kd_pitch = BoundedProperty("pidrl/pitch/kd", "pitch kd", float('-inf'), float('+inf'))
+kp_pitch = BoundedProperty("pidrl/pitch/kp", "pitch kp", float('-inf'), 0)
+ki_pitch = BoundedProperty("pidrl/pitch/ki", "pitch ki", float('-inf'), 0)
+kd_pitch = BoundedProperty("pidrl/pitch/kd", "pitch kd", float('-inf'), 0)
 
 kp_roll_avg = BoundedProperty("pidrl/roll/kp_avg", "roll kp average", kp_roll.min, kp_roll.max)
 ki_roll_avg = BoundedProperty("pidrl/roll/ki_avg", "roll ki average", ki_roll.min, ki_roll.max)

@@ -80,7 +80,7 @@ class ACNoVaTask(AttitudeControlTask):
         for prop, command in zip(self.action_prps, action):
             self.sim[prop] = command
         # self.sim[prp.throttle_cmd] = TrimPoint().throttle # set throttle to trim point throttle
-        # maintain airspeed at 55 kph with PI controller
+        # maintain airspeed at 60 kph with PI controller
         self.pid_airspeed.set_reference(60)
         throttle_cmd, airspeed_err, _ = self.pid_airspeed.update(state=self.sim[prp.airspeed_kph], saturate=True)
         self.sim[prp.throttle_cmd] = throttle_cmd
@@ -161,7 +161,8 @@ class ACNoVaIntegErrTask(ACNoVaTask):
         prp.p_radps, prp.q_radps, prp.r_radps, # angular rates
         prp.roll_err, prp.pitch_err, # errors
         prp.roll_integ_err, prp.pitch_integ_err, # integral errors
-        prp.aileron_avg, prp.elevator_avg # average of past 5 fcs commands
+        prp.aileron_avg, prp.elevator_avg, # average of past 5 fcs commands
+        prp.alpha_rad, prp.beta_rad # angle of attack and sideslip angles
         )
 
         self.error_prps: Tuple[BoundedProperty, ...] = (
@@ -201,8 +202,10 @@ class ACNoVaIntegErrTask(ACNoVaTask):
         # if there's a change in target state, reset integral errors
         if target_roll_rad != self.prev_target_roll:
             self.sim[prp.roll_integ_err] = 0.0
+            print("Target roll: ", target_roll_rad)
         if target_pitch_rad != self.prev_target_pitch:
             self.sim[prp.pitch_integ_err] = 0.0
+            print("Target pitch: ", target_pitch_rad)
 
         self.sim[prp.target_roll_rad] = target_roll_rad
         self.sim[prp.target_pitch_rad] = target_pitch_rad
@@ -252,7 +255,7 @@ class ACNoVaPIDRLTask(ACNoVaTask):
             prp.roll_err, prp.pitch_err, # errors
             prp.kp_roll, prp.ki_roll, prp.kd_roll, # PID gains (action)
             prp.kp_pitch, prp.ki_pitch, prp.kd_pitch,
-            # prp.aileron_cmd, prp.elevator_cmd, # control surface commands (output of the PID controller)
+            prp.aileron_cmd, prp.elevator_cmd, # control surface commands (output of the PID controller)
         )
 
         self.action_prps: Tuple[BoundedProperty, ...] = (
@@ -286,17 +289,23 @@ class ACNoVaPIDRLTask(ACNoVaTask):
         self.observation_space = self.get_observation_space()
 
         # PIDs and their initial gain values
-        self.kp_roll_init: float = 1.5
-        self.ki_roll_init: float = 0.1
-        self.kd_roll_init: float = 0.1
+        self.kp_roll_init: float = 0.0
+        self.ki_roll_init: float = 0.0
+        self.kd_roll_init: float = 0.0
         self.pid_roll = PID(kp=self.kp_roll_init, ki=self.ki_roll_init, kd=self.kd_roll_init,
-                            dt=self.fdm_dt, limit=AeroModel().aileron_limit)
+                            dt=self.fdm_dt, 
+                            # limit=AeroModel().aileron_limit
+                            limit = 1.0
+                            )
 
-        self.kp_pitch_init: float = -2.0
-        self.ki_pitch_init: float = -0.3
-        self.kd_pitch_init: float = -0.1
+        self.kp_pitch_init: float = -0.0
+        self.ki_pitch_init: float = -0.0
+        self.kd_pitch_init: float = -0.0
         self.pid_pitch = PID(kp=self.kp_pitch_init, ki=self.ki_pitch_init, kd=self.kd_pitch_init,
-                             dt=self.fdm_dt, limit=AeroModel().elevator_limit)
+                             dt=self.fdm_dt, 
+                            #  limit=AeroModel().elevator_limit
+                             limit = 1.0
+                             )
 
         self.initialize()
         self.telemetry_setup(self.telemetry_file)
@@ -328,9 +337,9 @@ class ACNoVaPIDRLTask(ACNoVaTask):
         self.pid_pitch.set_gains(kp=action[3], ki=action[4], kd=action[5])
 
         aileron_cmd, _, _ = self.pid_roll.update(state=self.sim[prp.roll_rad], state_dot=self.sim[prp.p_radps], 
-                                                 saturate=True, normalize=True)
+                                                 saturate=True, normalize=False)
         elevator_cmd, _, _ = self.pid_pitch.update(state=self.sim[prp.pitch_rad], state_dot=self.sim[prp.q_radps], 
-                                                   saturate=True, normalize=True)
+                                                   saturate=True, normalize=False)
 
         self.sim[prp.aileron_cmd] = aileron_cmd
         self.sim[prp.elevator_cmd] = elevator_cmd
