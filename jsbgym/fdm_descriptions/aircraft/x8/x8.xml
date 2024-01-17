@@ -241,12 +241,6 @@
                 <output>fcs/effective-aileron-pos</output>
             </pure_gain>
 
-            <!-- <actuator name="fcs/effective_aileron_actuator">
-                <input>fcs/effective-aileron-pos</input>
-                <rate_limit>3.49066</rate_limit>
-                <output>fcs/effective-aileron-pos</output>
-            </actuator> -->
-
         </channel>
 
         <channel name="Throttle">
@@ -544,7 +538,7 @@
                     <property>aero/qbar-area</property>
                     <property>metrics/bw-ft</property>
                     <property>fcs/effective-aileron-pos</property>
-                    <value>-0.00339</value> <!--0.1202-->
+                    <value>-0.00339</value> <!--0.1202--> <!-- -0.00339-->
                 </product>
             </function>
 
