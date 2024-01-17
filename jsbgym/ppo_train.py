@@ -8,8 +8,10 @@ from distutils.util import strtobool
 from tqdm import tqdm
 from jsbgym.trim.trim_point import TrimPoint
 from jsbgym.agents import ppo
+from jsbgym.agents.pid import PID
 from jsbgym.utils.eval_utils import RefSequence
 from jsbgym.eval import metrics
+from jsbgym.models.aerodynamics import AeroModel
 
 import wandb
 import gymnasium as gym
@@ -89,6 +91,8 @@ def parse_args():
         help="the target KL divergence threshold")
     parser.add_argument('--save-best',type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True,
                          help='save only the best models')
+    parser.add_argument('--save-cp',type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True,
+                         help='save checkpoints periodically')
 
     # training sim specific arguments
     parser.add_argument('--rand-targets',type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True, help='set targets randomly')
@@ -119,10 +123,11 @@ if __name__ == "__main__":
 
     if args.env_id == "AttitudeControl-v0":
         args.config = "config/ppo_caps.yaml"
-    elif args.env_id == "ACNoVa-v0" or args.env_id == "ACNoVaIntegErr-v0":
+    elif args.env_id == "ACNoVa-v0" or args.env_id == "ACNoVaIntegErr-v0" or args.env_id == "ACNoVaPIDRL-v0":
         args.config = "config/ppo_caps_no_va.yaml"
-
-    run_name = f"ppo_{args.exp_name}_{args.seed}_{strftime('%d-%m_%H:%M:%S', localtime())}"
+    
+    date_time = strftime('%d-%m_%H:%M:%S', localtime())
+    run_name = f"ppo_{args.exp_name}_{args.seed}_{date_time}"
 
     save_path: str = "models/train/"
     if not os.path.exists(save_path):
@@ -204,15 +209,21 @@ if __name__ == "__main__":
     num_updates = args.total_timesteps // args.batch_size
 
     # Generate a reference sequence and sample the first steps
-    refSeqs = [RefSequence(num_refs=5) for _ in range(args.num_envs)]
+    refSeqs = [RefSequence(num_refs=3, min_step_bound=600, max_step_bound=700) for _ in range(args.num_envs)]
     for _ in range(args.num_envs):
         refSeqs[_].sample_steps()
 
     # initial roll and pitch references
-    roll_ref = np.random.uniform(np.deg2rad(-60), np.deg2rad(60)) # TODO change to +- 60 
-    pitch_ref = np.random.uniform(np.deg2rad(-30), np.deg2rad(30)) # TODO change to +- 30
+    roll_limit = np.deg2rad(60)
+    pitch_limit = np.deg2rad(30)
+    roll_ref = np.random.uniform(-roll_limit, roll_limit)
+    pitch_ref = np.random.uniform(-pitch_limit, pitch_limit)
+    # roll_ref = np.deg2rad(60)
+    # pitch_ref = np.deg2rad(30)
     roll_refs = np.ones(args.num_envs) * roll_ref
     pitch_refs = np.ones(args.num_envs) * pitch_ref
+    # a_b_max = 1.0
+    # a_b_min = 0.1
 
     for update in tqdm(range(1, num_updates + 1)):
         # Annealing the rate if instructed to do so.
@@ -220,6 +231,16 @@ if __name__ == "__main__":
             frac = 1.0 - (update - 1.0) / num_updates
             lrnow = frac * args.learning_rate
             optimizer.param_groups[0]["lr"] = lrnow
+        
+        # save checkpoints periodically
+        if args.save_cp and update % 8 == 0:
+            run_name = f"ppo_{args.exp_name}_cp{global_step}_{args.seed}_{date_time}"
+            save_model(save_path, run_name, agent, envs.envs[0], args.seed)
+
+        # a = b = -0.01 * update + 1.01
+        # dydx = (a_b_min - a_b_max) / num_updates
+        # a = b = dydx * update + 1 +  abs(dydx)
+        # print(f"beta params: a = {a}, b = {b}")
 
         for step in range(0, args.num_steps):
             if args.track:
@@ -231,14 +252,10 @@ if __name__ == "__main__":
             for i in range(args.num_envs):
                 ith_env_step = unwr_envs[i].sim[unwr_envs[i].current_step]
                 # if args.rand_targets:
-                #     # roll_ref, pitch_ref, airspeed_ref = refSeqs[i].sample_refs(ith_env_step, i)
-
-                # if args.env_id == "AttitudeControl-v0":
-                #     unwr_envs[i].set_target_state(roll_ref, pitch_ref, airspeed_ref)
-                if args.env_id == "ACNoVa-v0" or args.env_id == "ACNoVaIntegErr-v0":
-                    pitch_ref = pitch_refs[i]
-                    roll_ref = roll_refs[i]
-                    unwr_envs[i].set_target_state(roll_ref, pitch_ref)
+                roll_ref, pitch_ref, _ = refSeqs[i].sample_refs(ith_env_step, i)
+                # pitch_ref = pitch_refs[i]
+                # roll_ref = roll_refs[i]
+                unwr_envs[i].set_target_state(roll_ref, pitch_ref)
 
             # ALGO LOGIC: action logic
             with torch.no_grad():
@@ -258,11 +275,15 @@ if __name__ == "__main__":
             for env_i, done in enumerate(dones):
                 if done:
                     obs_t1[step][env_i] = obs[step][env_i]
-                    # refSeqs[env_i].sample_steps() # Sample a new sequence of reference steps
+                    refSeqs[env_i].sample_steps() # Sample a new sequence of reference steps
                     # sample new references
-                    roll_refs[env_i] = np.random.uniform(np.deg2rad(-60), np.deg2rad(60))
-                    pitch_refs[env_i] = np.random.uniform(np.deg2rad(-30), np.deg2rad(30))
-                    print(f"Env Done, new refs : roll = {roll_refs[env_i]}, pitch = {pitch_refs[env_i]} sampled for env {env_i}")
+                    # roll_refs[env_i] = np.random.uniform(-roll_limit, roll_limit)
+                    # pitch_refs[env_i] = np.random.uniform(-pitch_limit, pitch_limit)
+                    # roll_refs[env_i] = np.deg2rad(60)
+                    # pitch_refs[env_i] = np.deg2rad(30)
+                    # roll_refs[env_i] = np.random.beta(a, b) * roll_limit*2 - roll_limit
+                    # pitch_refs[env_i] = np.random.beta(a, b) * pitch_limit*2 - pitch_limit
+                    # print(f"Env Done, new refs : roll = {roll_refs[env_i]}, pitch = {pitch_refs[env_i]} sampled for env {env_i}")
                 else:
                     obs_t1[step][env_i] = next_obs[env_i]
 
@@ -364,7 +385,9 @@ if __name__ == "__main__":
                 ss_loss = torch.linalg.norm(act_means - act_means_bar, ord=2)
 
                 # preactivation loss
-                pa_loss = torch.linalg.norm(act_means - trim_acts, ord=2)
+                pa_loss = torch.Tensor([0.0]).to(device)
+                if args.env_id != "ACNoVaPIDRL-v0":
+                    pa_loss = torch.linalg.norm(act_means - trim_acts, ord=2)
 
                 loss = pg_loss - args.ent_coef * entropy_loss + v_loss * args.vf_coef + args.ts_coef * ts_loss + args.ss_coef * ss_loss + args.pa_coef * pa_loss
 
@@ -419,16 +442,15 @@ if __name__ == "__main__":
         pe_obs = torch.Tensor(pe_obs).unsqueeze(0).to(device)
         e_refSeq = RefSequence(num_refs=5)
         e_refSeq.sample_steps()
-        roll_ref = np.deg2rad(20)
-        pitch_ref = np.deg2rad(15)
+        roll_ref = np.deg2rad(55)
+        pitch_ref = np.deg2rad(25)
         for step in range(4000):
             # if args.rand_targets:
             #     # roll_ref, pitch_ref, airspeed_ref = e_refSeq.sample_refs(step)
 
             # if args.env_id == "AttitudeControl-v0":
             #     pe_env.unwrapped.set_target_state(roll_ref, pitch_ref, airspeed_ref)
-            if args.env_id == "ACNoVa-v0" or args.env_id == "ACNoVaIntegErr-v0":
-                pe_env.unwrapped.set_target_state(roll_ref, pitch_ref)
+            pe_env.unwrapped.set_target_state(roll_ref, pitch_ref)
 
             action = agent.get_action_and_value(pe_obs)[1][0].detach().cpu().numpy()
             pe_obs, reward, truncated, terminated, info = pe_env.step(action)
@@ -470,14 +492,14 @@ if __name__ == "__main__":
                        "atmosphere": {
                             "variable": False,
                             "wind": {
-                                "enable": True,
+                                "enable": False,
                                 "rand_continuous": False
                             },
                             "turb": {
-                                    "enable": True
+                                    "enable": False
                             },
                             "gust": {
-                                "enable": True
+                                "enable": False
                             }
                         }}
 
