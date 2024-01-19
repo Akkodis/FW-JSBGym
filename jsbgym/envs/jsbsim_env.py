@@ -286,7 +286,7 @@ class JSBSimEnv(gym.Env, ABC):
                     gust_startup_duration_sec = 0.25
                     gust_steady_duration_sec = 0.5
                     gust_end_duration_sec = 0.25
-                    gust_frame = 2 # 1: Body frame, 2: Wind frame, 3: inertial NED frame
+                    gust_frame = 3 # 1: Body frame, 2: Wind frame, 3: inertial NED frame
                     match severity:
                         case "off": # no gust
                             gust_mag_fps = 0
