@@ -25,7 +25,8 @@ def parse_args():
         help='render mode')
     parser.add_argument("--tele-file", type=str, default="telemetry/pid_eval_telemetry.csv", 
         help="telemetry csv file")
-    parser.add_argument('--rand-targets', action='store_true', help='set targets randomly')
+    parser.add_argument('--ref-file', type=str, required=True,
+                        help='reference sequence file')
     parser.add_argument('--severity', type=str, required=True,
                         choices=['off', 'light', 'moderate', 'severe', 'all'],
                         help='severity of the atmosphere (wind and turb)')
@@ -93,20 +94,20 @@ if __name__ == '__main__':
                     )
 
     # load reference sequence and initialize evaluation arrays
-    simple_ref_data = np.load("eval/simple_ref_seq_arr.npy")
+    simple_ref_data = np.load(args.ref_file)
 
     # set default target values
     roll_ref: float = simple_ref_data[0, 0]
     pitch_ref: float = simple_ref_data[0, 1]
 
-    roll_ref: float = np.deg2rad(55)
-    pitch_ref: float = np.deg2rad(25)
+    # roll_ref: float = np.deg2rad(40)
+    # pitch_ref: float = np.deg2rad(25)
 
     # if no render mode, run the simulation for the whole reference sequence given by the .npy file
     if args.render_mode == "none":
         total_steps = 50_000
     else: # otherwise, run the simulation for 8000 steps
-        total_steps = 16000
+        total_steps = 8000
     sim_options = {"seed": seed,
                    "atmosphere": {
                        "variable": False,
@@ -154,6 +155,8 @@ if __name__ == '__main__':
         obs, _ = env.reset(options=sim_options)
         Va, roll, pitch, roll_rate, pitch_rate = rearrange_obs(obs)
         ep_cnt = 0 # episode counter
+        refs = simple_ref_data[ep_cnt]
+        roll_ref, pitch_ref = refs[0], refs[1]
         for step in tqdm(range(total_steps)):
             # apply target values
             roll_pid.set_reference(roll_ref)

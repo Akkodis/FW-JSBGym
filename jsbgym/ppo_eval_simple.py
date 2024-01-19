@@ -24,7 +24,8 @@ def parse_args():
         help='render mode')
     parser.add_argument("--tele-file", type=str, default="telemetry/ppo_eval_telemetry.csv", 
         help="telemetry csv file")
-    parser.add_argument('--rand-targets', action='store_true', help='set targets randomly')
+    parser.add_argument('--ref-file', type=str, required=True,
+                        help='reference sequence file')
     parser.add_argument('--severity', type=str, required=True,
                         choices=['off', 'light', 'moderate', 'severe', 'all'],
                         help='severity of the atmosphere (wind and turb)')
@@ -36,7 +37,7 @@ def parse_args():
 
 if __name__ == '__main__':
     args = parse_args()
-    np.set_printoptions(suppress=True)
+    np.set_printoptions(precision=3)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
 
@@ -61,20 +62,17 @@ if __name__ == '__main__':
     ppo_agent.eval()
 
     # load the reference sequence and initialize the evaluation arrays
-    simple_ref_data = np.load("eval/simple_ref_seq_arr.npy")
+    simple_ref_data = np.load(args.ref_file)
 
     # set default target values
-    roll_ref: float = simple_ref_data[0, 0]
-    pitch_ref: float = simple_ref_data[0, 1]
-
-    roll_ref: float = np.deg2rad(50)
-    pitch_ref: float = np.deg2rad(20)
+    # roll_ref: float = np.deg2rad(50)
+    # pitch_ref: float = np.deg2rad(20)
 
     # if no render mode, run the simulation for the whole reference sequence given by the .npy file
     if args.render_mode == "none":
         total_steps = 50_000
     else: # otherwise, run the simulation for 8000 steps
-        total_steps = 16000
+        total_steps = 8000
 
     sim_options = {"seed": seed,
                    "atmosphere": {
@@ -120,6 +118,8 @@ if __name__ == '__main__':
         obs, _ = env.reset(options=sim_options)
         obs = torch.Tensor(obs).unsqueeze_(0).to(device)
         ep_cnt = 0 # episode counter
+        refs = simple_ref_data[ep_cnt]
+        roll_ref, pitch_ref = refs[0], refs[1]
         for step in tqdm(range(total_steps)):
             env.set_target_state(roll_ref, pitch_ref)
             action = ppo_agent.get_action_and_value(obs)[1].squeeze_(0).detach().cpu().numpy()

@@ -69,7 +69,9 @@ def main():
     n_episodes = total_steps // steps_per_episode
     step_seq_arr: np.ndarray = np.zeros((n_episodes, ref_seq.num_refs, 3), dtype=np.int32)
     ref_seq_arr: np.ndarray = np.zeros((total_steps+1, 3), dtype=np.float32)
-    simple_ref_seq_arr: np.ndarray = np.zeros((n_episodes, 3), dtype=np.float32)
+    simple_easy_ref_seq_arr: np.ndarray = np.zeros((n_episodes, 2), dtype=np.float32)
+    simple_medium_ref_seq_arr: np.ndarray = np.zeros((n_episodes, 2), dtype=np.float32)
+    simple_hard_ref_seq_arr: np.ndarray = np.zeros((n_episodes, 2), dtype=np.float32)
 
     step_seq_arr[0] = ref_seq.ref_steps
 
@@ -81,13 +83,31 @@ def main():
             ref_seq.sample_steps(i)
             print(i // 2000)
             step_seq_arr[i // 2000] = ref_seq.ref_steps # save the reference steps
-    
-    # simple refs
+
     for i in range(total_steps // 2000):
-        roll_ref = np.deg2rad(np.random.uniform(-60, 60))
-        pitch_ref = np.deg2rad(np.random.uniform(-30, 30))
-        airspeed_ref = np.random.uniform(TrimPoint().Va_kph - 10, TrimPoint().Va_kph + 10)
-        simple_ref_seq_arr[i] = np.array([roll_ref, pitch_ref, airspeed_ref])
+        # simple refs easy : roll [-30, 30], pitch [-20, 20]
+        roll_ref = np.deg2rad(np.random.uniform(-30, 30))
+        pitch_ref = np.deg2rad(np.random.uniform(-20, 20))
+        simple_easy_ref_seq_arr[i] = np.array([roll_ref, pitch_ref])
+
+        # simple refs medium : roll [-45, -30]U[30, 45], pitch [-25, -20]U[20, 25]
+        roll_ref = np.deg2rad(np.random.uniform(45, 30))
+        pitch_ref = np.deg2rad(np.random.uniform(25, 20))
+        roll_sign = np.random.choice([-1, 1])
+        roll_ref *= roll_sign
+        pitch_sign = np.random.choice([-1, 1])
+        pitch_ref *= pitch_sign
+        simple_medium_ref_seq_arr[i] = np.array([roll_ref, pitch_ref])
+
+        # simple refs hard : roll [-60, -45]U[45, 60], pitch [-30, -25]U[25, 30]
+        roll_ref = np.deg2rad(np.random.uniform(60, 45))
+        pitch_ref = np.deg2rad(np.random.uniform(30, 25))
+        roll_sign = np.random.choice([-1, 1])
+        roll_ref *= roll_sign
+        pitch_sign = np.random.choice([-1, 1])
+        pitch_ref *= pitch_sign
+        simple_hard_ref_seq_arr[i] = np.array([roll_ref, pitch_ref])
+
 
     # print(step_seq_arr)
     # print(ref_seq_arr)
@@ -97,16 +117,22 @@ def main():
 
     np.save("eval/step_seq_arr.npy", step_seq_arr)
     np.save("eval/ref_seq_arr.npy", ref_seq_arr)
-    np.save("eval/simple_ref_seq_arr.npy", simple_ref_seq_arr)
+    np.save("eval/simple_easy_ref_seq_arr.npy", simple_easy_ref_seq_arr)
+    np.save("eval/simple_medium_ref_seq_arr.npy", simple_medium_ref_seq_arr)
+    np.save("eval/simple_hard_ref_seq_arr.npy", simple_hard_ref_seq_arr)
 
     # read the reference steps and values from a file
     step_seq_arr = np.load("eval/step_seq_arr.npy")
     ref_seq_arr = np.load("eval/ref_seq_arr.npy")
-    simple_ref_seq_arr = np.load("eval/simple_ref_seq_arr.npy")
+    simple_easy_ref_seq_arr = np.load("eval/simple_ref_seq_arr.npy")
+    simple_medium_ref_seq_arr = np.load("eval/simple_ref_seq_arr.npy")
+    simple_hard_ref_seq_arr = np.load("eval/simple_ref_seq_arr.npy")
 
     print(step_seq_arr)
     print(ref_seq_arr)
-    print(simple_ref_seq_arr)
+    print(simple_easy_ref_seq_arr)
+    print(simple_medium_ref_seq_arr)
+    print(simple_hard_ref_seq_arr)
 
 if __name__ == "__main__":
     main()
