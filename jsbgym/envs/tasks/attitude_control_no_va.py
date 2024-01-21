@@ -256,6 +256,7 @@ class ACNoVaPIDRLTask(ACNoVaTask):
             prp.kp_roll, prp.ki_roll, prp.kd_roll, # PID gains (action)
             prp.kp_pitch, prp.ki_pitch, prp.kd_pitch,
             prp.aileron_cmd, prp.elevator_cmd, # control surface commands (output of the PID controller)
+            prp.alpha_rad, prp.beta_rad # angle of attack and sideslip angles
         )
 
         self.action_prps: Tuple[BoundedProperty, ...] = (
@@ -318,6 +319,7 @@ class ACNoVaPIDRLTask(ACNoVaTask):
         super().reset_props()
         # reset the task actions i.e. the PID gains to their initial values
         # populate the properties with the initial values
+        print("resetting agent PID gains")
         self.sim[prp.kp_roll] = self.kp_roll_init
         self.sim[prp.ki_roll] = self.ki_roll_init
         self.sim[prp.kd_roll] = self.kd_roll_init
