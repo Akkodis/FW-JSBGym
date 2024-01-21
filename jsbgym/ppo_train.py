@@ -100,6 +100,8 @@ def parse_args():
     parser.add_argument('--turb', type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True, help='add turbulence')
     parser.add_argument('--wind', type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True, help='add wind')
     parser.add_argument('--gust', type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True, help='add gust')
+    parser.add_argument("--ref-sampler", type=str, default='uniform',
+        help="the distribution for sampling refs: uniform or beta")
     args = parser.parse_args()
     args.batch_size = int(args.num_envs * args.num_steps)
     args.minibatch_size = int(args.batch_size // args.num_minibatches)
@@ -218,12 +220,9 @@ if __name__ == "__main__":
     pitch_limit = np.deg2rad(30)
     roll_ref = np.random.uniform(-roll_limit, roll_limit)
     pitch_ref = np.random.uniform(-pitch_limit, pitch_limit)
-    # roll_ref = np.deg2rad(60)
-    # pitch_ref = np.deg2rad(30)
     roll_refs = np.ones(args.num_envs) * roll_ref
     pitch_refs = np.ones(args.num_envs) * pitch_ref
-    # a_b_max = 1.0
-    # a_b_min = 0.1
+    a = b = 0.70
 
     for update in tqdm(range(1, num_updates + 1)):
         # Annealing the rate if instructed to do so.
@@ -241,6 +240,11 @@ if __name__ == "__main__":
         # dydx = (a_b_min - a_b_max) / num_updates
         # a = b = dydx * update + 1 +  abs(dydx)
         # print(f"beta params: a = {a}, b = {b}")
+        
+        # at half the updates, change the beta params
+        if args.ref_sampler == "beta" and global_step > 7.5e5:
+            print("change beta params, make the refs harder")
+            a = b = 0.10
 
         for step in range(0, args.num_steps):
             if args.track:
@@ -275,14 +279,16 @@ if __name__ == "__main__":
             for env_i, done in enumerate(dones):
                 if done:
                     obs_t1[step][env_i] = obs[step][env_i]
-                    refSeqs[env_i].sample_steps() # Sample a new sequence of reference steps
+                    # refSeqs[env_i].sample_steps() # Sample a new sequence of reference steps
                     # sample new references
-                    # roll_refs[env_i] = np.random.uniform(-roll_limit, roll_limit)
-                    # pitch_refs[env_i] = np.random.uniform(-pitch_limit, pitch_limit)
+                    if args.ref_sampler == "uniform":
+                        roll_refs[env_i] = np.random.uniform(-roll_limit, roll_limit)
+                        pitch_refs[env_i] = np.random.uniform(-pitch_limit, pitch_limit)
                     # roll_refs[env_i] = np.deg2rad(60)
                     # pitch_refs[env_i] = np.deg2rad(30)
-                    roll_refs[env_i] = np.random.beta(0.15, 0.15) * roll_limit*2 - roll_limit
-                    pitch_refs[env_i] = np.random.beta(0.15, 0.15) * pitch_limit*2 - pitch_limit
+                    if args.ref_sampler == "beta":
+                        roll_refs[env_i] = np.random.beta(a, b) * roll_limit*2 - roll_limit
+                        pitch_refs[env_i] = np.random.beta(a, b) * pitch_limit*2 - pitch_limit
                     print(f"Env Done, new refs : roll = {roll_refs[env_i]}, pitch = {pitch_refs[env_i]} sampled for env {env_i}")
                 else:
                     obs_t1[step][env_i] = next_obs[env_i]
@@ -442,8 +448,8 @@ if __name__ == "__main__":
         pe_obs = torch.Tensor(pe_obs).unsqueeze(0).to(device)
         e_refSeq = RefSequence(num_refs=5)
         e_refSeq.sample_steps()
-        roll_ref = np.deg2rad(55)
-        pitch_ref = np.deg2rad(25)
+        roll_ref = np.deg2rad(30)
+        pitch_ref = np.deg2rad(15)
         for step in range(4000):
             # if args.rand_targets:
             #     # roll_ref, pitch_ref, airspeed_ref = e_refSeq.sample_refs(step)
