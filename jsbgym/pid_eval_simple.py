@@ -100,8 +100,8 @@ if __name__ == '__main__':
     roll_ref: float = simple_ref_data[0, 0]
     pitch_ref: float = simple_ref_data[0, 1]
 
-    # roll_ref: float = np.deg2rad(40)
-    # pitch_ref: float = np.deg2rad(25)
+    # roll_ref: float = np.deg2rad(30)
+    # pitch_ref: float = np.deg2rad(15)
 
     # if no render mode, run the simulation for the whole reference sequence given by the .npy file
     if args.render_mode == "none":
@@ -176,7 +176,7 @@ if __name__ == '__main__':
             if done:
                 ep_cnt += 1
                 print(f"Episode reward: {info['episode']['r']}")
-                break
+                # break
                 obs, last_info = env.reset()
                 ep_fcs_pos_hist = np.array(last_info["fcs_pos_hist"]) # get fcs pos history of the finished episode
                 eps_fcs_fluct.append(np.mean(np.abs(np.diff(ep_fcs_pos_hist, axis=0)), axis=0)) # get fcs fluctuation of the episode and append it to the list of all fcs fluctuations
