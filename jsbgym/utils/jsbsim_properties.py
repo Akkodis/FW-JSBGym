@@ -237,6 +237,14 @@ kp_pitch_act = BoundedProperty("pidrl/pitch/kp_piact", "additive pitch kp RL act
 ki_pitch_act = BoundedProperty("pidrl/pitch/ki_piact", "additive pitch ki RL action", float('-inf'), float('+inf'))
 kd_pitch_act = BoundedProperty("pidrl/pitch/kd_piact", "additive pitch kd RL action", float('-inf'), float('+inf'))
 
+kp_roll_dt = BoundedProperty("pidrl/roll/kp_dt", "roll kp temporal increment", -0.01, 0.01)
+ki_roll_dt = BoundedProperty("pidrl/roll/ki_dt", "roll ki temporal increment", -0.01, 0.01)
+kd_roll_dt = BoundedProperty("pidrl/roll/kd_dt", "roll kd temporal increment", -0.01, 0.01)
+
+kp_pitch_dt = BoundedProperty("pidrl/pitch/kp_dt", "pitch kp temporal increment", -0.01, 0.01)
+ki_pitch_dt = BoundedProperty("pidrl/pitch/ki_dt", "pitch ki temporal increment", -0.01, 0.01)
+kd_pitch_dt = BoundedProperty("pidrl/pitch/kd_dt", "pitch kd temporal increment", -0.01, 0.01)
+
 # PID-RL properties stability ensured parametrized version
 roll_tau_1 = BoundedProperty("pidrl/roll/tau_1", "roll tau 1", float(0), float('+inf'))
 roll_tau_2 = BoundedProperty("pidrl/roll/tau_2", "roll tau 2", float(0), float('+inf'))

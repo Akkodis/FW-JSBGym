@@ -29,3 +29,9 @@ gymnasium.register(
     entry_point='jsbgym.envs.tasks.attitude_control_no_va:ACNoVaPIDRLTask',
     # autoreset=True
 )
+
+gymnasium.register(
+    id='ACNoVaPIDRL_DT-v0',
+    entry_point='jsbgym.envs.tasks.attitude_control_no_va:ACNoVaPIDRL_DTTask',
+    # autoreset=True
+)

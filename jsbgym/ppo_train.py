@@ -125,9 +125,9 @@ if __name__ == "__main__":
 
     if args.env_id == "AttitudeControl-v0":
         args.config = "config/ppo_caps.yaml"
-    elif args.env_id == "ACNoVa-v0" or args.env_id == "ACNoVaIntegErr-v0" or args.env_id == "ACNoVaPIDRL-v0":
+    else:
         args.config = "config/ppo_caps_no_va.yaml"
-    
+
     date_time = strftime('%d-%m_%H:%M:%S', localtime())
     run_name = f"ppo_{args.exp_name}_{args.seed}_{date_time}"
 
@@ -392,7 +392,7 @@ if __name__ == "__main__":
 
                 # preactivation loss
                 pa_loss = torch.Tensor([0.0]).to(device)
-                if args.env_id != "ACNoVaPIDRL-v0":
+                if args.env_id not in ["ACNoVaPIDRL-v0", "ACNoVaPIDRL_DT-v0"]:
                     pa_loss = torch.linalg.norm(act_means - trim_acts, ord=2)
 
                 loss = pg_loss - args.ent_coef * entropy_loss + v_loss * args.vf_coef + args.ts_coef * ts_loss + args.ss_coef * ss_loss + args.pa_coef * pa_loss
