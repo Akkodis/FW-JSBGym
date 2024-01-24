@@ -253,8 +253,8 @@ class ACNoVaPIDRLTask(ACNoVaTask):
             prp.airspeed_kph, # airspeed
             prp.p_radps, prp.q_radps, prp.r_radps, # angular rates
             prp.roll_err, prp.pitch_err, # errors
-            prp.kp_roll, prp.ki_roll, prp.kd_roll, # PID gains (action)
-            prp.kp_pitch, prp.ki_pitch, prp.kd_pitch,
+            prp.kp_roll_act, prp.ki_roll_act, prp.kd_roll_act,
+            prp.kp_pitch_act, prp.ki_pitch_act, prp.kd_pitch_act,
             prp.aileron_cmd, prp.elevator_cmd, # control surface commands (output of the PID controller)
             prp.alpha_rad, prp.beta_rad # angle of attack and sideslip angles
         )
@@ -290,22 +290,22 @@ class ACNoVaPIDRLTask(ACNoVaTask):
         self.observation_space = self.get_observation_space()
 
         # PIDs and their initial gain values
-        self.kp_roll_init: float = 0.0
-        self.ki_roll_init: float = 0.0
-        self.kd_roll_init: float = 0.0
-        self.pid_roll = PID(kp=self.kp_roll_init, ki=self.ki_roll_init, kd=self.kd_roll_init,
+        self.kp_roll_base: float = 1.5
+        self.ki_roll_base: float = 0.1
+        self.kd_roll_base: float = 0.1
+        self.pid_roll = PID(kp=self.kp_roll_base, ki=self.ki_roll_base, kd=self.kd_roll_base,
                             dt=self.fdm_dt, 
-                            # limit=AeroModel().aileron_limit
-                            limit = 1.0
+                            limit=AeroModel().aileron_limit
+                            # limit = 1.0
                             )
 
-        self.kp_pitch_init: float = -0.0
-        self.ki_pitch_init: float = -0.0
-        self.kd_pitch_init: float = -0.0
-        self.pid_pitch = PID(kp=self.kp_pitch_init, ki=self.ki_pitch_init, kd=self.kd_pitch_init,
+        self.kp_pitch_base: float = -2.0
+        self.ki_pitch_base: float = -0.3
+        self.kd_pitch_base: float = -0.1
+        self.pid_pitch = PID(kp=self.kp_pitch_base, ki=self.ki_pitch_base, kd=self.kd_pitch_base,
                              dt=self.fdm_dt, 
-                            #  limit=AeroModel().elevator_limit
-                             limit = 1.0
+                             limit=AeroModel().elevator_limit
+                            #  limit = 1.0
                              )
 
         self.initialize()
@@ -316,16 +316,24 @@ class ACNoVaPIDRLTask(ACNoVaTask):
         """
             Reset the task environment.
         """
+        # populate the properties with the initial values
         super().reset_props()
         # reset the task actions i.e. the PID gains to their initial values
-        # populate the properties with the initial values
         print("resetting agent PID gains")
-        self.sim[prp.kp_roll] = self.kp_roll_init
-        self.sim[prp.ki_roll] = self.ki_roll_init
-        self.sim[prp.kd_roll] = self.kd_roll_init
-        self.sim[prp.kp_pitch] = self.kp_pitch_init
-        self.sim[prp.ki_pitch] = self.ki_pitch_init
-        self.sim[prp.kd_pitch] = self.kd_pitch_init
+        self.sim[prp.kp_roll] = 0.0
+        self.sim[prp.ki_roll] = 0.0
+        self.sim[prp.kd_roll] = 0.0
+        self.sim[prp.kp_pitch] = 0.0
+        self.sim[prp.ki_pitch] = 0.0
+        self.sim[prp.kd_pitch] = 0.0
+
+        # reset the RL action additive terms of the PID gains to zero
+        self.sim[prp.kp_roll_act] = 0.0
+        self.sim[prp.ki_roll_act] = 0.0
+        self.sim[prp.kd_roll_act] = 0.0
+        self.sim[prp.kp_pitch_act] = 0.0
+        self.sim[prp.ki_pitch_act] = 0.0
+        self.sim[prp.kd_pitch_act] = 0.0
 
 
     def apply_action(self, action: np.ndarray) -> None:
@@ -335,13 +343,26 @@ class ACNoVaPIDRLTask(ACNoVaTask):
         super().apply_action(action)
 
         # apply the action (pitch and roll PID gains)
-        self.pid_roll.set_gains(kp=action[0], ki=action[1], kd=action[2])
-        self.pid_pitch.set_gains(kp=action[3], ki=action[4], kd=action[5])
+        self.sim[prp.kp_roll_act] = action[0]
+        self.sim[prp.ki_roll_act] = action[1]
+        self.sim[prp.kd_roll_act] = action[2]
+        self.sim[prp.kp_roll] = self.kp_roll_base + self.sim[prp.kp_roll_act]
+        self.sim[prp.ki_roll] = self.ki_roll_base + self.sim[prp.ki_roll_act]
+        self.sim[prp.kd_roll] = self.kd_roll_base + self.sim[prp.kd_roll_act]
+        self.pid_roll.set_gains(kp=self.sim[prp.kp_roll], ki=self.sim[prp.ki_roll], kd=self.sim[prp.kd_roll])
+
+        self.sim[prp.kp_pitch_act] = action[3]
+        self.sim[prp.ki_pitch_act] = action[4]
+        self.sim[prp.kd_pitch_act] = action[5]
+        self.sim[prp.kp_pitch] = self.kp_pitch_base + self.sim[prp.kp_pitch_act]
+        self.sim[prp.ki_pitch] = self.ki_pitch_base + self.sim[prp.ki_pitch_act]
+        self.sim[prp.kd_pitch] = self.kd_pitch_base + self.sim[prp.kd_pitch_act]
+        self.pid_pitch.set_gains(kp=self.sim[prp.kp_pitch], ki=self.sim[prp.ki_pitch], kd=self.sim[prp.kd_pitch])
 
         aileron_cmd, _, _ = self.pid_roll.update(state=self.sim[prp.roll_rad], state_dot=self.sim[prp.p_radps], 
-                                                 saturate=True, normalize=False)
+                                                 saturate=True, normalize=True)
         elevator_cmd, _, _ = self.pid_pitch.update(state=self.sim[prp.pitch_rad], state_dot=self.sim[prp.q_radps], 
-                                                   saturate=True, normalize=False)
+                                                   saturate=True, normalize=True)
 
         self.sim[prp.aileron_cmd] = aileron_cmd
         self.sim[prp.elevator_cmd] = elevator_cmd
