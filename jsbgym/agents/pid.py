@@ -1,6 +1,7 @@
 import time
 from jsbgym.trim.trim_point import TrimPoint
 from math import pi as PI
+import torch
 
 class PID:
     def __init__(self, kp: float = 0, ki: float = 0, kd: float = 0, dt: float = None,
@@ -95,3 +96,13 @@ class PID:
             self.ki = ki
         if kd is not None:
             self.kd = kd
+
+
+def torchPID(pid_gains, errs, limit, saturate=False, normalize=False):
+    pid_terms = pid_gains * errs
+    u = pid_terms.sum(dim=1).reshape(-1, 1)
+    if saturate:
+        u = torch.clamp(u, -limit, limit)
+    if normalize:
+        u = (u - (-limit)) / (limit - (-limit)) * 2 - 1
+    return u

@@ -8,7 +8,7 @@ from distutils.util import strtobool
 from tqdm import tqdm
 from jsbgym.trim.trim_point import TrimPoint
 from jsbgym.agents import ppo
-from jsbgym.agents.pid import PID
+from jsbgym.agents.pid import torchPID
 from jsbgym.utils.eval_utils import RefSequence
 from jsbgym.eval import metrics
 from jsbgym.models.aerodynamics import AeroModel
@@ -382,13 +382,77 @@ if __name__ == "__main__":
                 # Temporal Smoothing
                 act_means = agent.get_action_and_value(b_obs[mb_inds])[1]
                 next_act_means = agent.get_action_and_value(b_obs_t1[mb_inds])[1]
-                ts_loss = torch.linalg.norm(act_means - next_act_means, ord=2)
+                ts_loss = torch.Tensor([0.0]).to(device)
+                b_cmd = torch.zeros((args.minibatch_size, 2)).to(device)
+                if args.env_id not in ["ACNoVaPIDRL-v0", "ACNoVaPIDRL_DT-v0"]:
+                    ts_loss = torch.linalg.norm(act_means - next_act_means, ord=2)
+                else:
+                    # get all the relevant variables for computing the PID output given the PIDRL action at time t
+                    roll_gains = act_means[:, 0:3]
+                    roll_err = b_obs[mb_inds][:, 0, 4, 6].reshape(-1, 1)
+                    roll_int_err = b_obs[mb_inds][:, 0, 4, 8].reshape(-1, 1)
+                    roll_p = b_obs[mb_inds][:, 0, 4, 3].reshape(-1, 1)
+                    roll_errs = torch.cat((roll_err, roll_int_err, -roll_p), dim=1)
+                    b_roll_cmd = torchPID(roll_gains, roll_errs, AeroModel().aileron_limit, saturate=True, normalize=True)
+                    # roll_pid_terms = roll_gains * roll_errs
+                    # b_roll_cmd = roll_pid_terms.sum(dim=1).reshape(-1, 1) # batch of aileron (roll) commands
+
+                    pitch_gains = act_means[:, 3:6]
+                    pitch_err = b_obs[mb_inds][:, 0, 4, 7].reshape(-1, 1)
+                    pitch_int_err = b_obs[mb_inds][:, 0, 4, 9].reshape(-1, 1)
+                    pitch_q = b_obs[mb_inds][:, 0, 4, 4].reshape(-1, 1)
+                    pitch_errs = torch.cat((pitch_err, pitch_int_err, -pitch_q), dim=1)
+                    b_pitch_cmd = torchPID(pitch_gains, pitch_errs, AeroModel().elevator_limit, saturate=True, normalize=True)
+                    # pitch_pid_terms = pitch_gains * pitch_errs
+                    # b_pitch_cmd = pitch_pid_terms.sum(dim=1).reshape(-1, 1) # batch of elevator (pitch) commands
+
+                    roll_gains_t1 = next_act_means[:, 0:3]
+                    roll_err_t1 = b_obs_t1[mb_inds][:, 0, 4, 6].reshape(-1, 1)
+                    roll_int_err_t1 = b_obs_t1[mb_inds][:, 0, 4, 8].reshape(-1, 1)
+                    roll_p_t1 = b_obs_t1[mb_inds][:, 0, 4, 3].reshape(-1, 1)
+                    roll_errs_t1 = torch.cat((roll_err_t1, roll_int_err_t1, -roll_p_t1), dim=1)
+                    b_roll_cmd_t1 = torchPID(roll_gains_t1, roll_errs_t1, AeroModel().aileron_limit, saturate=True, normalize=True)
+                    # roll_pid_terms_t1 = roll_gains_t1 * roll_errs_t1
+                    # b_roll_cmd_t1 = roll_pid_terms_t1.sum(dim=1).reshape(-1, 1)
+
+                    pitch_gains_t1 = next_act_means[:, 3:6]
+                    pitch_err_t1 = b_obs_t1[mb_inds][:, 0, 4, 7].reshape(-1, 1)
+                    pitch_int_err_t1 = b_obs_t1[mb_inds][:, 0, 4, 9].reshape(-1, 1)
+                    pitch_q_t1 = b_obs_t1[mb_inds][:, 0, 4, 4].reshape(-1, 1)
+                    pitch_errs_t1 = torch.cat((pitch_err_t1, pitch_int_err_t1, -pitch_q_t1), dim=1)
+                    b_pitch_cmd_t1 = torchPID(pitch_gains_t1, pitch_errs_t1, AeroModel().elevator_limit, saturate=True, normalize=True)
+                    # pitch_pid_terms_t1 = pitch_gains_t1 * pitch_errs_t1
+                    # b_pitch_cmd_t1 = pitch_pid_terms_t1.sum(dim=1).reshape(-1, 1)
+
+                    b_cmd = torch.cat((b_roll_cmd, b_pitch_cmd), dim=1)
+                    b_cmd_t1 = torch.cat((b_roll_cmd_t1, b_pitch_cmd_t1), dim=1)
+                    ts_loss = torch.linalg.norm(b_cmd - b_cmd_t1, ord=2)
+
 
                 # Spatial Smoothing
                 state_problaw = Normal(b_obs[mb_inds], 0.01)
                 state_sampled = state_problaw.sample()
                 act_means_bar = agent.get_action_and_value(state_sampled)[1]
-                ss_loss = torch.linalg.norm(act_means - act_means_bar, ord=2)
+                ss_loss = torch.Tensor([0.0]).to(device)
+                if args.env_id not in ["ACNoVaPIDRL-v0", "ACNoVaPIDRL_DT-v0"]:
+                    ss_loss = torch.linalg.norm(act_means - act_means_bar, ord=2)
+                else:
+                    roll_gains_bar = act_means_bar[:, 0:3]
+                    roll_err_bar = state_sampled[:, 0, 4, 6].reshape(-1, 1)
+                    roll_int_err_bar = state_sampled[:, 0, 4, 8].reshape(-1, 1)
+                    roll_p_bar = state_sampled[:, 0, 4, 3].reshape(-1, 1)
+                    roll_errs_bar = torch.cat((roll_err_bar, roll_int_err_bar, -roll_p_bar), dim=1)
+                    b_roll_cmd_bar = torchPID(roll_gains_bar, roll_errs_bar, AeroModel().aileron_limit, saturate=True, normalize=True)
+
+                    pitch_gains_bar = act_means_bar[:, 3:6]
+                    pitch_err_bar = state_sampled[:, 0, 4, 7].reshape(-1, 1)
+                    pitch_int_err_bar = state_sampled[:, 0, 4, 9].reshape(-1, 1)
+                    pitch_q_bar = state_sampled[:, 0, 4, 4].reshape(-1, 1)
+                    pitch_errs_bar = torch.cat((pitch_err_bar, pitch_int_err_bar, -pitch_q_bar), dim=1)
+                    b_pitch_cmd_bar = torchPID(pitch_gains_bar, pitch_errs_bar, AeroModel().elevator_limit, saturate=True, normalize=True)
+
+                    b_cmd_bar = torch.cat((b_roll_cmd_bar, b_pitch_cmd_bar), dim=1)
+                    ss_loss = torch.linalg.norm(b_cmd - b_cmd_bar, ord=2)
 
                 # preactivation loss
                 pa_loss = torch.Tensor([0.0]).to(device)
