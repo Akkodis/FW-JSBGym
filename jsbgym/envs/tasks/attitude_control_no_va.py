@@ -176,7 +176,6 @@ class ACNoVaIntegErrTask(ACNoVaTask):
             prp.p_radps, prp.q_radps, prp.r_radps, # angular rates and airspeed
             prp.aileron_cmd, prp.elevator_cmd, prp.throttle_cmd, # control surface commands
             prp.reward_total, prp.reward_roll, prp.reward_pitch, # rewards
-            # prp.reward_int_roll, prp.reward_int_pitch, # integral rewards
             prp.airspeed_mps, prp.airspeed_kph, # airspeed
             prp.total_windspeed_north_mps, prp.total_windspeed_east_mps, prp.total_windspeed_down_mps, # wind speed mps
             prp.total_windspeed_north_kph, prp.total_windspeed_east_kph, prp.total_windspeed_down_kph, # wind speed kph
@@ -244,7 +243,7 @@ class ACNoVaIntegErrTask(ACNoVaTask):
         self.sim[prp.pitch_integ_err] = 0.0
 
 
-class ACNoVaPIDRLTask(ACNoVaTask):
+class ACNoVaPIDRLTask(ACNoVaIntegErrTask):
     def __init__(self, config_file: str, telemetry_file: str='', render_mode: str='none') -> None:
         super().__init__(config_file, telemetry_file, render_mode)
 
@@ -253,6 +252,7 @@ class ACNoVaPIDRLTask(ACNoVaTask):
             prp.airspeed_kph, # airspeed
             prp.p_radps, prp.q_radps, prp.r_radps, # angular rates
             prp.roll_err, prp.pitch_err, # errors
+            prp.roll_integ_err, prp.pitch_integ_err, # integral errors
             prp.kp_roll_act, prp.ki_roll_act, prp.kd_roll_act,
             prp.kp_pitch_act, prp.ki_pitch_act, prp.kd_pitch_act,
             prp.aileron_cmd, prp.elevator_cmd, # control surface commands (output of the PID controller)
@@ -270,6 +270,7 @@ class ACNoVaPIDRLTask(ACNoVaTask):
 
         self.error_prps: Tuple[BoundedProperty, ...] = (
             prp.roll_err, prp.pitch_err, # errors
+            prp.roll_integ_err, prp.pitch_integ_err # integral errors
         )
 
         self.telemetry_prps: Tuple[BoundedProperty, ...] = (
