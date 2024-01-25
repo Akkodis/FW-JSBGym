@@ -345,17 +345,17 @@ class ACNoVaPIDRLTask(ACNoVaTask):
         super().apply_action(action)
 
         # apply the action (pitch and roll PID gains)
-        self.sim[prp.kp_roll_act] = action[0]
-        self.sim[prp.ki_roll_act] = action[1]
-        self.sim[prp.kd_roll_act] = action[2]
+        # self.sim[prp.kp_roll_act] = action[0]
+        # self.sim[prp.ki_roll_act] = action[1]
+        # self.sim[prp.kd_roll_act] = action[2]
         self.sim[prp.kp_roll] = self.kp_roll_base + self.sim[prp.kp_roll_act]
         self.sim[prp.ki_roll] = self.ki_roll_base + self.sim[prp.ki_roll_act]
         self.sim[prp.kd_roll] = self.kd_roll_base + self.sim[prp.kd_roll_act]
         self.pid_roll.set_gains(kp=self.sim[prp.kp_roll], ki=self.sim[prp.ki_roll], kd=self.sim[prp.kd_roll])
 
-        self.sim[prp.kp_pitch_act] = action[3]
-        self.sim[prp.ki_pitch_act] = action[4]
-        self.sim[prp.kd_pitch_act] = action[5]
+        # self.sim[prp.kp_pitch_act] = action[3]
+        # self.sim[prp.ki_pitch_act] = action[4]
+        # self.sim[prp.kd_pitch_act] = action[5]
         self.sim[prp.kp_pitch] = self.kp_pitch_base + self.sim[prp.kp_pitch_act]
         self.sim[prp.ki_pitch] = self.ki_pitch_base + self.sim[prp.ki_pitch_act]
         self.sim[prp.kd_pitch] = self.kd_pitch_base + self.sim[prp.kd_pitch_act]
@@ -464,12 +464,12 @@ class ACNoVaPIDRL_DTTask(ACNoVaTask):
         super().reset_props()
         # reset the task actions i.e. the PID gains to their initial values
         print("resetting agent PID gains")
-        self.sim[prp.kp_roll] = 0.0
-        self.sim[prp.ki_roll] = 0.0
-        self.sim[prp.kd_roll] = 0.0
-        self.sim[prp.kp_pitch] = 0.0
-        self.sim[prp.ki_pitch] = 0.0
-        self.sim[prp.kd_pitch] = 0.0
+        self.sim[prp.kp_roll] = self.kp_roll_base
+        self.sim[prp.ki_roll] = self.ki_roll_base
+        self.sim[prp.kd_roll] = self.kd_roll_base
+        self.sim[prp.kp_pitch] = self.kp_pitch_base
+        self.sim[prp.ki_pitch] = self.ki_pitch_base
+        self.sim[prp.kd_pitch] = self.kd_pitch_base
 
         # reset the RL action additive terms of the PID gains to zero
         self.sim[prp.kp_roll_dt] = 0.0
@@ -487,20 +487,20 @@ class ACNoVaPIDRL_DTTask(ACNoVaTask):
         super().apply_action(action)
 
         # apply the action (pitch and roll PID gains)
-        self.sim[prp.kp_roll_dt] = action[0]
-        self.sim[prp.ki_roll_dt] = action[1]
-        self.sim[prp.kd_roll_dt] = action[2]
-        self.sim[prp.kp_roll] = self.kp_roll_base + self.sim[prp.kp_roll_dt]
-        self.sim[prp.ki_roll] = self.ki_roll_base + self.sim[prp.ki_roll_dt]
-        self.sim[prp.kd_roll] = self.kd_roll_base + self.sim[prp.kd_roll_dt]
+        # self.sim[prp.kp_roll_dt] = action[0]
+        # self.sim[prp.ki_roll_dt] = action[1]
+        # self.sim[prp.kd_roll_dt] = action[2]
+        self.sim[prp.kp_roll] += self.sim[prp.kp_roll_dt]
+        self.sim[prp.ki_roll] += self.sim[prp.ki_roll_dt]
+        self.sim[prp.kd_roll] += self.sim[prp.kd_roll_dt]
         self.pid_roll.set_gains(kp=self.sim[prp.kp_roll], ki=self.sim[prp.ki_roll], kd=self.sim[prp.kd_roll])
 
-        self.sim[prp.kp_pitch_dt] = action[3]
-        self.sim[prp.ki_pitch_dt] = action[4]
-        self.sim[prp.kd_pitch_dt] = action[5]
-        self.sim[prp.kp_pitch] = self.kp_pitch_base + self.sim[prp.kp_pitch_dt]
-        self.sim[prp.ki_pitch] = self.ki_pitch_base + self.sim[prp.ki_pitch_dt]
-        self.sim[prp.kd_pitch] = self.kd_pitch_base + self.sim[prp.kd_pitch_dt]
+        # self.sim[prp.kp_pitch_dt] = action[3]
+        # self.sim[prp.ki_pitch_dt] = action[4]
+        # self.sim[prp.kd_pitch_dt] = action[5]
+        self.sim[prp.kp_pitch] += self.sim[prp.kp_pitch_dt]
+        self.sim[prp.ki_pitch] += self.sim[prp.ki_pitch_dt]
+        self.sim[prp.kd_pitch] += self.sim[prp.kd_pitch_dt]
         self.pid_pitch.set_gains(kp=self.sim[prp.kp_pitch], ki=self.sim[prp.ki_pitch], kd=self.sim[prp.kd_pitch])
 
         aileron_cmd, _, _ = self.pid_roll.update(state=self.sim[prp.roll_rad], state_dot=self.sim[prp.p_radps], 
