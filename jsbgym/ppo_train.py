@@ -384,7 +384,7 @@ if __name__ == "__main__":
                 next_act_means = agent.get_action_and_value(b_obs_t1[mb_inds])[1]
                 ts_loss = torch.Tensor([0.0]).to(device)
                 b_cmd = torch.zeros((args.minibatch_size, 2)).to(device)
-                if args.env_id not in ["ACNoVaPIDRL-v0", "ACNoVaPIDRL_DT-v0"]:
+                if args.env_id not in ["ACNoVaPIDRLAdd-v0", "ACNoVaPIDRL-v0"]:
                     ts_loss = torch.linalg.norm(act_means - next_act_means, ord=2)
                 else:
                     # get all the relevant variables for computing the PID output given the PIDRL action at time t
@@ -434,7 +434,7 @@ if __name__ == "__main__":
                 state_sampled = state_problaw.sample()
                 act_means_bar = agent.get_action_and_value(state_sampled)[1]
                 ss_loss = torch.Tensor([0.0]).to(device)
-                if args.env_id not in ["ACNoVaPIDRL-v0", "ACNoVaPIDRL_DT-v0"]:
+                if args.env_id not in ["ACNoVaPIDRLAdd-v0", "ACNoVaPIDRL-v0"]:
                     ss_loss = torch.linalg.norm(act_means - act_means_bar, ord=2)
                 else:
                     roll_gains_bar = act_means_bar[:, 0:3]
@@ -456,7 +456,7 @@ if __name__ == "__main__":
 
                 # preactivation loss
                 pa_loss = torch.Tensor([0.0]).to(device)
-                if args.env_id not in ["ACNoVaPIDRL-v0", "ACNoVaPIDRL_DT-v0"]:
+                if args.env_id not in ["ACNoVaPIDRLAdd-v0", "ACNoVaPIDRL-v0"]:
                     pa_loss = torch.linalg.norm(act_means - trim_acts, ord=2)
 
                 loss = pg_loss - args.ent_coef * entropy_loss + v_loss * args.vf_coef + args.ts_coef * ts_loss + args.ss_coef * ss_loss + args.pa_coef * pa_loss
@@ -515,11 +515,6 @@ if __name__ == "__main__":
         roll_ref = np.deg2rad(30)
         pitch_ref = np.deg2rad(15)
         for step in range(4000):
-            # if args.rand_targets:
-            #     # roll_ref, pitch_ref, airspeed_ref = e_refSeq.sample_refs(step)
-
-            # if args.env_id == "AttitudeControl-v0":
-            #     pe_env.unwrapped.set_target_state(roll_ref, pitch_ref, airspeed_ref)
             pe_env.unwrapped.set_target_state(roll_ref, pitch_ref)
 
             action = agent.get_action_and_value(pe_obs)[1][0].detach().cpu().numpy()

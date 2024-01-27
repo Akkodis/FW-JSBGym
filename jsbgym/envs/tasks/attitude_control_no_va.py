@@ -243,7 +243,7 @@ class ACNoVaIntegErrTask(ACNoVaTask):
         self.sim[prp.pitch_integ_err] = 0.0
 
 
-class ACNoVaPIDRLTask(ACNoVaIntegErrTask):
+class ACNoVaPIDRLAddTask(ACNoVaIntegErrTask):
     def __init__(self, config_file: str, telemetry_file: str='', render_mode: str='none') -> None:
         super().__init__(config_file, telemetry_file, render_mode)
 
@@ -388,14 +388,16 @@ class ACNoVaPIDRLTask(ACNoVaIntegErrTask):
         self.pid_pitch.reset()
 
 
-class ACNoVaPIDRL_DTTask(ACNoVaTask):
+class ACNoVaPIDRLTask(ACNoVaIntegErrTask):
     def __init__(self, config_file: str, telemetry_file: str='', render_mode: str='none') -> None:
         super().__init__(config_file, telemetry_file, render_mode)
+
         self.state_prps: Tuple[BoundedProperty, ...] = (
             prp.roll_rad, prp.pitch_rad, # attitude
             prp.airspeed_kph, # airspeed
             prp.p_radps, prp.q_radps, prp.r_radps, # angular rates
             prp.roll_err, prp.pitch_err, # errors
+            prp.roll_integ_err, prp.pitch_integ_err, # integral errors
             prp.kp_roll, prp.ki_roll, prp.kd_roll,
             prp.kp_pitch, prp.ki_pitch, prp.kd_pitch,
             prp.aileron_cmd, prp.elevator_cmd, # control surface commands (output of the PID controller)
@@ -403,8 +405,8 @@ class ACNoVaPIDRL_DTTask(ACNoVaTask):
         )
 
         self.action_prps: Tuple[BoundedProperty, ...] = (
-            prp.kp_roll_dt, prp.ki_roll_dt, prp.kd_roll_dt,
-            prp.kp_pitch_dt, prp.ki_pitch_dt, prp.kd_pitch_dt
+            prp.kp_roll, prp.ki_roll, prp.kd_roll,
+            prp.kp_pitch, prp.ki_pitch, prp.kd_pitch
         )
 
         self.target_prps: Tuple[BoundedProperty, ...] = (
@@ -413,6 +415,7 @@ class ACNoVaPIDRL_DTTask(ACNoVaTask):
 
         self.error_prps: Tuple[BoundedProperty, ...] = (
             prp.roll_err, prp.pitch_err, # errors
+            prp.roll_integ_err, prp.pitch_integ_err # integral errors
         )
 
         self.telemetry_prps: Tuple[BoundedProperty, ...] = (
@@ -435,26 +438,20 @@ class ACNoVaPIDRL_DTTask(ACNoVaTask):
         self.observation_space = self.get_observation_space()
 
         # PIDs and their initial gain values
-        self.kp_roll_base: float = 1.5
-        self.ki_roll_base: float = 0.1
-        self.kd_roll_base: float = 0.1
-        self.pid_roll = PID(kp=self.kp_roll_base, ki=self.ki_roll_base, kd=self.kd_roll_base,
+        self.pid_roll = PID(kp=0.0, ki=0.0, kd=0.0,
                             dt=self.fdm_dt, 
                             limit=AeroModel().aileron_limit
                             # limit = 1.0
                             )
 
-        self.kp_pitch_base: float = -2.0
-        self.ki_pitch_base: float = -0.3
-        self.kd_pitch_base: float = -0.1
-        self.pid_pitch = PID(kp=self.kp_pitch_base, ki=self.ki_pitch_base, kd=self.kd_pitch_base,
+        self.pid_pitch = PID(kp=0.0, ki=0.0, kd=0.0,
                              dt=self.fdm_dt, 
                              limit=AeroModel().elevator_limit
                             #  limit = 1.0
                              )
 
         self.initialize()
-        self.telemetry_setup(self.telemetry_file)
+        self.telemetry_setup(self.telemetry_file) 
 
 
     def reset_props(self, seed: int=None, options: dict=None) -> Tuple[np.ndarray, np.ndarray]:
@@ -465,20 +462,12 @@ class ACNoVaPIDRL_DTTask(ACNoVaTask):
         super().reset_props()
         # reset the task actions i.e. the PID gains to their initial values
         print("resetting agent PID gains")
-        self.sim[prp.kp_roll] = self.kp_roll_base
-        self.sim[prp.ki_roll] = self.ki_roll_base
-        self.sim[prp.kd_roll] = self.kd_roll_base
-        self.sim[prp.kp_pitch] = self.kp_pitch_base
-        self.sim[prp.ki_pitch] = self.ki_pitch_base
-        self.sim[prp.kd_pitch] = self.kd_pitch_base
-
-        # reset the RL action additive terms of the PID gains to zero
-        self.sim[prp.kp_roll_dt] = 0.0
-        self.sim[prp.ki_roll_dt] = 0.0
-        self.sim[prp.kd_roll_dt] = 0.0
-        self.sim[prp.kp_pitch_dt] = 0.0
-        self.sim[prp.ki_pitch_dt] = 0.0
-        self.sim[prp.kd_pitch_dt] = 0.0
+        self.sim[prp.kp_roll] = 0.0
+        self.sim[prp.ki_roll] = 0.0
+        self.sim[prp.kd_roll] = 0.0
+        self.sim[prp.kp_pitch] = 0.0
+        self.sim[prp.ki_pitch] = 0.0
+        self.sim[prp.kd_pitch] = 0.0
 
 
     def apply_action(self, action: np.ndarray) -> None:
@@ -488,20 +477,8 @@ class ACNoVaPIDRL_DTTask(ACNoVaTask):
         super().apply_action(action)
 
         # apply the action (pitch and roll PID gains)
-        # self.sim[prp.kp_roll_dt] = action[0]
-        # self.sim[prp.ki_roll_dt] = action[1]
-        # self.sim[prp.kd_roll_dt] = action[2]
-        self.sim[prp.kp_roll] += self.sim[prp.kp_roll_dt]
-        self.sim[prp.ki_roll] += self.sim[prp.ki_roll_dt]
-        self.sim[prp.kd_roll] += self.sim[prp.kd_roll_dt]
         self.pid_roll.set_gains(kp=self.sim[prp.kp_roll], ki=self.sim[prp.ki_roll], kd=self.sim[prp.kd_roll])
 
-        # self.sim[prp.kp_pitch_dt] = action[3]
-        # self.sim[prp.ki_pitch_dt] = action[4]
-        # self.sim[prp.kd_pitch_dt] = action[5]
-        self.sim[prp.kp_pitch] += self.sim[prp.kp_pitch_dt]
-        self.sim[prp.ki_pitch] += self.sim[prp.ki_pitch_dt]
-        self.sim[prp.kd_pitch] += self.sim[prp.kd_pitch_dt]
         self.pid_pitch.set_gains(kp=self.sim[prp.kp_pitch], ki=self.sim[prp.ki_pitch], kd=self.sim[prp.kd_pitch])
 
         aileron_cmd, _, _ = self.pid_roll.update(state=self.sim[prp.roll_rad], state_dot=self.sim[prp.p_radps], 
