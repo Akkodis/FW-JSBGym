@@ -574,8 +574,8 @@ if __name__ == "__main__":
         all_rmse = []
         all_fcs_fluct = []
         total_steps = 50_000
-        e_roll_limit = np.deg2rad(30)
-        e_pitch_limit = np.deg2rad(20)
+        e_roll_limit = np.deg2rad(60)
+        e_pitch_limit = np.deg2rad(30)
 
         for i, severity in enumerate(severity_range):
             e_env = envs.envs[0]
@@ -586,8 +586,8 @@ if __name__ == "__main__":
             print(f"********** PPO METRICS {severity} **********")
             obs, _ = e_env.reset(options=sim_options)
             obs = torch.Tensor(obs).unsqueeze_(0).to(device)
-            roll_ref = np.random.uniform(np.deg2rad(-60), np.deg2rad(60))
-            pitch_ref = np.random.uniform(np.deg2rad(-30), np.deg2rad(30))
+            roll_ref = np.random.uniform(-e_roll_limit, e_roll_limit)
+            pitch_ref = np.random.uniform(-e_pitch_limit, e_pitch_limit)
             ep_cnt = 0 # episode counter
 
             for step in tqdm(range(total_steps)):
@@ -609,7 +609,9 @@ if __name__ == "__main__":
                     eps_fcs_fluct.append(np.mean(np.abs(np.diff(ep_fcs_pos_hist, axis=0)), axis=0)) # get fcs fluctuation of the episode and append it to the list of all fcs fluctuations
                     if ep_cnt < len(simple_ref_data):
                         refs = simple_ref_data[ep_cnt]
-                    roll_ref, pitch_ref = refs[0], refs[1]
+                    # roll_ref, pitch_ref = refs[0], refs[1]
+                    roll_ref = np.random.uniform(-e_roll_limit, e_roll_limit)
+                    pitch_ref = np.random.uniform(-e_pitch_limit, e_pitch_limit)
             all_fcs_fluct.append(np.mean(np.array(eps_fcs_fluct), axis=0))
             roll_mse = np.mean(np.square(e_obs[:, 6]))
             pitch_mse = np.mean(np.square(e_obs[:, 7]))
