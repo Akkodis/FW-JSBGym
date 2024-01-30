@@ -66,8 +66,8 @@ r_radps = BoundedProperty('velocities/r-rad_sec', 'yaw rate [rad/s]', -20, 20)
 altitude_rate_fps = Property('velocities/h-dot-fps', 'Rate of altitude change [ft/s]')
 airspeed_fps = BoundedProperty('velocities/vt-fps', 'True aircraft airspeed [ft/s]', float('-inf'), float('+inf'))
 airspeed_kts = BoundedProperty('velocities/vtrue-kts', 'True aircraft airspeed [kts]', float('-inf'), float('+inf'))
-airspeed_mps = BoundedHelperProperty('velocities/vt-mps', 'True aircraft airspeed [m/s]', 0, 53) # 53 m/s = 190 km/h = 102 kts
-airspeed_kph = BoundedHelperProperty('velocities/vt-kph', 'True aircraft airspeed [m/s]', 0, 190) # 53 m/s = 190 km/h = 102 kts
+airspeed_mps = BoundedHelperProperty('velocities/vt-mps', 'True aircraft airspeed [m/s]', 0, 111)# 111 m/s = 400 km/h = 216 kts 
+airspeed_kph = BoundedHelperProperty('velocities/vt-kph', 'True aircraft airspeed [m/s]', 0, 400) # 111 m/s = 400 km/h = 216 kts
 alpha_rad = BoundedProperty('aero/alpha-rad', 'aircraft angle of attack [rad]', float('-inf'), float('+inf'))
 beta_rad = BoundedProperty('aero/beta-rad', 'aircraft sideslip angle [rad]', float('-inf'), float('+inf'))
 ci2vel = Property('aero/ci2vel', 'chord/2*airspeed')
