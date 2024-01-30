@@ -178,6 +178,7 @@ class AttitudeControlTask(JSBSimEnv):
         # check if the episode is terminated modifies the reward with extra penalty if necessary
         terminated = self.is_terminated()
         truncated, episode_end, out_of_bounds = self.is_truncated()
+        self.prev_ep_oob = out_of_bounds # save the last episode oob status (True: it did oob, False: it didn't)
 
         # write telemetry to a csv file every agent step
         if self.render_mode in self.metadata["render_modes"][1:]:

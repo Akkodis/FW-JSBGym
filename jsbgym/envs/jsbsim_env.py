@@ -128,6 +128,8 @@ class JSBSimEnv(gym.Env, ABC):
         self.fcs_pos_hist = []
 
         self.sim_options: dict = {}
+        self.prev_ep_oob = False
+
 
 
     def initialize(self) -> None:
@@ -193,7 +195,9 @@ class JSBSimEnv(gym.Env, ABC):
         print(f"Seed: {self.sim['simulation/randomseed']}")
 
         # set the atmospehere (wind and turbulences)
+        print(f"Last Ep OOB: {self.prev_ep_oob}")
         self.set_atmosphere(self.sim_options["atmosphere"])
+
 
     def set_atmosphere(self, atmo_options: dict={}) -> None:
         """
