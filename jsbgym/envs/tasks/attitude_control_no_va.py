@@ -74,6 +74,9 @@ class ACNoVaTask(AttitudeControlTask):
         self.initialize()
         self.telemetry_setup(self.telemetry_file)
 
+        self.prev_target_roll: float = 0.0
+        self.prev_target_pitch: float = 0.0
+
 
     def apply_action(self, action: np.ndarray) -> None:
         # apply the action to the simulation
@@ -111,9 +114,17 @@ class ACNoVaTask(AttitudeControlTask):
         """
             Set the target state of the aircraft, i.e. the target state variables defined in the `target_state_vars` tuple.
         """
+        if target_roll_rad != self.prev_target_roll:
+            print("Target roll: ", target_roll_rad)
+        if target_pitch_rad != self.prev_target_pitch:
+            print("Target pitch: ", target_pitch_rad)
+
         # set target state sim properties
         self.sim[prp.target_roll_rad] = target_roll_rad
         self.sim[prp.target_pitch_rad] = target_pitch_rad
+
+        self.prev_target_roll = target_roll_rad
+        self.prev_target_pitch = target_pitch_rad
 
         # fill target state namedtuple with target state attributes
         self.target = self.TargetState(str(target_roll_rad), str(target_pitch_rad))
@@ -186,9 +197,6 @@ class ACNoVaIntegErrTask(ACNoVaTask):
         # set action and observation space from the task
         self.action_space = self.get_action_space()
         self.observation_space = self.get_observation_space()
-
-        self.prev_target_roll: float = 0.0
-        self.prev_target_pitch: float = 0.0
 
         self.initialize()
         self.telemetry_setup(self.telemetry_file)
