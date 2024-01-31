@@ -12,7 +12,7 @@ from abc import ABC, abstractmethod
 from jsbgym.simulation.jsb_simulation import Simulation
 from jsbgym.visualizers.visualizer import PlotVisualizer, FlightGearVisualizer
 from jsbgym.utils import jsbsim_properties as prp
-from jsbgym.utils.jsbsim_properties import BoundedProperty
+from jsbgym.utils.jsbsim_properties import BoundedProperty, Property
 
 
 class JSBSimEnv(gym.Env, ABC):
@@ -130,6 +130,20 @@ class JSBSimEnv(gym.Env, ABC):
         self.sim_options: dict = {}
         self.prev_ep_oob = False
 
+        self.fdm_aero_1: Tuple[Property, ...] = (
+            prp.aero_CDo, prp.aero_CDalpha, prp.aero_CDalpha2,
+            prp.aero_CDbeta, prp.aero_CDbeta2, prp.aero_CDe,
+            prp.aero_CLo, prp.aero_CLalpha, prp.aero_CLDe,
+            prp.aero_CYb, prp.aero_Clb, prp.aero_Clda,
+            prp.aero_Cmo, prp.aero_Cmalpha, prp.aero_CmDe,
+            prp.aero_Cnb, prp.aero_Cnda
+        )
+
+        self.fdm_aero_2: Tuple[Property, ...] = (
+            prp.aero_CLq, prp.aero_CYp, prp.aero_CYr,
+            prp.aero_Clp, prp.aero_Clr, prp.aero_Cnp,
+            prp.aero_Cnr
+        )
 
 
     def initialize(self) -> None:
@@ -197,6 +211,8 @@ class JSBSimEnv(gym.Env, ABC):
         # set the atmospehere (wind and turbulences)
         print(f"Last Ep OOB: {self.prev_ep_oob}")
         self.set_atmosphere(self.sim_options["atmosphere"])
+
+        self.randomize_fdm()
 
 
     def set_atmosphere(self, atmo_options: dict={}) -> None:
@@ -345,6 +361,19 @@ class JSBSimEnv(gym.Env, ABC):
         self.sim[prp.gust_dir_z_fps] = gust_dir[2]
         self.sim[prp.gust_start] = 1
         print("Gust Start")
+
+
+    def randomize_fdm(self):
+        for prop in self.fdm_aero_1:
+            self.sim[prop] = np.clip(np.random.normal(self.sim[prop], abs(0.1 * self.sim[prop])), 
+                                     -self.sim[prop] * 0.2, self.sim[prop] * 0.2)
+
+        for prop in self.fdm_aero_2:
+            self.sim[prop] = np.clip(np.random.normal(self.sim[prop], abs(0.2 * self.sim[prop])), 
+                                     -self.sim[prop] * 0.5, self.sim[prop] * 0.5)
+
+        self.sim[prp.aero_Cmq] = np.clip(np.random.normal(self.sim[prp.aero_Cmq], abs(0.5 * self.sim[prp.aero_Cmq])), 
+                                -self.sim[prp.aero_Cmq] * 0.95, self.sim[prp.aero_Cmq] * 0.95)
 
 
     @abstractmethod
