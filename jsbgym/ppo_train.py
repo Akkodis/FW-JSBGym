@@ -102,6 +102,7 @@ def parse_args():
     parser.add_argument('--gust', type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True, help='add gust')
     parser.add_argument("--ref-sampler", type=str, default='uniform',
         help="the distribution for sampling refs: uniform or beta")
+    parser.add_argument('--cst-beta', type=float, default=None)
     args = parser.parse_args()
     args.batch_size = int(args.num_envs * args.num_steps)
     args.minibatch_size = int(args.batch_size // args.num_minibatches)
@@ -287,8 +288,14 @@ if __name__ == "__main__":
                     # roll_refs[env_i] = np.deg2rad(60)
                     # pitch_refs[env_i] = np.deg2rad(30)
                     if args.ref_sampler == "beta":
-                        roll_refs[env_i] = np.random.beta(a, b) * roll_limit*2 - roll_limit
-                        pitch_refs[env_i] = np.random.beta(a, b) * pitch_limit*2 - pitch_limit
+                        if args.cst_beta is not None: # sample from beta with constant params
+                            roll_refs[env_i] = np.random.beta(args.cst_beta, args.cst_beta) * roll_limit*2 - roll_limit
+                            pitch_refs[env_i] = np.random.beta(args.cst_beta, args.cst_beta) * pitch_limit*2 - pitch_limit
+                            print(f"Sampled from beta with constant params {args.cst_beta}")
+                        else:
+                            roll_refs[env_i] = np.random.beta(a, b) * roll_limit*2 - roll_limit
+                            pitch_refs[env_i] = np.random.beta(a, b) * pitch_limit*2 - pitch_limit
+
                     print(f"Env Done, new refs : roll = {roll_refs[env_i]}, pitch = {pitch_refs[env_i]} sampled for env {env_i}")
                 else:
                     obs_t1[step][env_i] = next_obs[env_i]
