@@ -182,15 +182,40 @@ qbar_area = Property('aero/qbar-area', 'dynamic pressure * wing-planform area')
 Sw = Property('metrics/Sw-sqft', 'wing area [sqft]')
 rho = Property('atmosphere/rho-slugs_ft3', 'air density [slug/ft^3]')
 
-# fdm values
-Clo = Property('aero/coefficient/CLo', 'zero lift')
-Clalpha = Property('aero/coefficient/CLalpha', 'alpha lift')
-Clq = Property('aero/coefficient/CLq', 'pitch-rate lift')
-ClDe = Property('aero/coefficient/CLDe', 'elevator deflection lift')
-Cmo = Property('aero/coefficient/Cmo', 'zero lift pitch')
-Cmalpha = Property('aero/coefficient/Cmalpha', 'alpha pitch')
-Cmq = Property('aero/coefficient/Cmq', 'pitch rate pitch')
-CmDe = Property('aero/coefficient/CmDe', 'pitch due to elevator')
+# dynamic aero stability coefficients
+aero_CLo = Property('aero/stab-coef/CLo', 'coef: alpha independent lift')
+aero_CLalpha = Property('aero/stab-coef/CLalpha', 'coef: lift per alpha rad')
+aero_CLq = Property('aero/stab-coef/CLq', 'coef: lift due to pitch rate')
+aero_CLDe = Property('aero/stab-coef/CLDe', 'coef: lift due to elevator deflection')
+
+aero_CDo = Property('aero/stab-coef/CDo', 'coef: drag at zero alpha')
+aero_CDalpha = Property('aero/stab-coef/CDalpha', 'coef: drag due to alpha')
+aero_CDalpha2 = Property('aero/stab-coef/CDalpha2', 'coef: drag due to alpha squared')
+aero_CDbeta = Property('aero/stab-coef/CDbeta', 'coef: drag due to sideslip')
+aero_CDbeta2 = Property('aero/stab-coef/CDbeta2', 'coef: drag due to sideslip squared')
+aero_CDq = Property('aero/stab-coef/CDq', 'coef: drag due to pitch rate')
+aero_CDe = Property('aero/stab-coef/CDe', 'coef: drag due to elevator deflection')
+
+aero_CYb = Property('aero/stab-coef/CYb', 'coef: sideforce due to sideslip')
+aero_CYp = Property('aero/stab-coef/CYp', 'coef: sideforce due to roll rate')
+aero_CYr = Property('aero/stab-coef/CYr', 'coef: sideforce due to yaw rate')
+aero_CYda = Property('aero/stab-coef/CYda', 'coef: sideforce due to aileron deflection')
+
+aero_Clb = Property('aero/stab-coef/Clb', 'coef: roll moment due to sideslip')
+aero_Clp = Property('aero/stab-coef/Clp', 'coef: roll moment due to roll rate')
+aero_Clr = Property('aero/stab-coef/Clr', 'coef: roll moment due to yaw rate')
+aero_Clda = Property('aero/stab-coef/Clda', 'coef: roll moment due to aileron deflection')
+
+aero_Cmo = Property('aero/stab-coef/Cmo', 'coef: pitch moment at zero alpha')
+aero_Cmalpha = Property('aero/stab-coef/Cmalpha', 'coef: pitch moment due to alpha')
+aero_Cmq = Property('aero/stab-coef/Cmq', 'coef: pitch moment due to pitch rate')
+aero_CmDe = Property('aero/stab-coef/CmDe', 'coef: pitch moment due to elevator deflection')
+
+aero_Cnb = Property('aero/stab-coef/Cnb', 'coef: yaw moment due to sideslip')
+aero_Cnp = Property('aero/stab-coef/Cnp', 'coef: yaw moment due to roll rate')
+aero_Cnr = Property('aero/stab-coef/Cnr', 'coef: yaw moment due to yaw rate')
+aero_Cnda = Property('aero/stab-coef/Cnda', 'coef: yaw moment due to aileron deflection')
+
 
 # additional custom properties for error and target values
 airspeed_err = BoundedProperty("error/airspeed-err", "airspeed error", float('-inf'), float('+inf'))
