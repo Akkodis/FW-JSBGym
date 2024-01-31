@@ -65,8 +65,8 @@ if __name__ == '__main__':
     simple_ref_data = np.load(args.ref_file)
 
     # set default target values
-    # roll_ref: float = np.deg2rad(20)
-    # pitch_ref: float = np.deg2rad(15)
+    # roll_ref: float = np.deg2rad(55)
+    # pitch_ref: float = np.deg2rad(25)
 
     # if no render mode, run the simulation for the whole reference sequence given by the .npy file
     if args.render_mode == "none":
@@ -111,8 +111,7 @@ if __name__ == '__main__':
 
     for i, severity in enumerate(severity_range):
         sim_options["atmosphere"]["severity"] = severity
-        e_actions = np.ndarray((total_steps, env.action_space.shape[0]))
-        e_obs = np.ndarray((total_steps, env.observation_space.shape[2]))
+        e_obs = []
         eps_fcs_fluct = []
         print(f"********** PPO METRICS {severity} **********")
         obs, _ = env.reset(options=sim_options)
@@ -123,11 +122,9 @@ if __name__ == '__main__':
         for step in tqdm(range(total_steps)):
             env.set_target_state(roll_ref, pitch_ref)
             action = ppo_agent.get_action_and_value(obs)[1].squeeze_(0).detach().cpu().numpy()
-            e_actions[step] = action
             obs, reward, truncated, terminated, info = env.step(action)
-            e_obs[step] = info["non_norm_obs"][0, -1] # take the last obs of the history
+            e_obs.append(info["non_norm_obs"][0, -1])
             obs = torch.Tensor(obs).unsqueeze_(0).to(device)
-            # print(env.sim["aero/coefficient/Cnda"])
 
             done = np.logical_or(truncated, terminated)
             if done:
@@ -141,7 +138,11 @@ if __name__ == '__main__':
                 if ep_cnt < len(simple_ref_data):
                     refs = simple_ref_data[ep_cnt]
                 roll_ref, pitch_ref = refs[0], refs[1]
+
         all_fcs_fluct.append(np.mean(np.array(eps_fcs_fluct), axis=0))
+        e_obs = np.array(e_obs)
+        print(f"e_obs shape: {e_obs.shape}")
+        print(f"eps_fcs_fluct shape: {np.array(eps_fcs_fluct).shape}")
         roll_mse = np.mean(np.square(e_obs[:, 6]))
         pitch_mse = np.mean(np.square(e_obs[:, 7]))
         all_mse.append([roll_mse, pitch_mse])
@@ -160,6 +161,4 @@ if __name__ == '__main__':
                                 "roll_rmse": rmse[0], "pitch_rmse": rmse[1], 
                                 "roll_fcs_fluct": fcs_fluct[0], "pitch_fcs_fluct": fcs_fluct[1]})
 
-    # np.save("eval/e_ppo_obs.npy", e_obs)
-    # np.save("eval/e_ppo_actions.npy", e_actions)
     env.close()

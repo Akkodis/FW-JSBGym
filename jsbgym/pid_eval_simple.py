@@ -100,8 +100,8 @@ if __name__ == '__main__':
     roll_ref: float = simple_ref_data[0, 0]
     pitch_ref: float = simple_ref_data[0, 1]
 
-    # roll_ref: float = np.deg2rad(30)
-    # pitch_ref: float = np.deg2rad(15)
+    # roll_ref: float = np.deg2rad(55)
+    # pitch_ref: float = np.deg2rad(25)
 
     # if no render mode, run the simulation for the whole reference sequence given by the .npy file
     if args.render_mode == "none":
@@ -148,8 +148,7 @@ if __name__ == '__main__':
 
     for i, severity in enumerate(severity_range):
         sim_options["atmosphere"]["severity"] = severity
-        e_actions = np.ndarray((total_steps, env.action_space.shape[0]))
-        e_obs = np.ndarray((total_steps, env.observation_space.shape[2]))
+        e_obs = []
         eps_fcs_fluct = []
         print(f"********** PID METRICS {severity} **********")
         obs, _ = env.reset(options=sim_options)
@@ -167,9 +166,8 @@ if __name__ == '__main__':
             elevator_cmd, pitch_err, _ = pitch_pid.update(state=pitch, state_dot=pitch_rate, saturate=True, normalize=True)
 
             action = np.array([aileron_cmd, elevator_cmd])
-            e_actions[step] = action
             obs, reward, truncated, terminated, info = env.step(action)
-            e_obs[step] = obs[0, -1] # take the last obs of the history
+            e_obs.append(obs[0, -1])
             Va, roll, pitch, roll_rate, pitch_rate = rearrange_obs(obs)
 
             done = np.logical_or(truncated, terminated)
@@ -180,12 +178,17 @@ if __name__ == '__main__':
                 obs, last_info = env.reset()
                 ep_fcs_pos_hist = np.array(last_info["fcs_pos_hist"]) # get fcs pos history of the finished episode
                 eps_fcs_fluct.append(np.mean(np.abs(np.diff(ep_fcs_pos_hist, axis=0)), axis=0)) # get fcs fluctuation of the episode and append it to the list of all fcs fluctuations
+                # break
                 pitch_pid.reset()
                 roll_pid.reset()
                 if ep_cnt < len(simple_ref_data):
                     refs = simple_ref_data[ep_cnt]
                 roll_ref, pitch_ref = refs[0], refs[1]
+
         all_fcs_fluct.append(np.mean(np.array(eps_fcs_fluct), axis=0))
+        e_obs = np.array(e_obs)
+        print(f"e_obs shape: {e_obs.shape}")
+        print(f"eps_fcs_fluct shape: {np.array(eps_fcs_fluct).shape}")
         roll_mse = np.mean(np.square(e_obs[:, 6]))
         pitch_mse = np.mean(np.square(e_obs[:, 7]))
         all_mse.append([roll_mse, pitch_mse])
@@ -204,5 +207,4 @@ if __name__ == '__main__':
                                 "roll_rmse": rmse[0], "pitch_rmse": rmse[1], 
                                 "roll_fcs_fluct": fcs_fluct[0], "pitch_fcs_fluct": fcs_fluct[1]})
 
-    # np.save("eval/e_pid_obs.npy", e_obs)
-    # np.save("eval/e_pid_actions.npy", e_actions)
+    env.close()
