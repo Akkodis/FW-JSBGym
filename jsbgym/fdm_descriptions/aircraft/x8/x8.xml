@@ -61,6 +61,25 @@
         </location>
     </mass_balance>
 
+    <!-- <mass_balance>
+        <property value="1.2290">fdm/inertia-matrix/ixx</property>
+        <property value="0.1702">fdm/inertia-matrix/iyy</property>
+        <property value="0.8808">fdm/inertia-matrix/izz</property>
+        <property value="0.9343">fdm/inertia-matrix/ixz</property>
+        <property value="3.3640">fdm/emptywt</property>
+
+        <ixx unit="KG*M2"><property>fdm/inertia-matrix/ixx</property></ixx>
+        <iyy unit="KG*M2"><property>fdm/inertia-matrix/iyy</property></iyy>
+        <izz unit="KG*M2"><property>fdm/inertia-matrix/izz</property></izz>
+        <ixz unit="KG*M2"><property>fdm/inertia-matrix/ixz</property></ixz>
+        <emptywt unit="KG"><property>fdm/emptywt</property></emptywt>
+        <location name ="CG" unit="M">
+            <x> 0.0 </x>
+            <y> 0.0 </y>
+            <z> 0.0 </z>
+        </location>
+    </mass_balance> -->
+
     <ground_reactions>
       <!-- <contact type="STRUCTURE" name="Belly">
         <location unit="IN">

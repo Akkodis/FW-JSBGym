@@ -182,6 +182,13 @@ qbar_area = Property('aero/qbar-area', 'dynamic pressure * wing-planform area')
 Sw = Property('metrics/Sw-sqft', 'wing area [sqft]')
 rho = Property('atmosphere/rho-slugs_ft3', 'air density [slug/ft^3]')
 
+# mass related dynamic properties
+fdm_ixx = Property('fdm/inertia-matrix/ixx', 'inertia matrix element Ixx [KG*M^2]')
+fdm_iyy = Property('fdm/inertia-matrix/iyy', 'inertia matrix element Iyy [KG*M^2]')
+fdm_izz = Property('fdm/inertia-matrix/izz', 'inertia matrix element Izz [KG*M^2]')
+fdm_ixz = Property('fdm/inertia-matrix/ixz', 'inertia matrix element Ixz [KG*M^2]')
+fdm_mass_kg = Property('fdm/emptywt', 'empty mass [KG]')
+
 # dynamic aero stability coefficients
 aero_CLo = Property('aero/stab-coef/CLo', 'coef: alpha independent lift')
 aero_CLalpha = Property('aero/stab-coef/CLalpha', 'coef: lift per alpha rad')
