@@ -5,13 +5,10 @@ import torch
 import random
 import os
 import csv
-from tqdm import tqdm
 
 from agents.pid import PID
 from models import aerodynamics
 from trim.trim_point import TrimPoint
-from utils.eval_utils import RefSequence
-from jsbgym.eval import metrics
 
 
 def parse_args():
@@ -32,6 +29,8 @@ def parse_args():
                         help='severity of the atmosphere (wind and turb)')
     parser.add_argument('--out-file', type=str, default='eval_res_pid.csv', 
                         help='save results to file')
+    parser.add_argument('--rand-fdm', action='store_true',
+                        help='randomize the fdm coefs at the start of each episode')
     args = parser.parse_args()
     return args
 
@@ -120,8 +119,10 @@ if __name__ == '__main__':
                        },
                        "gust": {
                             "enable": True
-                       }
-                   }}
+                       },
+                    },
+                   "rand_fdm": args.rand_fdm
+                  }
 
     if args.severity == "all":
         severity_range = ["off", "light", "moderate", "severe"]
@@ -154,9 +155,11 @@ if __name__ == '__main__':
         obs, _ = env.reset(options=sim_options)
         Va, roll, pitch, roll_rate, pitch_rate = rearrange_obs(obs)
         ep_cnt = 0 # episode counter
+        ep_step = 0
+        step = 0
         refs = simple_ref_data[ep_cnt]
         roll_ref, pitch_ref = refs[0], refs[1]
-        for step in tqdm(range(total_steps)):
+        while step < total_steps:
             # apply target values
             roll_pid.set_reference(roll_ref)
             pitch_pid.set_reference(pitch_ref)
@@ -172,18 +175,27 @@ if __name__ == '__main__':
 
             done = np.logical_or(truncated, terminated)
             if done:
-                ep_cnt += 1
+                if info['out_of_bounds']:
+                    print("Out of bounds")
+                    e_obs[len(e_obs)-ep_step:] = [] # delete last ep obs if out of bounds
+                    step -= ep_step
+                    ep_step = 0
+                else:
+                    ep_step = 0
+                    ep_cnt += 1
                 print(f"Episode reward: {info['episode']['r']}")
+                print(f"******* {step}/{total_steps} *******")
                 # break
                 obs, last_info = env.reset()
                 ep_fcs_pos_hist = np.array(last_info["fcs_pos_hist"]) # get fcs pos history of the finished episode
                 eps_fcs_fluct.append(np.mean(np.abs(np.diff(ep_fcs_pos_hist, axis=0)), axis=0)) # get fcs fluctuation of the episode and append it to the list of all fcs fluctuations
-                # break
                 pitch_pid.reset()
                 roll_pid.reset()
                 if ep_cnt < len(simple_ref_data):
                     refs = simple_ref_data[ep_cnt]
                 roll_ref, pitch_ref = refs[0], refs[1]
+            ep_step += 1
+            step += 1
 
         all_fcs_fluct.append(np.mean(np.array(eps_fcs_fluct), axis=0))
         e_obs = np.array(e_obs)

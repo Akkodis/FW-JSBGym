@@ -4,12 +4,9 @@ import torch
 import numpy as np
 import os
 import csv
-from tqdm import tqdm
 
 from agents import ppo
 from jsbgym.trim.trim_point import TrimPoint
-from jsbgym.eval import metrics
-from jsbgym.utils import jsbsim_properties as prp
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -31,6 +28,8 @@ def parse_args():
                         help='severity of the atmosphere (wind and turb)')
     parser.add_argument('--out-file', type=str, default='eval_res_ppo.csv', 
                         help='save results to file')
+    parser.add_argument('--rand-fdm', action='store_true',
+                        help='randomize the fdm coefs at the start of each episode')
     args = parser.parse_args()
     return args
 
@@ -86,8 +85,9 @@ if __name__ == '__main__':
                        },
                        "gust": {
                            "enable": True
-                       }
-                   }}
+                       },
+                    },
+                   "rand_fdm": args.rand_fdm}
 
     if args.severity == "all":
         severity_range = ["off", "light", "moderate", "severe"]
@@ -117,9 +117,11 @@ if __name__ == '__main__':
         obs, _ = env.reset(options=sim_options)
         obs = torch.Tensor(obs).unsqueeze_(0).to(device)
         ep_cnt = 0 # episode counter
+        ep_step = 0 # step counter within an episode
+        step = 0
         refs = simple_ref_data[ep_cnt]
         roll_ref, pitch_ref = refs[0], refs[1]
-        for step in tqdm(range(total_steps)):
+        while step < total_steps:
             env.set_target_state(roll_ref, pitch_ref)
             action = ppo_agent.get_action_and_value(obs)[1].squeeze_(0).detach().cpu().numpy()
             obs, reward, truncated, terminated, info = env.step(action)
@@ -128,8 +130,16 @@ if __name__ == '__main__':
 
             done = np.logical_or(truncated, terminated)
             if done:
-                ep_cnt += 1
+                if info['out_of_bounds']:
+                    print("Out of bounds")
+                    e_obs[len(e_obs)-ep_step:] = [] # delete the last observations if the ep is oob
+                    step -= ep_step # set the step counter back to the last episode
+                    ep_step = 0 # reset the episode step counter
+                else:
+                    ep_step = 0 # reset the episode step counter
+                    ep_cnt += 1 # increment the episode counter
                 print(f"Episode reward: {info['episode']['r']}")
+                print(f"******* {step}/{total_steps} *******")
                 # break
                 obs, last_info = env.reset()
                 obs = torch.Tensor(obs).unsqueeze_(0).to(device)
@@ -138,6 +148,8 @@ if __name__ == '__main__':
                 if ep_cnt < len(simple_ref_data):
                     refs = simple_ref_data[ep_cnt]
                 roll_ref, pitch_ref = refs[0], refs[1]
+            ep_step += 1
+            step += 1
 
         all_fcs_fluct.append(np.mean(np.array(eps_fcs_fluct), axis=0))
         e_obs = np.array(e_obs)

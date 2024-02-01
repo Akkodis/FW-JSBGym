@@ -130,6 +130,9 @@ class JSBSimEnv(gym.Env, ABC):
         self.sim_options: dict = {}
         self.prev_ep_oob = False
 
+        self.fdm_seed = None
+        self.fdm_rng: np.random.Generator = None
+
         self.fdm_aero_1: Tuple[Property, ...] = (
             prp.aero_CDo, prp.aero_CDalpha, prp.aero_CDalpha2,
             prp.aero_CDbeta, prp.aero_CDbeta2, prp.aero_CDe,
@@ -180,13 +183,6 @@ class JSBSimEnv(gym.Env, ABC):
                                   viz_time_factor=self.viz_time_factor,
                                   enable_fgear_output=self.enable_fgear_output)
 
-        # reset the random number generator
-        # super().reset(seed=seed)
-        # if seed is not None:
-        #     self.sim["simulation/randomseed"] = seed
-        # else:
-        #     self.sim["simulation/randomseed"] = np.random.randint(0, 10000)
-
         # set render mode
         if options is not None:
             if "render_mode" in options: 
@@ -198,21 +194,25 @@ class JSBSimEnv(gym.Env, ABC):
                 self.sim_options["seed"] = options["seed"]
             if "atmosphere" in options:
                 self.sim_options["atmosphere"] = options["atmosphere"]
+            if "rand_fdm" in options:
+                self.sim_options["rand_fdm"] = options["rand_fdm"]
 
-        # TODO add curriculum learning with a bool in args.config yaml file and change
-        # the sim_options dict accordingly
         if self.sim_options is not None:
             if "seed" in self.sim_options:
                 self.sim["simulation/randomseed"] = self.sim_options["seed"]
             else:
                 self.sim["simulation/randomseed"] = np.random.randint(0, 10000)
+            if self.fdm_rng is None:
+                self.fdm_rng = np.random.default_rng(int(self.sim["simulation/randomseed"]))
+            if self.sim_options.get("rand_fdm", False):
+                self.randomize_fdm()
+
+
         print(f"Seed: {self.sim['simulation/randomseed']}")
 
         # set the atmospehere (wind and turbulences)
         print(f"Last Ep OOB: {self.prev_ep_oob}")
         self.set_atmosphere(self.sim_options["atmosphere"])
-
-        self.randomize_fdm()
 
 
     def set_atmosphere(self, atmo_options: dict={}) -> None:
@@ -364,16 +364,17 @@ class JSBSimEnv(gym.Env, ABC):
 
 
     def randomize_fdm(self):
+        print("Sampling new FDM Coefs")
         for prop in self.fdm_aero_1:
-            self.sim[prop] = np.clip(np.random.normal(self.sim[prop], abs(0.1 * self.sim[prop])), 
-                                     -self.sim[prop] * 0.2, self.sim[prop] * 0.2)
+            self.sim[prop] = np.clip(self.fdm_rng.normal(self.sim[prop], abs(0.1 * self.sim[prop])), 
+                                     self.sim[prop]-abs(self.sim[prop]) * 0.2, self.sim[prop]+abs(self.sim[prop]) * 0.2)
 
         for prop in self.fdm_aero_2:
-            self.sim[prop] = np.clip(np.random.normal(self.sim[prop], abs(0.2 * self.sim[prop])), 
-                                     -self.sim[prop] * 0.5, self.sim[prop] * 0.5)
+            self.sim[prop] = np.clip(self.fdm_rng.normal(self.sim[prop], abs(0.2 * self.sim[prop])), 
+                                     self.sim[prop]-abs(self.sim[prop]) * 0.5, self.sim[prop]+abs(self.sim[prop]) * 0.5)
 
-        self.sim[prp.aero_Cmq] = np.clip(np.random.normal(self.sim[prp.aero_Cmq], abs(0.5 * self.sim[prp.aero_Cmq])), 
-                                -self.sim[prp.aero_Cmq] * 0.95, self.sim[prp.aero_Cmq] * 0.95)
+        self.sim[prp.aero_Cmq] = np.clip(self.fdm_rng.normal(self.sim[prp.aero_Cmq], abs(0.5 * self.sim[prp.aero_Cmq])), 
+                                self.sim[prp.aero_Cmq]-abs(self.sim[prp.aero_Cmq]) * 0.95, self.sim[prp.aero_Cmq]+abs(self.sim[prp.aero_Cmq]) * 0.95)
 
 
     @abstractmethod

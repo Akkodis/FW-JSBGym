@@ -10,7 +10,6 @@ from jsbgym.trim.trim_point import TrimPoint
 from jsbgym.agents import ppo
 from jsbgym.agents.pid import torchPID
 from jsbgym.utils.eval_utils import RefSequence
-from jsbgym.eval import metrics
 from jsbgym.models.aerodynamics import AeroModel
 
 import wandb
@@ -103,6 +102,8 @@ def parse_args():
     parser.add_argument("--ref-sampler", type=str, default='uniform',
         help="the distribution for sampling refs: uniform or beta")
     parser.add_argument('--cst-beta', type=float, default=None)
+    parser.add_argument('--rand-fdm', type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True,
+                         help='randomize the fdm parameters at the start of each episode')
     args = parser.parse_args()
     args.batch_size = int(args.num_envs * args.num_steps)
     args.minibatch_size = int(args.batch_size // args.num_minibatches)
@@ -204,8 +205,11 @@ if __name__ == "__main__":
                         },
                         "gust": {
                             "enable": args.gust
-                        }
-                   }}
+                        },
+                   },
+                   "rand_fdm": args.rand_fdm
+                  }
+
     next_obs, _ = envs.reset(options=sim_options)
     next_obs = torch.Tensor(next_obs).to(device)
     next_terminated = torch.zeros(args.num_envs).to(device)
