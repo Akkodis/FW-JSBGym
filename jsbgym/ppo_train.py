@@ -111,7 +111,6 @@ def parse_args():
     return args
 
 
-# TODO: Implement save_model function
 def save_model(save_path, run_name, agent, env, seed):
     print("saving agent...")
     train_dict = {}

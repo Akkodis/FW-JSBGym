@@ -63,7 +63,7 @@ class ACNoVaTask(AttitudeControlTask):
         ) + self.target_prps + self.error_prps # target state variables
 
         self.pid_airspeed = PID(kp=0.5, ki=0.1, kd=0.0,
-                           dt=self.fdm_dt, trim=TrimPoint(), # TODO: make setting of dt more modulable (read from config file)
+                           dt=self.fdm_dt, trim=TrimPoint(), 
                            limit=AeroModel().throttle_limit, is_throttle=True
         )
 
