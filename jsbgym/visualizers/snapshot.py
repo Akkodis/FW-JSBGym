@@ -16,6 +16,7 @@ parser.add_argument('--tele-file', type=str, required=True, help='Telemetry csv 
 parser.add_argument('--fullscreen', action='store_true', help='True: fullscreen, False: windowed')
 args: Namespace = parser.parse_args()
 
+plt.rcParams.update({'font.size': 17})
 
 fig, axis = plt.subplots(2, 2)
 
@@ -76,7 +77,7 @@ axis[0, 0].plot(tsteps, roll, label='roll' if not np.isnan(np.sum(roll)) else ''
 axis[0, 0].plot(tsteps, roll_ref, color='r', linestyle='--', label='roll_ref' if not np.isnan(np.sum(roll_ref)) else '')
 axis[0, 0].fill_between(tsteps, roll_ref - np.deg2rad(5), roll_ref + np.deg2rad(5), color='r', alpha=0.2)
 axis[0, 0].set_title('roll control')
-axis[0, 0].set_xlabel("timestep")
+# axis[0, 0].set_xlabel("timestep")
 axis[0, 0].set_ylabel("roll [rad]")
 axis[0, 0].legend()
 axis[0, 0].grid()
@@ -85,7 +86,7 @@ axis[0, 1].plot(tsteps, pitch, label='pitch' if not np.isnan(np.sum(pitch)) else
 axis[0, 1].plot(tsteps, pitch_ref, color='r', linestyle='--', label='pitch_ref' if not np.isnan(np.sum(pitch_ref)) else '')
 axis[0, 1].fill_between(tsteps, pitch_ref - np.deg2rad(5), pitch_ref + np.deg2rad(5), color='r', alpha=0.2)
 axis[0, 1].set_title('pitch control')
-axis[0, 1].set_xlabel("timestep")
+# axis[0, 1].set_xlabel("timestep")
 axis[0, 1].set_ylabel("pitch [rad]")
 axis[0, 1].legend()
 axis[0, 1].grid()
