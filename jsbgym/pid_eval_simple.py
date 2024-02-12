@@ -99,8 +99,8 @@ if __name__ == '__main__':
     roll_ref: float = simple_ref_data[0, 0]
     pitch_ref: float = simple_ref_data[0, 1]
 
-    # roll_ref: float = np.deg2rad(55)
-    # pitch_ref: float = np.deg2rad(25)
+    # roll_ref: float = np.deg2rad(58)
+    # pitch_ref: float = np.deg2rad(28)
 
     # if no render mode, run the simulation for the whole reference sequence given by the .npy file
     if args.render_mode == "none":
@@ -121,7 +121,10 @@ if __name__ == '__main__':
                             "enable": True
                        },
                     },
-                   "rand_fdm": args.rand_fdm
+                   "rand_fdm": {
+                       "enable": args.rand_fdm,
+                       "eval": True
+                   }
                   }
 
     if args.severity == "all":

@@ -7,6 +7,7 @@ import csv
 
 from agents import ppo
 from jsbgym.trim.trim_point import TrimPoint
+from jsbgym.utils import jsbsim_properties as prp
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -64,8 +65,8 @@ if __name__ == '__main__':
     simple_ref_data = np.load(args.ref_file)
 
     # set default target values
-    # roll_ref: float = np.deg2rad(55)
-    # pitch_ref: float = np.deg2rad(25)
+    # roll_ref: float = np.deg2rad(58)
+    # pitch_ref: float = np.deg2rad(28)
 
     # if no render mode, run the simulation for the whole reference sequence given by the .npy file
     if args.render_mode == "none":
@@ -87,7 +88,11 @@ if __name__ == '__main__':
                            "enable": True
                        },
                     },
-                   "rand_fdm": args.rand_fdm}
+                   "rand_fdm": {
+                       "enable": args.rand_fdm,
+                       "eval": True
+                   }
+                }
 
     if args.severity == "all":
         severity_range = ["off", "light", "moderate", "severe"]
