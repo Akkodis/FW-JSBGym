@@ -1,0 +1,63 @@
+{'__header__': b'MATLAB 5.0 MAT-file, Platform: GLNXA64, Created on: Wed Aug 21 07:42:07 2019', '__version__': '1.0', '__globals__': [], 
+'C_D_0': array([[0.01970001]]), 
+'C_D_alpha1': array([[0.07909146]]),
+'C_D_alpha2': array([[1.05546999]]), 
+'C_D_beta1': array([[-0.00584298]]), 
+'C_D_beta2': array([[0.14781193]]), 
+'C_D_delta_e': array([[0.0633474]]), 
+'C_D_p': array([[0.0102]]), 
+'C_D_q': array([[0]], dtype=uint8), 
+
+'C_L_0': array([[0.08673557]]), 
+'C_L_alpha': array([[4.02032824]]), 
+'C_L_delta_e': array([[0.27807362]]), 
+'C_L_q': array([[3.87]]), 
+
+'C_Y_0': array([[0]], dtype=uint8), 
+'C_Y_beta': array([[-0.22387216]]), 
+'C_Y_delta_a': array([[0.0432764]]), 
+'C_Y_delta_r': array([[0]], dtype=uint8), 
+'C_Y_p': array([[-0.13735505]]), 
+'C_Y_r': array([[0.08386877]]), 
+
+'C_l_0': array([[0]], dtype=uint8), 
+'C_l_beta': array([[-0.08489629]]), ;
+'C_l_delta_a': array([[0.12018814]]), 
+'C_l_delta_r': array([[0]], dtype=uint8), 
+'C_l_p': array([[-0.404198]]), 
+'C_l_r': array([[0.0555206]]), 
+
+'C_m_0': array([[0.018]]), 
+'C_m_alpha': array([[-0.2524]]), 
+'C_m_delta_e': array([[-0.2292]]), 
+'C_m_fp': array([[-0.2168]]), 
+'C_m_q': array([[-1.30123704]]), 
+
+'C_n_0': array([[0]], dtype=uint8), 
+'C_n_beta': array([[0.0283]]), 
+'C_n_delta_a': array([[-0.00339]]), 
+'C_n_delta_r': array([[0]], dtype=uint8), 
+'C_n_p': array([[0.00436551]]), 
+'C_n_r': array([[-0.072]]), 
+'C_prop': array([[0.248]]), 
+
+'Jx': array([[1.229]]), 
+'Jxz': array([[0.9343]]), 
+'Jy': array([[0.1702]]), 
+'Jz': array([[0.8808]]), w
+
+'M': array([[50]], dtype=uint8), 
+'S_prop': array([[0.1017876]]), 
+'S_wing': array([[0.75]]), 
+'a_0': array([[0.267]]), 
+'b': array([[2.1]]), 
+'c': array([[0.35714286]]), 
+'e': array([[0.9935]]), 
+'k_Omega': array([[797.1268]]), 
+'k_T_P': array([[1.1871e-06]]), 
+'k_motor': array([[37.42]]), 
+'mass': array([[3.364]]), 
+'r_cg': array([[0],
+       [0],
+       [0]], dtype=uint8)}
+

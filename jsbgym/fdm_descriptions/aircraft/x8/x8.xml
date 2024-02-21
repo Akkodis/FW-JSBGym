@@ -61,6 +61,25 @@
         </location>
     </mass_balance>
 
+    <!-- <mass_balance>
+        <property value="1.2290">fdm/inertia-matrix/ixx</property>
+        <property value="0.1702">fdm/inertia-matrix/iyy</property>
+        <property value="0.8808">fdm/inertia-matrix/izz</property>
+        <property value="0.9343">fdm/inertia-matrix/ixz</property>
+        <property value="3.3640">fdm/emptywt</property>
+
+        <ixx unit="KG*M2"><property>fdm/inertia-matrix/ixx</property></ixx>
+        <iyy unit="KG*M2"><property>fdm/inertia-matrix/iyy</property></iyy>
+        <izz unit="KG*M2"><property>fdm/inertia-matrix/izz</property></izz>
+        <ixz unit="KG*M2"><property>fdm/inertia-matrix/ixz</property></ixz>
+        <emptywt unit="KG"><property>fdm/emptywt</property></emptywt>
+        <location name ="CG" unit="M">
+            <x> 0.0 </x>
+            <y> 0.0 </y>
+            <z> 0.0 </z>
+        </location>
+    </mass_balance> -->
+
     <ground_reactions>
       <!-- <contact type="STRUCTURE" name="Belly">
         <location unit="IN">
@@ -174,11 +193,11 @@
             <aerosurface_scale name="fcs/left-aileron-control">
                 <description>The port aileron output is in radians</description>
                 <input>fcs/roll-sum</input>
-                <gain>0.01745</gain>
                 <range>
                     <min>-30</min>
                     <max>30</max>
                 </range>
+                <gain>0.01745</gain>
             </aerosurface_scale>
             
             <!-- Not sure it's doing anything -->
@@ -191,11 +210,11 @@
             <aerosurface_scale name="fcs/right-aileron-control">
                 <description>The Starboard aileron output is in radians</description>
                 <input>fcs/roll-sum</input>
-                <gain>0.01745</gain>
                 <range>
                     <min>-30</min>
                     <max>30</max>
                 </range>
+                <gain>0.01745</gain>
             </aerosurface_scale>
 
             <second_order_filter name="fcs/left-aileron-filter">
@@ -241,12 +260,6 @@
                 <output>fcs/effective-aileron-pos</output>
             </pure_gain>
 
-            <!-- <actuator name="fcs/effective_aileron_actuator">
-                <input>fcs/effective-aileron-pos</input>
-                <rate_limit>3.49066</rate_limit>
-                <output>fcs/effective-aileron-pos</output>
-            </actuator> -->
-
         </channel>
 
         <channel name="Throttle">
@@ -261,6 +274,45 @@
 
 
     <aerodynamics>
+        
+        <!-- LIFT -->
+        <property value="0.0867">    aero/stab-coef/CLo </property>
+        <property value="4.0203">    aero/stab-coef/CLalpha </property>
+        <property value="3.87">    aero/stab-coef/CLq </property>
+        <property value="0.2781">    aero/stab-coef/CLDe </property>
+
+        <!-- DRAG -->
+        <property value="0.0197">    aero/stab-coef/CDo </property>
+        <property value="0.0791">    aero/stab-coef/CDalpha </property>
+        <property value="1.0555">    aero/stab-coef/CDalpha2 </property>
+        <property value="-0.0058">    aero/stab-coef/CDbeta </property>
+        <property value="0.1478">    aero/stab-coef/CDbeta2 </property>
+        <property value="0.0">    aero/stab-coef/CDq </property>
+        <property value="0.0633">    aero/stab-coef/CDe </property>
+
+        <!-- SIDE -->
+        <property value="-0.2239">    aero/stab-coef/CYb </property>
+        <property value="-0.1374">    aero/stab-coef/CYp </property>
+        <property value="0.0839">    aero/stab-coef/CYr </property>
+        <property value="0.0433">    aero/stab-coef/CYda </property>
+
+        <!-- ROLL -->
+        <property value="-0.0849">    aero/stab-coef/Clb </property>
+        <property value="-0.4042">    aero/stab-coef/Clp </property>
+        <property value="0.0555">    aero/stab-coef/Clr </property>
+        <property value="0.1202">    aero/stab-coef/Clda </property>
+
+        <!-- PITCH -->
+        <property value="0.0227">    aero/stab-coef/Cmo </property>
+        <property value="-0.4629">    aero/stab-coef/Cmalpha </property>
+        <property value="-1.3012">    aero/stab-coef/Cmq </property>
+        <property value="-0.2292">    aero/stab-coef/CmDe </property>
+
+        <!-- YAW -->
+        <property value="0.0283">    aero/stab-coef/Cnb </property>
+        <property value="0.0044">    aero/stab-coef/Cnp </property>
+        <property value="-0.072">    aero/stab-coef/Cnr </property>
+        <property value="-0.00339">    aero/stab-coef/Cnda </property>
 
         <axis name="LIFT">
 
@@ -268,7 +320,7 @@
                 <description>Alpha independent lift coefficient</description>
                 <product>
                     <property>aero/qbar-area</property>
-                    <value>0.0867</value>
+                    <property>aero/stab-coef/CLo</property>
                 </product>
             </function>
 
@@ -277,7 +329,7 @@
                 <product>
                     <property>aero/qbar-area</property>
                     <property>aero/alpha-rad</property>
-                    <value> 4.0203 </value>
+                    <property>aero/stab-coef/CLalpha</property>
                 </product>
             </function>
 
@@ -287,7 +339,7 @@
                     <property>aero/qbar-area</property>
                     <property>velocities/q-aero-rad_sec</property>
                     <property>aero/ci2vel</property>
-                    <value>3.87</value>
+                    <property>aero/stab-coef/CLq</property>
                 </product>
             </function>
 
@@ -296,7 +348,7 @@
                 <product>
                     <property>aero/qbar-area</property>
                     <property>fcs/elevator-pos-rad</property>
-                    <value>0.2781</value>
+                    <property>aero/stab-coef/CLDe</property>
                 </product>
             </function>
 
@@ -308,7 +360,7 @@
                 <description>Drag at zero alpha</description>
                 <product>
                     <property>aero/qbar-area</property>
-                    <value>0.0197</value>
+                    <property>aero/stab-coef/CDo</property>
                 </product>
             </function>
 
@@ -317,7 +369,7 @@
                 <product>
                     <property>aero/qbar-area</property>
                     <property>aero/alpha-rad</property>
-                    <value>0.0791</value>
+                    <property>aero/stab-coef/CDalpha</property>
                 </product>
             </function>
 
@@ -328,7 +380,7 @@
                     <property>aero/qbar-area</property>
                     <property>aero/alpha-rad</property>
                     <property>aero/alpha-rad</property>
-                    <value>1.0555</value>
+                    <property>aero/stab-coef/CDalpha2</property>
                 </product>
             </function>
 
@@ -337,7 +389,7 @@
                 <product>
                     <property>aero/qbar-area</property>
                     <property>aero/mag-beta-rad</property>
-                    <value>-0.0058</value>
+                    <property>aero/stab-coef/CDbeta</property>
                 </product>
             </function>
 
@@ -347,7 +399,7 @@
                     <property>aero/qbar-area</property>
                     <property>aero/mag-beta-rad</property>
                     <property>aero/mag-beta-rad</property>
-                    <value>0.1478</value>
+                    <property>aero/stab-coef/CDbeta2</property>
                 </product>
             </function>
 
@@ -357,7 +409,7 @@
                     <property>aero/qbar-area</property>
                     <property>velocities/q-aero-rad_sec</property>
                     <property>aero/ci2vel</property>
-                    <value>0.0</value>
+                    <property>aero/stab-coef/CDq</property>
                 </product>
             </function>
 
@@ -366,7 +418,7 @@
                 <product>
                     <property>aero/qbar-area</property>
                     <property>fcs/mag-elevator-pos-rad</property>
-                    <value>0.0633</value> <!-- x8 model uses elevator def squared here but not sure why -->
+                    <property>aero/stab-coef/CDe</property>
                 </product>
             </function>
 
@@ -379,7 +431,7 @@
                 <product>
                     <property>aero/qbar-area</property>
                     <property>aero/beta-rad</property>
-                    <value>-0.2239</value>
+                    <property>aero/stab-coef/CYb</property>
                 </product>
             </function>
 
@@ -389,7 +441,7 @@
                     <property>aero/qbar-area</property>
                     <property>aero/bi2vel</property>
                     <property>velocities/p-aero-rad_sec</property>
-                    <value>-0.1374</value>
+                    <property>aero/stab-coef/CYp</property>
                 </product>
             </function>
 
@@ -399,7 +451,7 @@
                     <property>aero/qbar-area</property>
                     <property>aero/bi2vel</property>
                     <property>velocities/r-aero-rad_sec</property>
-                    <value>0.0839</value>
+                    <property>aero/stab-coef/CYr</property>
                 </product>
             </function>
 
@@ -408,7 +460,7 @@
                 <product>
                     <property>aero/qbar-area</property>
                     <property>fcs/effective-aileron-pos</property>
-                    <value>0.0433</value>
+                    <property>aero/stab-coef/CYda</property>
                 </product>
             </function>
 
@@ -422,7 +474,7 @@
                     <property>aero/qbar-area</property>
                     <property>metrics/bw-ft</property>
                     <property>aero/beta-rad</property>
-                    <value>-0.0849</value>
+                    <property>aero/stab-coef/Clb</property>
                 </product>
             </function>
 
@@ -433,7 +485,7 @@
                     <property>metrics/bw-ft</property>
                     <property>aero/bi2vel</property>
                     <property>velocities/p-aero-rad_sec</property>
-                    <value>-0.4042</value>
+                    <property>aero/stab-coef/Clp</property>
                 </product>
             </function>
 
@@ -444,7 +496,7 @@
                     <property>metrics/bw-ft</property>
                     <property>aero/bi2vel</property>
                     <property>velocities/r-aero-rad_sec</property>
-                    <value>0.0555</value>
+                    <property>aero/stab-coef/Clr</property>
                 </product>
             </function>
 
@@ -454,7 +506,7 @@
                     <property>aero/qbar-area</property>
                     <property>metrics/bw-ft</property>
                     <property>fcs/effective-aileron-pos</property>
-                    <value>0.1202</value>
+                    <property>aero/stab-coef/Clda</property>
                 </product>
             </function>
 
@@ -467,7 +519,7 @@
                 <product>
                     <property>aero/qbar-area</property>
                     <property>metrics/cbarw-ft</property>
-                    <value>0.0227</value>
+                    <property>aero/stab-coef/Cmo</property>
                 </product>
             </function>
 
@@ -477,7 +529,7 @@
                     <property>aero/qbar-area</property>
                     <property>metrics/cbarw-ft</property>
                     <property>aero/alpha-rad</property>
-                    <value>-0.4629</value>
+                    <property>aero/stab-coef/Cmalpha</property>
                 </product>
             </function>
 
@@ -488,7 +540,7 @@
                     <property>metrics/cbarw-ft</property>
                     <property>aero/ci2vel</property>
                     <property>velocities/q-aero-rad_sec</property>
-                    <value>-1.3012</value>
+                    <property>aero/stab-coef/Cmq</property>
                 </product>
             </function>
 
@@ -498,7 +550,7 @@
                     <property>aero/qbar-area</property>
                     <property>metrics/cbarw-ft</property>
                     <property>fcs/elevator-pos-rad</property>
-                    <value>-0.2292</value>
+                    <property>aero/stab-coef/CmDe</property>
                 </product>
             </function>
 
@@ -512,7 +564,7 @@
                     <property>aero/qbar-area</property>
                     <property>metrics/bw-ft</property>
                     <property>aero/beta-rad</property>
-                    <value>0.0283</value>
+                    <property>aero/stab-coef/Cnb</property>
                 </product>
             </function>
 
@@ -523,7 +575,7 @@
                     <property>metrics/bw-ft</property>
                     <property>aero/bi2vel</property>
                     <property>velocities/p-aero-rad_sec</property>
-                    <value>0.0044</value>
+                    <property>aero/stab-coef/Cnp</property>
                 </product>
             </function>
 
@@ -534,7 +586,7 @@
                     <property>metrics/bw-ft</property>
                     <property>aero/bi2vel</property>
                     <property>velocities/r-aero-rad_sec</property>
-                    <value>-0.072</value>
+                    <property>aero/stab-coef/Cnr</property>
                 </product>
             </function>
 
@@ -544,7 +596,7 @@
                     <property>aero/qbar-area</property>
                     <property>metrics/bw-ft</property>
                     <property>fcs/effective-aileron-pos</property>
-                    <value>0.1202</value>
+                    <property>aero/stab-coef/Cnda</property>
                 </product>
             </function>
 
