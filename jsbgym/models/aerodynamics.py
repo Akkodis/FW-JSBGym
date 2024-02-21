@@ -92,7 +92,7 @@ class AeroModel(object):
         self.Cnp: float = 0.0044
         self.Cnb: float = 0.0283
         self.Cnr: float = -0.072
-        self.Cnda: float = 0.1202
+        self.Cnda: float = -0.00339
         self.Cndr: float = 0.0
 
         # intermediate values of aero coeffs weighted by inertia components
@@ -117,7 +117,7 @@ class AeroModel(object):
                         self.b / (2 * self.Va_trim))
         self.a_roll2: float = 1 / 2 * self.rho * self.Va_trim ** 2 * self.S * self.b * self.Cpda
 
-        self.aileron_limit: float = 1.04 # combined aileron actuator max deflection : rad
+        self.aileron_limit: float = np.deg2rad(30) # combined aileron actuator max deflection : rad
         self.roll_max: float = 60.0 * (math.pi / 180)  # roll max angle : deg to rad, default 45.0
         self.roll_err_max: float = self.roll_max * 2  # max expected error, roll_max * 2 : rad
         self.roll_damping: float = 1.5  # ask if needed to plot the step responses for various damping ratios in something
@@ -131,7 +131,7 @@ class AeroModel(object):
         self.a_pitch1: float = - ((self.rho * self.Va_trim**2 * self.c * self.S) / (2 * self.Iyy)) * self.Cmq * (self.c / (2 * self.Va_trim))
         self.a_pitch2: float = - ((self.rho * self.Va_trim**2 * self.c * self.S) / (2 * self.Iyy)) * self.Cma
         self.a_pitch3: float = ((self.rho * self.Va_trim**2 * self.c * self.S) / (2 * self.Iyy)) * self.Cmde
-        self.elevator_limit: float = 30.0 * (math.pi / 180)  # elevator actuator max deflection : deg to rad
+        self.elevator_limit: float = np.deg2rad(30)  # elevator actuator max deflection : deg to rad
         self.pitch_max: float = 30.0 * (math.pi / 180)  # pitch max angle : deg to rad, default 15.0
         self.pitch_err_max: float = self.pitch_max * 2  # max expected error, pitch_max * 2 : rad
         self.pitch_damping: float = 1  # ask if needed to plot the step responses for various damping ratios in something

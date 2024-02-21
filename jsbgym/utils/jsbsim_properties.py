@@ -60,15 +60,16 @@ w_fps = BoundedProperty('velocities/w-fps', 'body frame z-axis velocity [ft/s]',
 v_north_fps = BoundedProperty('velocities/v-north-fps', 'velocity true north [ft/s]', float('-inf'), float('+inf'))
 v_east_fps = BoundedProperty('velocities/v-east-fps', 'velocity east [ft/s]', float('-inf'), float('+inf'))
 v_down_fps = BoundedProperty('velocities/v-down-fps', 'velocity downwards [ft/s]', float('-inf'), float('+inf'))
-p_radps = BoundedProperty('velocities/p-rad_sec', 'roll rate [rad/s]', -20, 20)
-q_radps = BoundedProperty('velocities/q-rad_sec', 'pitch rate [rad/s]', -20, 20)
-r_radps = BoundedProperty('velocities/r-rad_sec', 'yaw rate [rad/s]', -20, 20)
+p_radps = BoundedProperty('velocities/p-rad_sec', 'roll rate [rad/s]', -35, 35)
+q_radps = BoundedProperty('velocities/q-rad_sec', 'pitch rate [rad/s]', -35, 35)
+r_radps = BoundedProperty('velocities/r-rad_sec', 'yaw rate [rad/s]', -35, 35)
 altitude_rate_fps = Property('velocities/h-dot-fps', 'Rate of altitude change [ft/s]')
 airspeed_fps = BoundedProperty('velocities/vt-fps', 'True aircraft airspeed [ft/s]', float('-inf'), float('+inf'))
 airspeed_kts = BoundedProperty('velocities/vtrue-kts', 'True aircraft airspeed [kts]', float('-inf'), float('+inf'))
-airspeed_mps = BoundedHelperProperty('velocities/vt-mps', 'True aircraft airspeed [m/s]', 0, 53) # 53 m/s = 190 km/h = 102 kts
-airspeed_kph = BoundedHelperProperty('velocities/vt-kph', 'True aircraft airspeed [m/s]', 0, 190) # 53 m/s = 190 km/h = 102 kts
-alpha = Property('aero/alpha-rad', 'aircraft angle of attack [rad]')
+airspeed_mps = BoundedHelperProperty('velocities/vt-mps', 'True aircraft airspeed [m/s]', 0, 111)# 111 m/s = 400 km/h = 216 kts 
+airspeed_kph = BoundedHelperProperty('velocities/vt-kph', 'True aircraft airspeed [m/s]', 0, 400) # 111 m/s = 400 km/h = 216 kts
+alpha_rad = BoundedProperty('aero/alpha-rad', 'aircraft angle of attack [rad]', float('-inf'), float('+inf'))
+beta_rad = BoundedProperty('aero/beta-rad', 'aircraft sideslip angle [rad]', float('-inf'), float('+inf'))
 ci2vel = Property('aero/ci2vel', 'chord/2*airspeed')
 
 # atmospherical properties
@@ -181,15 +182,47 @@ qbar_area = Property('aero/qbar-area', 'dynamic pressure * wing-planform area')
 Sw = Property('metrics/Sw-sqft', 'wing area [sqft]')
 rho = Property('atmosphere/rho-slugs_ft3', 'air density [slug/ft^3]')
 
-# fdm values
-Clo = Property('aero/coefficient/CLo', 'zero lift')
-Clalpha = Property('aero/coefficient/CLalpha', 'alpha lift')
-Clq = Property('aero/coefficient/CLq', 'pitch-rate lift')
-ClDe = Property('aero/coefficient/CLDe', 'elevator deflection lift')
-Cmo = Property('aero/coefficient/Cmo', 'zero lift pitch')
-Cmalpha = Property('aero/coefficient/Cmalpha', 'alpha pitch')
-Cmq = Property('aero/coefficient/Cmq', 'pitch rate pitch')
-CmDe = Property('aero/coefficient/CmDe', 'pitch due to elevator')
+# mass related dynamic properties
+fdm_ixx = Property('fdm/inertia-matrix/ixx', 'inertia matrix element Ixx [KG*M^2]')
+fdm_iyy = Property('fdm/inertia-matrix/iyy', 'inertia matrix element Iyy [KG*M^2]')
+fdm_izz = Property('fdm/inertia-matrix/izz', 'inertia matrix element Izz [KG*M^2]')
+fdm_ixz = Property('fdm/inertia-matrix/ixz', 'inertia matrix element Ixz [KG*M^2]')
+fdm_mass_kg = Property('fdm/emptywt', 'empty mass [KG]')
+
+# dynamic aero stability coefficients
+aero_CLo = Property('aero/stab-coef/CLo', 'coef: alpha independent lift')
+aero_CLalpha = Property('aero/stab-coef/CLalpha', 'coef: lift per alpha rad')
+aero_CLq = Property('aero/stab-coef/CLq', 'coef: lift due to pitch rate')
+aero_CLDe = Property('aero/stab-coef/CLDe', 'coef: lift due to elevator deflection')
+
+aero_CDo = Property('aero/stab-coef/CDo', 'coef: drag at zero alpha')
+aero_CDalpha = Property('aero/stab-coef/CDalpha', 'coef: drag due to alpha')
+aero_CDalpha2 = Property('aero/stab-coef/CDalpha2', 'coef: drag due to alpha squared')
+aero_CDbeta = Property('aero/stab-coef/CDbeta', 'coef: drag due to sideslip')
+aero_CDbeta2 = Property('aero/stab-coef/CDbeta2', 'coef: drag due to sideslip squared')
+aero_CDq = Property('aero/stab-coef/CDq', 'coef: drag due to pitch rate')
+aero_CDe = Property('aero/stab-coef/CDe', 'coef: drag due to elevator deflection')
+
+aero_CYb = Property('aero/stab-coef/CYb', 'coef: sideforce due to sideslip')
+aero_CYp = Property('aero/stab-coef/CYp', 'coef: sideforce due to roll rate')
+aero_CYr = Property('aero/stab-coef/CYr', 'coef: sideforce due to yaw rate')
+aero_CYda = Property('aero/stab-coef/CYda', 'coef: sideforce due to aileron deflection')
+
+aero_Clb = Property('aero/stab-coef/Clb', 'coef: roll moment due to sideslip')
+aero_Clp = Property('aero/stab-coef/Clp', 'coef: roll moment due to roll rate')
+aero_Clr = Property('aero/stab-coef/Clr', 'coef: roll moment due to yaw rate')
+aero_Clda = Property('aero/stab-coef/Clda', 'coef: roll moment due to aileron deflection')
+
+aero_Cmo = Property('aero/stab-coef/Cmo', 'coef: pitch moment at zero alpha')
+aero_Cmalpha = Property('aero/stab-coef/Cmalpha', 'coef: pitch moment due to alpha')
+aero_Cmq = Property('aero/stab-coef/Cmq', 'coef: pitch moment due to pitch rate')
+aero_CmDe = Property('aero/stab-coef/CmDe', 'coef: pitch moment due to elevator deflection')
+
+aero_Cnb = Property('aero/stab-coef/Cnb', 'coef: yaw moment due to sideslip')
+aero_Cnp = Property('aero/stab-coef/Cnp', 'coef: yaw moment due to roll rate')
+aero_Cnr = Property('aero/stab-coef/Cnr', 'coef: yaw moment due to yaw rate')
+aero_Cnda = Property('aero/stab-coef/Cnda', 'coef: yaw moment due to aileron deflection')
+
 
 # additional custom properties for error and target values
 airspeed_err = BoundedProperty("error/airspeed-err", "airspeed error", float('-inf'), float('+inf'))
@@ -218,3 +251,37 @@ reward_actvar = BoundedProperty("reward/act_var", "action variation reward", flo
 reward_act_bounds = BoundedProperty("reward/act_bounds", "action bound reward", float('-inf'), 0)
 reward_int_roll = BoundedProperty("reward/int_roll", "roll integral reward", float('-inf'), 0)
 reward_int_pitch = BoundedProperty("reward/int_pitch", "pitch integral reward", float('-inf'), 0)
+
+# PID-RL properties no stability ensured
+kp_roll = BoundedProperty("pidrl/roll/kp", "roll kp", float('-inf'), float('+inf'))
+ki_roll = BoundedProperty("pidrl/roll/ki", "roll ki", float('-inf'), float('+inf'))
+kd_roll = BoundedProperty("pidrl/roll/kd", "roll kd", float('-inf'), float('+inf'))
+
+kp_pitch = BoundedProperty("pidrl/pitch/kp", "pitch kp", float('-inf'), float('+inf'))
+ki_pitch = BoundedProperty("pidrl/pitch/ki", "pitch ki", float('-inf'), float('+inf'))
+kd_pitch = BoundedProperty("pidrl/pitch/kd", "pitch kd", float('-inf'), float('+inf'))
+
+kp_roll_act = BoundedProperty("pidrl/roll/kp_piact", "additive roll kp RL action", float('-inf'), float('+inf'))
+ki_roll_act = BoundedProperty("pidrl/roll/ki_piact", "additive roll ki RL action", float('-inf'), float('+inf'))
+kd_roll_act = BoundedProperty("pidrl/roll/kd_piact", "additive roll kd RL action", float('-inf'), float('+inf'))
+
+kp_pitch_act = BoundedProperty("pidrl/pitch/kp_piact", "additive pitch kp RL action", float('-inf'), float('+inf'))
+ki_pitch_act = BoundedProperty("pidrl/pitch/ki_piact", "additive pitch ki RL action", float('-inf'), float('+inf'))
+kd_pitch_act = BoundedProperty("pidrl/pitch/kd_piact", "additive pitch kd RL action", float('-inf'), float('+inf'))
+
+kp_roll_dt = BoundedProperty("pidrl/roll/kp_dt", "roll kp temporal increment", -0.01, 0.01)
+ki_roll_dt = BoundedProperty("pidrl/roll/ki_dt", "roll ki temporal increment", -0.01, 0.01)
+kd_roll_dt = BoundedProperty("pidrl/roll/kd_dt", "roll kd temporal increment", -0.01, 0.01)
+
+kp_pitch_dt = BoundedProperty("pidrl/pitch/kp_dt", "pitch kp temporal increment", -0.01, 0.01)
+ki_pitch_dt = BoundedProperty("pidrl/pitch/ki_dt", "pitch ki temporal increment", -0.01, 0.01)
+kd_pitch_dt = BoundedProperty("pidrl/pitch/kd_dt", "pitch kd temporal increment", -0.01, 0.01)
+
+# PID-RL properties stability ensured parametrized version
+roll_tau_1 = BoundedProperty("pidrl/roll/tau_1", "roll tau 1", float(0), float('+inf'))
+roll_tau_2 = BoundedProperty("pidrl/roll/tau_2", "roll tau 2", float(0), float('+inf'))
+roll_tau_3 = BoundedProperty("pidrl/roll/tau_3", "roll tau 3", float(0), float('+inf'))
+
+pitch_tau_1 = BoundedProperty("pidrl/pitch/tau_1", "pitch tau 1", float(0), float('+inf'))
+pitch_tau_2 = BoundedProperty("pidrl/pitch/tau_2", "pitch tau 2", float(0), float('+inf'))
+pitch_tau_3 = BoundedProperty("pidrl/pitch/tau_3", "pitch tau 3", float(0), float('+inf'))
