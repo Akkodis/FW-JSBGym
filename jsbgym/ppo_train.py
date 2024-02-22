@@ -8,8 +8,9 @@ from distutils.util import strtobool
 from tqdm import tqdm
 from jsbgym.trim.trim_point import TrimPoint
 from jsbgym.agents import ppo
+from jsbgym.agents.pid import torchPID
 from jsbgym.utils.eval_utils import RefSequence
-from jsbgym.eval import metrics
+from jsbgym.models.aerodynamics import AeroModel
 
 import wandb
 import gymnasium as gym
@@ -89,6 +90,8 @@ def parse_args():
         help="the target KL divergence threshold")
     parser.add_argument('--save-best',type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True,
                          help='save only the best models')
+    parser.add_argument('--save-cp',type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True,
+                         help='save checkpoints periodically')
 
     # training sim specific arguments
     parser.add_argument('--rand-targets',type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True, help='set targets randomly')
@@ -96,6 +99,11 @@ def parse_args():
     parser.add_argument('--turb', type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True, help='add turbulence')
     parser.add_argument('--wind', type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True, help='add wind')
     parser.add_argument('--gust', type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True, help='add gust')
+    parser.add_argument("--ref-sampler", type=str, default='uniform',
+        help="the distribution for sampling refs: uniform or beta")
+    parser.add_argument('--cst-beta', type=float, default=None)
+    parser.add_argument('--rand-fdm', type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True,
+                         help='randomize the fdm parameters at the start of each episode')
     args = parser.parse_args()
     args.batch_size = int(args.num_envs * args.num_steps)
     args.minibatch_size = int(args.batch_size // args.num_minibatches)
@@ -103,7 +111,6 @@ def parse_args():
     return args
 
 
-# TODO: Implement save_model function
 def save_model(save_path, run_name, agent, env, seed):
     print("saving agent...")
     train_dict = {}
@@ -119,10 +126,11 @@ if __name__ == "__main__":
 
     if args.env_id == "AttitudeControl-v0":
         args.config = "config/ppo_caps.yaml"
-    elif args.env_id == "ACNoVa-v0" or args.env_id == "ACNoVaIntegErr-v0":
+    else:
         args.config = "config/ppo_caps_no_va.yaml"
 
-    run_name = f"ppo_{args.exp_name}_{args.seed}_{strftime('%d-%m_%H:%M:%S', localtime())}"
+    date_time = strftime('%d-%m_%H:%M:%S', localtime())
+    run_name = f"ppo_{args.exp_name}_{args.seed}_{date_time}"
 
     save_path: str = "models/train/"
     if not os.path.exists(save_path):
@@ -196,23 +204,29 @@ if __name__ == "__main__":
                         },
                         "gust": {
                             "enable": args.gust
-                        }
-                   }}
+                        },
+                   },
+                   "rand_fdm": args.rand_fdm
+                  }
+
     next_obs, _ = envs.reset(options=sim_options)
     next_obs = torch.Tensor(next_obs).to(device)
     next_terminated = torch.zeros(args.num_envs).to(device)
     num_updates = args.total_timesteps // args.batch_size
 
     # Generate a reference sequence and sample the first steps
-    refSeqs = [RefSequence(num_refs=5) for _ in range(args.num_envs)]
+    refSeqs = [RefSequence(num_refs=3, min_step_bound=600, max_step_bound=700) for _ in range(args.num_envs)]
     for _ in range(args.num_envs):
         refSeqs[_].sample_steps()
 
     # initial roll and pitch references
-    roll_ref = np.random.uniform(np.deg2rad(-60), np.deg2rad(60)) # TODO change to +- 60 
-    pitch_ref = np.random.uniform(np.deg2rad(-30), np.deg2rad(30)) # TODO change to +- 30
+    roll_limit = np.deg2rad(60)
+    pitch_limit = np.deg2rad(30)
+    roll_ref = np.random.uniform(-roll_limit, roll_limit)
+    pitch_ref = np.random.uniform(-pitch_limit, pitch_limit)
     roll_refs = np.ones(args.num_envs) * roll_ref
     pitch_refs = np.ones(args.num_envs) * pitch_ref
+    a = b = 0.70
 
     for update in tqdm(range(1, num_updates + 1)):
         # Annealing the rate if instructed to do so.
@@ -220,6 +234,21 @@ if __name__ == "__main__":
             frac = 1.0 - (update - 1.0) / num_updates
             lrnow = frac * args.learning_rate
             optimizer.param_groups[0]["lr"] = lrnow
+        
+        # save checkpoints periodically
+        if args.save_cp and update % 8 == 0:
+            run_name = f"ppo_{args.exp_name}_cp{global_step}_{args.seed}_{date_time}"
+            save_model(save_path, run_name, agent, envs.envs[0], args.seed)
+
+        # a = b = -0.01 * update + 1.01
+        # dydx = (a_b_min - a_b_max) / num_updates
+        # a = b = dydx * update + 1 +  abs(dydx)
+        # print(f"beta params: a = {a}, b = {b}")
+        
+        # at half the updates, change the beta params
+        if args.ref_sampler == "beta" and global_step > 7.5e5:
+            print("change beta params, make the refs harder")
+            a = b = 0.10
 
         for step in range(0, args.num_steps):
             if args.track:
@@ -231,14 +260,10 @@ if __name__ == "__main__":
             for i in range(args.num_envs):
                 ith_env_step = unwr_envs[i].sim[unwr_envs[i].current_step]
                 # if args.rand_targets:
-                #     # roll_ref, pitch_ref, airspeed_ref = refSeqs[i].sample_refs(ith_env_step, i)
-
-                # if args.env_id == "AttitudeControl-v0":
-                #     unwr_envs[i].set_target_state(roll_ref, pitch_ref, airspeed_ref)
-                if args.env_id == "ACNoVa-v0" or args.env_id == "ACNoVaIntegErr-v0":
-                    pitch_ref = pitch_refs[i]
-                    roll_ref = roll_refs[i]
-                    unwr_envs[i].set_target_state(roll_ref, pitch_ref)
+                # roll_ref, pitch_ref, _ = refSeqs[i].sample_refs(ith_env_step, i)
+                pitch_ref = pitch_refs[i]
+                roll_ref = roll_refs[i]
+                unwr_envs[i].set_target_state(roll_ref, pitch_ref)
 
             # ALGO LOGIC: action logic
             with torch.no_grad():
@@ -260,8 +285,20 @@ if __name__ == "__main__":
                     obs_t1[step][env_i] = obs[step][env_i]
                     # refSeqs[env_i].sample_steps() # Sample a new sequence of reference steps
                     # sample new references
-                    roll_refs[env_i] = np.random.uniform(np.deg2rad(-60), np.deg2rad(60))
-                    pitch_refs[env_i] = np.random.uniform(np.deg2rad(-30), np.deg2rad(30))
+                    if args.ref_sampler == "uniform":
+                        roll_refs[env_i] = np.random.uniform(-roll_limit, roll_limit)
+                        pitch_refs[env_i] = np.random.uniform(-pitch_limit, pitch_limit)
+                    # roll_refs[env_i] = np.deg2rad(60)
+                    # pitch_refs[env_i] = np.deg2rad(30)
+                    if args.ref_sampler == "beta":
+                        if args.cst_beta is not None: # sample from beta with constant params
+                            roll_refs[env_i] = np.random.beta(args.cst_beta, args.cst_beta) * roll_limit*2 - roll_limit
+                            pitch_refs[env_i] = np.random.beta(args.cst_beta, args.cst_beta) * pitch_limit*2 - pitch_limit
+                            print(f"Sampled from beta with constant params {args.cst_beta}")
+                        else:
+                            roll_refs[env_i] = np.random.beta(a, b) * roll_limit*2 - roll_limit
+                            pitch_refs[env_i] = np.random.beta(a, b) * pitch_limit*2 - pitch_limit
+
                     print(f"Env Done, new refs : roll = {roll_refs[env_i]}, pitch = {pitch_refs[env_i]} sampled for env {env_i}")
                 else:
                     obs_t1[step][env_i] = next_obs[env_i]
@@ -355,16 +392,82 @@ if __name__ == "__main__":
                 # Temporal Smoothing
                 act_means = agent.get_action_and_value(b_obs[mb_inds])[1]
                 next_act_means = agent.get_action_and_value(b_obs_t1[mb_inds])[1]
-                ts_loss = torch.linalg.norm(act_means - next_act_means, ord=2)
+                ts_loss = torch.Tensor([0.0]).to(device)
+                b_cmd = torch.zeros((args.minibatch_size, 2)).to(device)
+                if args.env_id not in ["ACNoVaPIDRLAdd-v0", "ACNoVaPIDRL-v0"]:
+                    ts_loss = torch.linalg.norm(act_means - next_act_means, ord=2)
+                else:
+                    # get all the relevant variables for computing the PID output given the PIDRL action at time t
+                    roll_gains = act_means[:, 0:3]
+                    roll_err = b_obs[mb_inds][:, 0, 4, 6].reshape(-1, 1)
+                    roll_int_err = b_obs[mb_inds][:, 0, 4, 8].reshape(-1, 1)
+                    roll_p = b_obs[mb_inds][:, 0, 4, 3].reshape(-1, 1)
+                    roll_errs = torch.cat((roll_err, roll_int_err, -roll_p), dim=1)
+                    b_roll_cmd = torchPID(roll_gains, roll_errs, AeroModel().aileron_limit, saturate=True, normalize=True)
+                    # roll_pid_terms = roll_gains * roll_errs
+                    # b_roll_cmd = roll_pid_terms.sum(dim=1).reshape(-1, 1) # batch of aileron (roll) commands
+
+                    pitch_gains = act_means[:, 3:6]
+                    pitch_err = b_obs[mb_inds][:, 0, 4, 7].reshape(-1, 1)
+                    pitch_int_err = b_obs[mb_inds][:, 0, 4, 9].reshape(-1, 1)
+                    pitch_q = b_obs[mb_inds][:, 0, 4, 4].reshape(-1, 1)
+                    pitch_errs = torch.cat((pitch_err, pitch_int_err, -pitch_q), dim=1)
+                    b_pitch_cmd = torchPID(pitch_gains, pitch_errs, AeroModel().elevator_limit, saturate=True, normalize=True)
+                    # pitch_pid_terms = pitch_gains * pitch_errs
+                    # b_pitch_cmd = pitch_pid_terms.sum(dim=1).reshape(-1, 1) # batch of elevator (pitch) commands
+
+                    roll_gains_t1 = next_act_means[:, 0:3]
+                    roll_err_t1 = b_obs_t1[mb_inds][:, 0, 4, 6].reshape(-1, 1)
+                    roll_int_err_t1 = b_obs_t1[mb_inds][:, 0, 4, 8].reshape(-1, 1)
+                    roll_p_t1 = b_obs_t1[mb_inds][:, 0, 4, 3].reshape(-1, 1)
+                    roll_errs_t1 = torch.cat((roll_err_t1, roll_int_err_t1, -roll_p_t1), dim=1)
+                    b_roll_cmd_t1 = torchPID(roll_gains_t1, roll_errs_t1, AeroModel().aileron_limit, saturate=True, normalize=True)
+                    # roll_pid_terms_t1 = roll_gains_t1 * roll_errs_t1
+                    # b_roll_cmd_t1 = roll_pid_terms_t1.sum(dim=1).reshape(-1, 1)
+
+                    pitch_gains_t1 = next_act_means[:, 3:6]
+                    pitch_err_t1 = b_obs_t1[mb_inds][:, 0, 4, 7].reshape(-1, 1)
+                    pitch_int_err_t1 = b_obs_t1[mb_inds][:, 0, 4, 9].reshape(-1, 1)
+                    pitch_q_t1 = b_obs_t1[mb_inds][:, 0, 4, 4].reshape(-1, 1)
+                    pitch_errs_t1 = torch.cat((pitch_err_t1, pitch_int_err_t1, -pitch_q_t1), dim=1)
+                    b_pitch_cmd_t1 = torchPID(pitch_gains_t1, pitch_errs_t1, AeroModel().elevator_limit, saturate=True, normalize=True)
+                    # pitch_pid_terms_t1 = pitch_gains_t1 * pitch_errs_t1
+                    # b_pitch_cmd_t1 = pitch_pid_terms_t1.sum(dim=1).reshape(-1, 1)
+
+                    b_cmd = torch.cat((b_roll_cmd, b_pitch_cmd), dim=1)
+                    b_cmd_t1 = torch.cat((b_roll_cmd_t1, b_pitch_cmd_t1), dim=1)
+                    ts_loss = torch.linalg.norm(b_cmd - b_cmd_t1, ord=2)
+
 
                 # Spatial Smoothing
                 state_problaw = Normal(b_obs[mb_inds], 0.01)
                 state_sampled = state_problaw.sample()
                 act_means_bar = agent.get_action_and_value(state_sampled)[1]
-                ss_loss = torch.linalg.norm(act_means - act_means_bar, ord=2)
+                ss_loss = torch.Tensor([0.0]).to(device)
+                if args.env_id not in ["ACNoVaPIDRLAdd-v0", "ACNoVaPIDRL-v0"]:
+                    ss_loss = torch.linalg.norm(act_means - act_means_bar, ord=2)
+                else:
+                    roll_gains_bar = act_means_bar[:, 0:3]
+                    roll_err_bar = state_sampled[:, 0, 4, 6].reshape(-1, 1)
+                    roll_int_err_bar = state_sampled[:, 0, 4, 8].reshape(-1, 1)
+                    roll_p_bar = state_sampled[:, 0, 4, 3].reshape(-1, 1)
+                    roll_errs_bar = torch.cat((roll_err_bar, roll_int_err_bar, -roll_p_bar), dim=1)
+                    b_roll_cmd_bar = torchPID(roll_gains_bar, roll_errs_bar, AeroModel().aileron_limit, saturate=True, normalize=True)
+
+                    pitch_gains_bar = act_means_bar[:, 3:6]
+                    pitch_err_bar = state_sampled[:, 0, 4, 7].reshape(-1, 1)
+                    pitch_int_err_bar = state_sampled[:, 0, 4, 9].reshape(-1, 1)
+                    pitch_q_bar = state_sampled[:, 0, 4, 4].reshape(-1, 1)
+                    pitch_errs_bar = torch.cat((pitch_err_bar, pitch_int_err_bar, -pitch_q_bar), dim=1)
+                    b_pitch_cmd_bar = torchPID(pitch_gains_bar, pitch_errs_bar, AeroModel().elevator_limit, saturate=True, normalize=True)
+
+                    b_cmd_bar = torch.cat((b_roll_cmd_bar, b_pitch_cmd_bar), dim=1)
+                    ss_loss = torch.linalg.norm(b_cmd - b_cmd_bar, ord=2)
 
                 # preactivation loss
-                pa_loss = torch.linalg.norm(act_means - trim_acts, ord=2)
+                pa_loss = torch.Tensor([0.0]).to(device)
+                if args.env_id not in ["ACNoVaPIDRLAdd-v0", "ACNoVaPIDRL-v0"]:
+                    pa_loss = torch.linalg.norm(act_means - trim_acts, ord=2)
 
                 loss = pg_loss - args.ent_coef * entropy_loss + v_loss * args.vf_coef + args.ts_coef * ts_loss + args.ss_coef * ss_loss + args.pa_coef * pa_loss
 
@@ -419,16 +522,10 @@ if __name__ == "__main__":
         pe_obs = torch.Tensor(pe_obs).unsqueeze(0).to(device)
         e_refSeq = RefSequence(num_refs=5)
         e_refSeq.sample_steps()
-        roll_ref = np.deg2rad(20)
+        roll_ref = np.deg2rad(30)
         pitch_ref = np.deg2rad(15)
         for step in range(4000):
-            # if args.rand_targets:
-            #     # roll_ref, pitch_ref, airspeed_ref = e_refSeq.sample_refs(step)
-
-            # if args.env_id == "AttitudeControl-v0":
-            #     pe_env.unwrapped.set_target_state(roll_ref, pitch_ref, airspeed_ref)
-            if args.env_id == "ACNoVa-v0" or args.env_id == "ACNoVaIntegErr-v0":
-                pe_env.unwrapped.set_target_state(roll_ref, pitch_ref)
+            pe_env.unwrapped.set_target_state(roll_ref, pitch_ref)
 
             action = agent.get_action_and_value(pe_obs)[1][0].detach().cpu().numpy()
             pe_obs, reward, truncated, terminated, info = pe_env.step(action)
@@ -470,14 +567,14 @@ if __name__ == "__main__":
                        "atmosphere": {
                             "variable": False,
                             "wind": {
-                                "enable": True,
+                                "enable": False,
                                 "rand_continuous": False
                             },
                             "turb": {
-                                    "enable": True
+                                    "enable": False
                             },
                             "gust": {
-                                "enable": True
+                                "enable": False
                             }
                         }}
 
@@ -487,6 +584,8 @@ if __name__ == "__main__":
         all_rmse = []
         all_fcs_fluct = []
         total_steps = 50_000
+        e_roll_limit = np.deg2rad(60)
+        e_pitch_limit = np.deg2rad(30)
 
         for i, severity in enumerate(severity_range):
             e_env = envs.envs[0]
@@ -497,8 +596,8 @@ if __name__ == "__main__":
             print(f"********** PPO METRICS {severity} **********")
             obs, _ = e_env.reset(options=sim_options)
             obs = torch.Tensor(obs).unsqueeze_(0).to(device)
-            roll_ref = np.random.uniform(np.deg2rad(-60), np.deg2rad(60))
-            pitch_ref = np.random.uniform(np.deg2rad(-30), np.deg2rad(30))
+            roll_ref = np.random.uniform(-e_roll_limit, e_roll_limit)
+            pitch_ref = np.random.uniform(-e_pitch_limit, e_pitch_limit)
             ep_cnt = 0 # episode counter
 
             for step in tqdm(range(total_steps)):
@@ -520,7 +619,9 @@ if __name__ == "__main__":
                     eps_fcs_fluct.append(np.mean(np.abs(np.diff(ep_fcs_pos_hist, axis=0)), axis=0)) # get fcs fluctuation of the episode and append it to the list of all fcs fluctuations
                     if ep_cnt < len(simple_ref_data):
                         refs = simple_ref_data[ep_cnt]
-                    roll_ref, pitch_ref = refs[0], refs[1]
+                    # roll_ref, pitch_ref = refs[0], refs[1]
+                    roll_ref = np.random.uniform(-e_roll_limit, e_roll_limit)
+                    pitch_ref = np.random.uniform(-e_pitch_limit, e_pitch_limit)
             all_fcs_fluct.append(np.mean(np.array(eps_fcs_fluct), axis=0))
             roll_mse = np.mean(np.square(e_obs[:, 6]))
             pitch_mse = np.mean(np.square(e_obs[:, 7]))

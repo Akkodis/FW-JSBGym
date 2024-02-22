@@ -199,8 +199,6 @@ def compute_all_metrics(obs, act, steps):
     return ret_dict
 
 
-# TODO: now that I have my error bounds and success I can compute the steady state error by taking the mean of the last 200 steps
-# then I can compute the rise time, settling time, and overshoot
 
 def main():
     np.set_printoptions(suppress=True)
