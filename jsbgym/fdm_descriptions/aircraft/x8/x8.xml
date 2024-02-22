@@ -360,7 +360,7 @@
                              1.5711    0.0042
                         </tableData>
                     </table>
-                    <value> 4.0203 </value>
+                    <!-- <value> 4.0203 </value> -->
                 </product>
             </function>
 
@@ -419,7 +419,6 @@
                              1.5723    2.2448
                         </tableData>
                     </table>
-                    
                 </product>
             </function>
 
