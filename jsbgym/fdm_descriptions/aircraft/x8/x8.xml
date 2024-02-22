@@ -264,19 +264,50 @@
 
         <axis name="LIFT">
 
-            <function name="aero/coefficient/CLo">
+            <!-- <function name="aero/coefficient/CLo">
                 <description>Alpha independent lift coefficient</description>
                 <product>
                     <property>aero/qbar-area</property>
                     <value>0.0867</value>
                 </product>
-            </function>
+            </function> -->
 
             <function name="aero/coefficient/CLalpha">
                 <description>Lift per radian of alpha</description>
                 <product>
                     <property>aero/qbar-area</property>
-                    <property>aero/alpha-rad</property>
+                    <!-- <property>aero/alpha-rad</property> -->
+                    <table>
+                        <independentVar lookup="row">aero/alpha-rad</independentVar>
+                        <tableData>
+                            -1.5714   -0.0028
+                            -1.4614   -0.2135
+                            -1.3252   -0.4569
+                            -1.0581   -0.7448
+                            -0.9691   -0.7705
+                            -0.7491   -0.6746
+                            -0.4925   -0.3937
+                            -0.3406   -0.2369
+                            -0.2987   -0.3492
+                            -0.2725   -0.5412
+                            -0.2254   -0.7308
+                            -0.1573   -0.5412
+                            -0.0682   -0.1596
+                            -0.0001    0.1119
+                             0.1308    0.6222
+                             0.2146    0.8960
+                             0.2722    0.5800
+                             0.3403    0.2453
+                             0.5288    0.4466
+                             0.6441    0.5777
+                             0.7802    0.7041
+                             0.9583    0.7696
+                             1.1940    0.6362
+                             1.3511    0.4092
+                             1.4821    0.1751
+                             1.5711    0.0042
+                        </tableData>
+                    </table>
                     <value> 4.0203 </value>
                 </product>
             </function>
@@ -304,25 +335,44 @@
 
         <axis name="DRAG">
 
-            <function name="aero/coefficient/CDo">
+            <!-- <function name="aero/coefficient/CDo">
                 <description>Drag at zero alpha</description>
                 <product>
                     <property>aero/qbar-area</property>
                     <value>0.0197</value>
                 </product>
-            </function>
+            </function> -->
 
             <function name="aero/coefficient/CDalpha">
                 <description>Drag due to alpha</description>
                 <product>
                     <property>aero/qbar-area</property>
-                    <property>aero/alpha-rad</property>
-                    <value>0.0791</value>
+                    <!-- <property>aero/alpha-rad</property> -->
+                    <table>
+                        <independentVar lookup="row">aero/alpha-rad</independentVar>
+                        <tableData>
+                            -1.5702    2.1255
+                            -1.4497    1.8147
+                            -1.2088    1.2558
+                            -0.9941    0.8538
+                            -0.6641    0.3734
+                            -0.2294    0.0500
+                             0.0011    0.0155
+                             0.2839    0.0971
+                             0.5039    0.2541
+                             0.7553    0.5524
+                             0.9910    0.9104
+                             1.1952    1.3060
+                             1.3681    1.7173
+                             1.5723    2.2448
+                        </tableData>
+                    </table>
+                    
                 </product>
             </function>
 
             <!-- This alpha squared could be problematic -->
-            <function name="aero/coefficient/CDalpha2">
+            <!-- <function name="aero/coefficient/CDalpha2">
                 <description>Drag due to alpha squared</description>
                 <product>
                     <property>aero/qbar-area</property>
@@ -330,7 +380,7 @@
                     <property>aero/alpha-rad</property>
                     <value>1.0555</value>
                 </product>
-            </function>
+            </function> -->
 
             <function name="aero/coefficient/CDbeta">
                 <description>Drag due to sideslip</description>
