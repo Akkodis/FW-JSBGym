@@ -205,7 +205,7 @@ class JSBSimEnv(gym.Env, ABC):
             if self.fdm_rng is None:
                 self.fdm_rng = np.random.default_rng(int(self.sim["simulation/randomseed"]))
             if self.sim_options["rand_fdm"]["enable"]:
-                self.randomize_fdm(eval=self.sim_options["rand_fdm"]["eval"])
+                self.randomize_fdm()
                 print(f"CD_alpha = {self.sim[prp.aero_CDalpha]}, Cmq = {self.sim[prp.aero_Cmq]}, Clr = {self.sim[prp.aero_Clr]}")
 
 
@@ -364,21 +364,7 @@ class JSBSimEnv(gym.Env, ABC):
         print("Gust Start")
 
 
-    def randomize_fdm(self, eval: bool=False):
-        # if eval:
-        #     change_fdm = self.fdm_rng.choice([True, False])
-        #     if change_fdm:
-        #         print("Changing FDM Coefs")
-        #         for prop in self.fdm_aero_1:
-        #             self.sim[prop] = self.sim[prop] + 0.2 * self.sim[prop]
-
-        #         for prop in self.fdm_aero_2:
-        #             self.sim[prop] = self.sim[prop] + 0.5 * self.sim[prop]
-
-        #         self.sim[prp.aero_Cmq] = self.sim[prp.aero_Cmq] + 0.95 * self.sim[prp.aero_Cmq]
-        #     else:
-        #         print("Not Changing FDM Coefs")
-        # else: # Train
+    def randomize_fdm(self):
         print("Sampling new FDM Coefs")
         for prop in self.fdm_aero_1:
             self.sim[prop] = np.clip(self.fdm_rng.normal(self.sim[prop], abs(0.1 * self.sim[prop])), 

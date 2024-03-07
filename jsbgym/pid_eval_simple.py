@@ -123,7 +123,6 @@ if __name__ == '__main__':
                     },
                    "rand_fdm": {
                        "enable": args.rand_fdm,
-                       "eval": True
                    }
                   }
 
