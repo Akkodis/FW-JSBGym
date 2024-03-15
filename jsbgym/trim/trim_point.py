@@ -1,6 +1,7 @@
 import yaml
-from yaml import load
 from numpy import rad2deg
+from pkg_resources import resource_filename
+
 
 try:
     from yaml import CLoader as Loader
@@ -10,7 +11,8 @@ except ImportError:
 class TrimPoint(object):
 
     def __init__(self, aircraft_id: str = "x8"):
-        stream = open(f"trim/trim_points_{aircraft_id}.yaml", "r")
+        trim_cfg_path = resource_filename("jsbgym", f"trim/trim_points_{aircraft_id}.yaml")
+        stream = open(trim_cfg_path, "r")
         dictionary = yaml.load_all(stream, Loader=Loader)
         key_count = 0
         for doc in dictionary:
