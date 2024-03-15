@@ -197,7 +197,7 @@ class JSBSimEnv(gym.Env, ABC):
             if "rand_fdm" in options:
                 self.sim_options["rand_fdm"] = options["rand_fdm"]
 
-        if self.sim_options is not None:
+        if len(self.sim_options) != 0:
             if "seed" in self.sim_options:
                 self.sim["simulation/randomseed"] = self.sim_options["seed"]
             else:
@@ -398,6 +398,21 @@ class JSBSimEnv(gym.Env, ABC):
                     self.gust_start()
 
 
+    def apply_action(self, action: np.ndarray) -> None:
+        # apply the action to the simulation
+        for prop, command in zip(self.action_prps, action):
+            self.sim[prop] = command
+
+
+    def observe_state(self) -> np.ndarray:
+        """
+            Observe the state of the aircraft from the simulation properties and return the state as a numpy array.
+        """
+        self.state = self.State(*[self.sim[prop] for prop in self.state_prps]) # create state named tuple with state variable values from the sim properties
+        np_state = np.array(self.state).astype(np.float32)
+        return np_state
+
+
     def render(self) -> None:
         """
             Rendering method. Launches the visualizers according to the render mode.
@@ -427,6 +442,32 @@ class JSBSimEnv(gym.Env, ABC):
                 self.plot_viz = PlotVisualizer(True, self.telemetry_file)
 
 
+    def is_terminated(self) -> Tuple[bool]:
+        """
+            Check if the episode is terminated. In the current MDP formulation, there's no terminal state.
+        """
+        return False
+
+
+    def is_truncated(self) -> Tuple[bool, bool, bool]:
+        """
+            Check if the episode is truncated, i.e. if the episode reaches the maximum number of steps or
+            if the observation contains out of bounds obs (due to JSBSim diverging).
+            Args:
+                - `sim`: the simulation object containing the JSBSim FDM
+        """
+        episode_end: bool = self.sim[self.steps_left] <= 0 # if the episode is done, return True
+        obs_out_of_bounds: bool = self.observation not in self.observation_space # if the observation contains out of bounds obs (due to JSBSim diverging), return True
+
+        if obs_out_of_bounds:
+            print(f"Out of bounds observation: {self.observation}")
+            print(f"Turbulence: {self.sim[prp.turb_type]}")
+            print(f"Turbulence: {self.sim[prp.turb_w20_fps]}")
+            print(f"Turbulence: {self.sim[prp.turb_severity]}")
+
+        return episode_end or obs_out_of_bounds, episode_end, obs_out_of_bounds
+
+
     def get_observation_space(self) -> gym.spaces.Box:
         """
             Get the observation space of the env.
@@ -449,18 +490,6 @@ class JSBSimEnv(gym.Env, ABC):
         return action_space
 
 
-    def observe_state(self) -> None:
-        """
-            Observe the state of the aircraft and update the state properties.
-        """
-        # update state sim properties
-        for state_var in self.state_prps:
-            self.sim[state_var] = self.sim[state_var]
-
-        # fill state namedtuple with state variable values from the sim properties
-        self.state = self.State(*[self.sim[prop] for prop in self.state_prps])
-
-
     @abstractmethod
     def get_reward(self):
         """
@@ -473,13 +502,14 @@ class JSBSimEnv(gym.Env, ABC):
         """
             Log flight data to telemetry csv.
         """
-        # write flight data to csv
-        with open(self.telemetry_file, 'a') as csv_file:
-            csv_writer: csv.DictWriter = csv.DictWriter(csv_file, fieldnames=self.telemetry_fieldnames)
-            info: dict[str, float] = {}
-            for fieldname, prop in zip(self.telemetry_fieldnames, self.telemetry_prps):
-                info[fieldname] = self.sim[prop]
-            csv_writer.writerow(info)
+        if self.render_mode in self.metadata["render_modes"][1:]:
+            # write flight data to csv
+            with open(self.telemetry_file, 'a') as csv_file:
+                csv_writer: csv.DictWriter = csv.DictWriter(csv_file, fieldnames=self.telemetry_fieldnames)
+                info: dict[str, float] = {}
+                for fieldname, prop in zip(self.telemetry_fieldnames, self.telemetry_prps):
+                    info[fieldname] = self.sim[prop]
+                csv_writer.writerow(info)
 
 
     def telemetry_setup(self, telemetry_file: str) -> None:
@@ -495,3 +525,11 @@ class JSBSimEnv(gym.Env, ABC):
             with open(self.telemetry_file, 'w') as csvfile:
                 csv_writer = csv.DictWriter(csvfile, fieldnames=self.telemetry_fieldnames)
                 csv_writer.writeheader()
+
+
+    def reset_props(self) -> None:
+        """
+            Reset some properties of the environment.
+        """
+        self.sim[self.steps_left] = self.steps_left.max # reset the number of steps left in the episode to the max
+        self.sim[self.current_step] = self.current_step.min # reset the number of steps left in the episode to 
