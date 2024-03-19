@@ -35,3 +35,8 @@ gymnasium.register(
     entry_point='jsbgym.envs.tasks.attitude_control_no_va:ACNoVaPIDRLTask',
     # autoreset=True
 )
+
+gymnasium.register(
+    id='SimpleAC-v0',
+    entry_point='jsbgym.envs.tasks.simple_ac:SimpleAC'
+)
