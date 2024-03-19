@@ -206,7 +206,10 @@ if __name__ == "__main__":
                             "enable": args.gust
                         },
                    },
-                   "rand_fdm": args.rand_fdm
+                   "rand_fdm":
+                    {
+                        "enable": args.rand_fdm
+                    }
                   }
 
     next_obs, _ = envs.reset(options=sim_options)

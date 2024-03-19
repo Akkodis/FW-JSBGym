@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import sys
 from os import path
-sys.path.append(f'{path.dirname(path.abspath(__file__))}/..')
+# sys.path.append(f'{path.dirname(path.abspath(__file__))}/..')
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
@@ -11,7 +11,8 @@ from jsbgym.utils import jsbsim_properties as prp
 
 
 def animate(i, axis, args) -> None:
-    df = pd.read_csv(f'{path.dirname(path.abspath(__file__))}/../{args.tele_file}')
+    # df = pd.read_csv(f'{path.dirname(path.abspath(__file__))}/../{args.tele_file}')
+    df = pd.read_csv(args.tele_file)
     nan_arr = np.empty(df.index.size)
     nan_arr.fill(np.nan)
 

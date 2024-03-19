@@ -123,7 +123,6 @@ if __name__ == '__main__':
                     },
                    "rand_fdm": {
                        "enable": args.rand_fdm,
-                       "eval": True
                    }
                   }
 
@@ -172,11 +171,11 @@ if __name__ == '__main__':
             elevator_cmd, pitch_err, _ = pitch_pid.update(state=pitch, state_dot=pitch_rate, saturate=True, normalize=True)
 
             action = np.array([aileron_cmd, elevator_cmd])
-            obs, reward, truncated, terminated, info = env.step(action)
+            obs, reward, terminated, truncated, info = env.step(action)
             e_obs.append(obs[0, -1])
             Va, roll, pitch, roll_rate, pitch_rate = rearrange_obs(obs)
 
-            done = np.logical_or(truncated, terminated)
+            done = np.logical_or(terminated, truncated)
             if done:
                 if info['out_of_bounds']:
                     print("Out of bounds")

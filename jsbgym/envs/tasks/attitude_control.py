@@ -128,12 +128,12 @@ class AttitudeControlTask(JSBSimEnv):
         """
             Reset some of the properties (target, errors, action history, action averages, fcs position history etc...)
         """
+        super().reset_props() # reset the parent class JSBSimEnv properties
+
         self.reset_target_state() # reset task target state
         self.update_errors() # reset task errors
         self.update_action_history() # reset action history
         self.update_action_avg() # reset action avg
-        self.sim[self.steps_left] = self.steps_left.max # reset the number of steps left in the episode to the max
-        self.sim[self.current_step] = self.current_step.min # reset the number of steps left in the episode to 
 
 
     def step(self, action: np.ndarray) -> Tuple[np.ndarray, float, bool, bool, dict]:
@@ -181,8 +181,7 @@ class AttitudeControlTask(JSBSimEnv):
         self.prev_ep_oob = out_of_bounds # save the last episode oob status (True: it did oob, False: it didn't)
 
         # write telemetry to a csv file every agent step
-        if self.render_mode in self.metadata["render_modes"][1:]:
-            self.telemetry_logging()
+        self.telemetry_logging()
 
         # info dict for debugging and misc infos
         info: Dict = {"steps_left": self.sim[self.steps_left],
@@ -195,35 +194,35 @@ class AttitudeControlTask(JSBSimEnv):
 
         return self.observation, self.reward, terminated, truncated, info
 
-    def apply_action(self, action: np.ndarray) -> None:
-        # apply the action to the simulation
-        for prop, command in zip(self.action_prps, action):
-            self.sim[prop] = command
+    # def apply_action(self, action: np.ndarray) -> None:
+    #     # apply the action to the simulation
+    #     for prop, command in zip(self.action_prps, action):
+    #         self.sim[prop] = command
 
-    def is_terminated(self) -> Tuple[bool]:
-        """
-            Check if the episode is terminated. In the current MDP formulation, there's no terminal state.
-        """
-        return False
+    # def is_terminated(self) -> Tuple[bool]:
+    #     """
+    #         Check if the episode is terminated. In the current MDP formulation, there's no terminal state.
+    #     """
+    #     return False
 
 
-    def is_truncated(self) -> Tuple[bool, bool, bool]:
-        """
-            Check if the episode is truncated, i.e. if the episode reaches the maximum number of steps or
-            if the observation contains out of bounds obs (due to JSBSim diverging).
-            Args:
-                - `sim`: the simulation object containing the JSBSim FDM
-        """
-        episode_end: bool = self.sim[self.steps_left] <= 0 # if the episode is done, return True
-        obs_out_of_bounds: bool = self.observation not in self.observation_space # if the observation contains out of bounds obs (due to JSBSim diverging), return True
+    # def is_truncated(self) -> Tuple[bool, bool, bool]:
+    #     """
+    #         Check if the episode is truncated, i.e. if the episode reaches the maximum number of steps or
+    #         if the observation contains out of bounds obs (due to JSBSim diverging).
+    #         Args:
+    #             - `sim`: the simulation object containing the JSBSim FDM
+    #     """
+    #     episode_end: bool = self.sim[self.steps_left] <= 0 # if the episode is done, return True
+    #     obs_out_of_bounds: bool = self.observation not in self.observation_space # if the observation contains out of bounds obs (due to JSBSim diverging), return True
 
-        if obs_out_of_bounds:
-            print(f"Out of bounds observation: {self.observation}")
-            print(f"Turbulence: {self.sim[prp.turb_type]}")
-            print(f"Turbulence: {self.sim[prp.turb_w20_fps]}")
-            print(f"Turbulence: {self.sim[prp.turb_severity]}")
+    #     if obs_out_of_bounds:
+    #         print(f"Out of bounds observation: {self.observation}")
+    #         print(f"Turbulence: {self.sim[prp.turb_type]}")
+    #         print(f"Turbulence: {self.sim[prp.turb_w20_fps]}")
+    #         print(f"Turbulence: {self.sim[prp.turb_severity]}")
 
-        return episode_end or obs_out_of_bounds, episode_end, obs_out_of_bounds
+    #     return episode_end or obs_out_of_bounds, episode_end, obs_out_of_bounds
 
 
     def update_action_history(self, action: np.ndarray=None) -> None:
@@ -268,7 +267,8 @@ class AttitudeControlTask(JSBSimEnv):
             If it's the first observation, the observation is initialized to `obs_history_size` * `state`.\\
             Otherwise the observation is the newest `state` appended to the observation history and the oldest is dropped.
         """
-        self.state = self.State(*[self.sim[prop] for prop in self.state_prps]) # create state named tuple with state variable values from the sim properties
+        # observe the state of the aircraft, self.state gets updated here
+        super().observe_state()
 
         # if it's the first observation i.e. following a reset(): fill observation with obs_history_size * state
         if first_obs:

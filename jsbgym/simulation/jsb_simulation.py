@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import resource
 import jsbsim
 import os
 import time
@@ -6,6 +7,7 @@ from jsbgym.trim.trim_point import TrimPoint
 from typing import Union
 from jsbgym.utils import jsbsim_properties as prp
 from enum import Enum
+from pkg_resources import resource_filename
 
 
 class ConvFactor(Enum):
@@ -57,7 +59,8 @@ class Simulation(object):
                 - `enable_trim`: whether to start the simulation in trimmed flight
                 - `trim_point`: the trim point to start the simulation in
         """
-        self.fdm = jsbsim.FGFDMExec('fdm_descriptions') # provide the path of the fdm_descriptions folder containing the aircraft, engine, etc. .xml files
+        fdm_descriptions_path = resource_filename("jsbgym", "fdm_descriptions")
+        self.fdm = jsbsim.FGFDMExec(fdm_descriptions_path) # provide the path of the fdm_descriptions folder containing the aircraft, engine, etc. .xml files
         self.fdm.set_debug_level(0) # don't print debug info from JSBSim to avoid cluttering the output
         self.aircraft_id: str = aircraft_id
         self.fdm_dt: float = 1 / fdm_frequency
@@ -112,7 +115,7 @@ class Simulation(object):
             self.fdm['ic/gamma-deg'] = self.trim_point.gamma_deg # steady level flight
         # if we start in untrimmed flight, load the basic ic from file
         else:
-            ic_path: str = f'initial_conditions/{self.aircraft_id}_basic_ic.xml'
+            ic_path: str = resource_filename('jsbgym', f'initial_conditions/{self.aircraft_id}_basic_ic.xml')
             self.fdm.load_ic(ic_path, False)
 
         # error handling for ic loading

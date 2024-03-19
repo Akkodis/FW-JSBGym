@@ -1,15 +1,16 @@
 import subprocess
 import time
 from jsbgym.simulation.jsb_simulation import Simulation
-
+from pkg_resources import resource_filename
 
 class PlotVisualizer(object):
     def __init__(self, scale: bool, telemetry_file: str) -> None:
+        viz_plot_path: str = resource_filename('jsbgym', 'visualizers/attitude_control_telemetry.py')
         cmd: str = ""
         if scale:
-            cmd = f"python visualizers/attitude_control_telemetry.py --tele-file {telemetry_file} --scale"
+            cmd = f"python {viz_plot_path} --tele-file {telemetry_file} --scale"
         else:
-            cmd = f"python visualizers/attitude_control_telemetry.py --tele-file {telemetry_file}"
+            cmd = f"python {viz_plot_path} --tele-file {telemetry_file}"
         self.process: subprocess.Popen = subprocess.Popen(cmd, 
                                                           shell=True,
                                                           stdout=subprocess.PIPE,

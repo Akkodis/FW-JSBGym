@@ -90,7 +90,6 @@ if __name__ == '__main__':
                     },
                    "rand_fdm": {
                        "enable": args.rand_fdm,
-                       "eval": True
                    }
                 }
 
@@ -129,11 +128,11 @@ if __name__ == '__main__':
         while step < total_steps:
             env.set_target_state(roll_ref, pitch_ref)
             action = ppo_agent.get_action_and_value(obs)[1].squeeze_(0).detach().cpu().numpy()
-            obs, reward, truncated, terminated, info = env.step(action)
+            obs, reward, terminated, truncated, info = env.step(action)
             e_obs.append(info["non_norm_obs"][0, -1])
             obs = torch.Tensor(obs).unsqueeze_(0).to(device)
 
-            done = np.logical_or(truncated, terminated)
+            done = np.logical_or(terminated, truncated)
             if done:
                 if info['out_of_bounds']:
                     print("Out of bounds")
