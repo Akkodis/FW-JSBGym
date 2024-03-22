@@ -37,6 +37,6 @@ gymnasium.register(
 )
 
 gymnasium.register(
-    id='SimpleAC-v0',
-    entry_point='jsbgym.envs.tasks.simple_ac:SimpleAC'
+    id='SimpleAC_OMAC-v0',
+    entry_point='jsbgym.envs.tasks.simple_ac:SimpleAC_OMAC'
 )

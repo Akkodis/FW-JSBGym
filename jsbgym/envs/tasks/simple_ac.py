@@ -1,15 +1,16 @@
 import numpy as np
 import yaml
+import os
+
 from typing import Tuple
 from jsbgym.utils import jsbsim_properties as prp
 from jsbgym.utils.jsbsim_properties import BoundedProperty
 from jsbgym.envs.jsbsim_env import JSBSimEnv
-import os
 
 
-class SimpleAC(JSBSimEnv):
+class SimpleAC_OMAC(JSBSimEnv):
     """
-        Simple Aircraft Attitude Controller (AC) environment for JSBSim
+        Simple Aircraft Attitude Controller (AC) environment for JSBSim with states for OMAC algo reimplementation
     """
     def __init__(self, config_file="config.yaml", telemetry_file: str = '', render_mode: str = 'none'):
         print("current dir: ", os.getcwd())
@@ -116,4 +117,3 @@ class SimpleAC(JSBSimEnv):
         r_total = 1.0
         self.sim[prp.reward_total] = r_total
         return r_total
-
