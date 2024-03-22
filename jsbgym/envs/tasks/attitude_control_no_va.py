@@ -167,13 +167,13 @@ class ACNoVaIntegErrTask(ACNoVaTask):
         super().__init__(config_file, telemetry_file, render_mode)
 
         self.state_prps: Tuple[BoundedProperty, ...] = (
-        prp.roll_rad, prp.pitch_rad, # attitude
-        prp.airspeed_kph, # airspeed
-        prp.p_radps, prp.q_radps, prp.r_radps, # angular rates
-        prp.roll_err, prp.pitch_err, # errors
-        prp.roll_integ_err, prp.pitch_integ_err, # integral errors
-        prp.aileron_avg, prp.elevator_avg, # average of past 5 fcs commands
-        prp.alpha_rad, prp.beta_rad # angle of attack and sideslip angles
+            prp.roll_rad, prp.pitch_rad, # attitude
+            prp.airspeed_kph, # airspeed
+            prp.p_radps, prp.q_radps, prp.r_radps, # angular rates
+            prp.roll_err, prp.pitch_err, # errors
+            prp.roll_integ_err, prp.pitch_integ_err, # integral errors
+            prp.aileron_avg, prp.elevator_avg, # average of past 5 fcs commands
+            prp.alpha_rad, prp.beta_rad # angle of attack and sideslip angles
         )
 
         self.error_prps: Tuple[BoundedProperty, ...] = (

@@ -41,13 +41,14 @@ class AttitudeControlTask(JSBSimEnv):
 
         super().__init__(cfg_all["JSBSimEnv"], telemetry_file, render_mode)
 
-        self.task_cfg: dict = cfg_all["AttitudeControlTask"]
+        self.task_cfg: dict = cfg_all.get("AttitudeControlTask", {})
 
-        self.obs_is_matrix = self.task_cfg["obs_is_matrix"]
+        # by default, the observation is a vector, if obs_is_matrix is set to True, the observation is a matrix
+        self.obs_is_matrix: bool = self.task_cfg.get("obs_is_matrix", False)
 
-        # observation history size
-        self.obs_history_size: int = self.task_cfg["obs_history_size"]
-        self.act_history_size: int = self.task_cfg["act_history_size"]
+        # observation history size, by default = 1
+        self.obs_history_size: int = self.task_cfg.get("obs_history_size", 1)
+        self.act_history_size: int = self.task_cfg.get("act_history_size", 1)
 
         self.state_prps: Tuple[BoundedProperty, ...] = (
             prp.roll_rad, prp.pitch_rad, # attitude
@@ -282,7 +283,7 @@ class AttitudeControlTask(JSBSimEnv):
         if self.obs_is_matrix:
             obs: np.ndarray = np.expand_dims(np.array(self.observation_deque), axis=0).astype(np.float32)
         else:
-            obs: np.ndarray = np.array(self.observation_deque).astype(np.float32)
+            obs: np.ndarray = np.array(self.observation_deque).squeeze().astype(np.float32)
         return obs
 
 
