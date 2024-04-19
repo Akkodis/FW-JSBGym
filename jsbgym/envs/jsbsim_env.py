@@ -64,6 +64,10 @@ class JSBSimEnv(gym.Env, ABC):
         # jsbsim level configuration
         self.jsbsim_cfg: dict = jsbsim_config
 
+        # jsbsim sim options
+        self.sim_options: dict = self.jsbsim_cfg.get("sim_options", False)
+        # self.sim_options: dict = {}
+
         # simulation attribute, will be initialized in reset() with a call to Simulation()
         self.sim: Simulation = None
 
@@ -127,7 +131,6 @@ class JSBSimEnv(gym.Env, ABC):
 
         self.fcs_pos_hist = []
 
-        self.sim_options: dict = {}
         self.prev_ep_oob = False
 
         self.fdm_seed = None
@@ -183,7 +186,7 @@ class JSBSimEnv(gym.Env, ABC):
                                   viz_time_factor=self.viz_time_factor,
                                   enable_fgear_output=self.enable_fgear_output)
 
-        # set render mode
+        # TODO: improvement, remove the options argument and only pass the atmosphere options through setting the self.sim_options attirbute
         if options is not None:
             if "render_mode" in options: 
                 self.render_mode = options["render_mode"]
@@ -197,7 +200,8 @@ class JSBSimEnv(gym.Env, ABC):
             if "rand_fdm" in options:
                 self.sim_options["rand_fdm"] = options["rand_fdm"]
 
-        if len(self.sim_options) != 0:
+        print("self.sim_options: ", self.sim_options)
+        if self.sim_options:
             if "seed" in self.sim_options:
                 self.sim["simulation/randomseed"] = self.sim_options["seed"]
             else:
@@ -213,7 +217,10 @@ class JSBSimEnv(gym.Env, ABC):
 
         # set the atmospehere (wind and turbulences)
         print(f"Last Ep OOB: {self.prev_ep_oob}")
-        self.set_atmosphere(self.sim_options["atmosphere"])
+        if self.sim_options.get("atmosphere", False):
+            self.set_atmosphere(self.sim_options["atmosphere"])
+        else:
+            print("ERROR: No Atmosphere Options Found")
 
 
     def set_atmosphere(self, atmo_options: dict={}) -> None:
@@ -307,7 +314,8 @@ class JSBSimEnv(gym.Env, ABC):
                     gust_startup_duration_sec = 0.25
                     gust_steady_duration_sec = 0.5
                     gust_end_duration_sec = 0.25
-                    gust_frame = 3 # 1: Body frame, 2: Wind frame, 3: inertial NED frame
+                    # gust_frame = 3 # 1: Body frame, 2: Wind frame, 3: inertial NED frame
+                    gust_frame = 1 # 1: Body frame, 2: Wind frame, 3: inertial NED frame
                     match severity:
                         case "off": # no gust
                             gust_mag_fps = 0
@@ -356,10 +364,14 @@ class JSBSimEnv(gym.Env, ABC):
 
 
     def gust_start(self):
-        gust_dir = self.random_wind_direction()
-        self.sim[prp.gust_dir_x_fps] = gust_dir[0]
-        self.sim[prp.gust_dir_y_fps] = gust_dir[1]
-        self.sim[prp.gust_dir_z_fps] = gust_dir[2]
+        # gust_dir = self.random_wind_direction()
+        # self.sim[prp.gust_dir_x_fps] = gust_dir[0]
+        # self.sim[prp.gust_dir_y_fps] = gust_dir[1]
+        # self.sim[prp.gust_dir_z_fps] = gust_dir[2]
+        # self.sim[prp.gust_start] = 1
+        self.sim[prp.gust_dir_x_fps] = 0
+        self.sim[prp.gust_dir_y_fps] = 1
+        self.sim[prp.gust_dir_z_fps] = 0
         self.sim[prp.gust_start] = 1
         print("Gust Start")
 
@@ -460,7 +472,7 @@ class JSBSimEnv(gym.Env, ABC):
         obs_out_of_bounds: bool = self.observation not in self.observation_space # if the observation contains out of bounds obs (due to JSBSim diverging), return True
 
         if obs_out_of_bounds:
-            print(f"Out of bounds observation: {self.observation}")
+            print(f"Out of bounds observation: {self.observation} at step {self.sim[self.current_step]}")
             print(f"Turbulence: {self.sim[prp.turb_type]}")
             print(f"Turbulence: {self.sim[prp.turb_w20_fps]}")
             print(f"Turbulence: {self.sim[prp.turb_severity]}")
