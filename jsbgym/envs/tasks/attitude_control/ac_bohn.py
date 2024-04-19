@@ -9,7 +9,7 @@ from jsbgym.utils import jsbsim_properties as prp
 from jsbgym.utils.jsbsim_properties import BoundedProperty
 
 
-class AttitudeControlTask(JSBSimEnv):
+class ACBohnTask(JSBSimEnv):
     """
         gym.Env wrapper task. Made for attitude control as described in Deep Reinforcement Learning Attitude Control of Fixed-Wing UAVs Using Proximal Policy Optimization by Bohn et al.
 
@@ -41,7 +41,7 @@ class AttitudeControlTask(JSBSimEnv):
 
         super().__init__(cfg_all["JSBSimEnv"], telemetry_file, render_mode)
 
-        self.task_cfg: dict = cfg_all.get("AttitudeControlTask", {})
+        self.task_cfg: dict = cfg_all.get("ACBohnTask", {})
 
         # by default, the observation is a vector, if obs_is_matrix is set to True, the observation is a matrix
         self.obs_is_matrix: bool = self.task_cfg.get("obs_is_matrix", False)
