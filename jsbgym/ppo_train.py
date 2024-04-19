@@ -46,7 +46,7 @@ def parse_args():
     parser.add_argument("--no-eval-plot", action='store_true', default=False, help="do not do a short evaluation plot at the end of training")
 
     # Algorithm specific arguments
-    parser.add_argument("--env-id", type=str, default="ACNoVa-v0",
+    parser.add_argument("--env-id", type=str, default="ACBohnNoVa-v0",
         help="the id of the environment")
     parser.add_argument("--config", type=str, default="config/ppo_caps_no_va.yaml",
         help="the config file of the environnement")
@@ -175,7 +175,7 @@ if __name__ == "__main__":
     trim_point: TrimPoint = TrimPoint(aircraft_id='x8')
     if args.env_id == "AttitudeControl-v0":
         trim_acts = torch.tensor([trim_point.aileron, trim_point.elevator, trim_point.throttle]).to(device)
-    elif args.env_id == "ACNoVa-v0" or args.env_id == "ACNoVaIntegErr-v0":
+    elif args.env_id == "ACBohnNoVa-v0" or args.env_id == "ACBohnNoVaIErr-v0":
         trim_acts = torch.tensor([trim_point.aileron, trim_point.elevator]).to(device)
 
     # ALGO Logic: Storage setup
@@ -542,7 +542,7 @@ if __name__ == "__main__":
                 # Save the best agents depending on the env
                 # if args.save_best:
                 #     if (args.env_id == "AttitudeControl-v0" and r_per_step > -0.20) or \
-                #        ((args.env_id == "ACNoVa-v0" or args.env_id == "ACNoVaIntegErr-v0") and r_per_step > -0.06):
+                #        ((args.env_id == "ACBohnNoVa-v0" or args.env_id == "ACBohnNoVaIErr-v0") and r_per_step > -0.06):
                 #         save_model(save_path, run_name, agent, pe_env, args.seed)
                 # else:
                 #     save_model(save_path, run_name, agent, pe_env, args.seed)

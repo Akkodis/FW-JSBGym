@@ -30,7 +30,7 @@ if __name__ == '__main__':
     args = parse_args()
     if args.env_id == "AttitudeControl-v0":
         args.config = "config/ppo_caps.yaml"
-    elif args.env_id == "ACNoVa-v0":
+    elif args.env_id == "ACBohnNoVa-v0":
         args.config = "config/ppo_caps_no_va.yaml"
 
     env = gym.make(args.env_id, config_file=args.config, render_mode=args.render_mode, telemetry_file=args.tele_file)
@@ -94,11 +94,11 @@ if __name__ == '__main__':
 
 
 # if __name__ == '__main__':
-#     env_id = "ACNoVa-v0" 
+#     env_id = "ACBohnNoVa-v0" 
 #     config = ""
 #     if env_id == "AttitudeControl-v0":
 #         config = "config/ppo_caps.yaml"
-#     elif env_id == "ACNoVa-v0":
+#     elif env_id == "ACBohnNoVa-v0":
 #         config = "config/ppo_caps_no_va.yaml"
 
 #     env = gym.make(env_id, config, render_mode="plot", telemetry_file="telemetry/sandbox.csv")

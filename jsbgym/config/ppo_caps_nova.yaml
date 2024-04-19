@@ -22,8 +22,8 @@ JSBSimEnv:
         rand_fdm:
             enable:
 
-# task specific child class config: AttitudeControlTask
-AttitudeControlTask:
+# task specific child class config: ACBohnTask
+ACBohnTask:
     obs_is_matrix: True
     obs_history_size: 5 # default 5
     act_history_size: 5 # default 5

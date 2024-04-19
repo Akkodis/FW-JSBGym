@@ -7,8 +7,8 @@ JSBSimEnv:
     episode_length_s: 20.0
     viz_time_factor: 1.0
 
-# task specific child class config: AttitudeControlTaskEnv
-AttitudeControlTaskEnv:
+# task specific child class config: ACBohnTaskEnv
+ACBohnTaskEnv:
     telemetry_file: "telemetry/eval_telemetry.csv"
     obs_is_matrix: True
     obs_history_size: 5

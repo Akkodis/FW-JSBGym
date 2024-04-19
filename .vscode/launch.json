@@ -11,7 +11,7 @@
             "cwd": "${workspaceFolder}/jsbgym",
             "program": "ppo_eval.py",
             "args": ["--config", "config/eval/ppo_caps_no_va.yaml",
-                    "--env-id", "ACNoVaIntegErr-v0",
+                    "--env-id", "ACBohnNoVaIErr-v0",
                     "--train-model", "models/train_saves/ppo_caps_tuned1_integerr_2_88648_12-12_23:32:52.pt",
                     "--render-mode", "plot", "--rand-targets"],
             "console": "integratedTerminal",
@@ -26,7 +26,7 @@
             "program": "pid_eval.py",
             "args": [
                     "--render-mode", "plot",
-                    "--rand-targets", "--env-id", "ACNoVa-v0","--severity", "off"],
+                    "--rand-targets", "--env-id", "ACBohnNoVa-v0","--severity", "off"],
                     // "--turb", "--wind"],
             "console": "integratedTerminal",
             "justMyCode": false,
@@ -39,7 +39,7 @@
             "program": "ppo_train.py",
             "args": ["--exp-name", "debug_exp", "--num-envs", "2",
                 "--total-timesteps", "10000", "--track", 
-                "--env-id", "ACNoVa-v0",
+                "--env-id", "ACBohnNoVa-v0",
                 "--turb", "--wind", "--rand-atmo-mag", "--rand-targets"
                 // "--config", "config/ppo_caps_no_va.yaml",
                 // "--config", "config/ppo_caps.yaml",
