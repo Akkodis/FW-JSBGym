@@ -197,6 +197,6 @@ if args.fullscreen:
 
 # starting animation
 ani = FuncAnimation(plt.gcf(), animate, fargs=(ax, args, ), interval=50, blit=False)
-# print("TELEMETRY FILE : ", args.tele_file, file=sys.stderr)
+print("TELEMETRY FILE : ", args.tele_file, file=sys.stderr)
 print("Animation plot started...", file=sys.stderr)
 plt.show()
