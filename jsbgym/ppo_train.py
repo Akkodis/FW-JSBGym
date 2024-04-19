@@ -99,6 +99,8 @@ def parse_args():
     parser.add_argument('--turb', type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True, help='add turbulence')
     parser.add_argument('--wind', type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True, help='add wind')
     parser.add_argument('--gust', type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True, help='add gust')
+    parser.add_argument('--severity', type=str, default='', nargs="?", 
+                        help='severity of the atmosphere (wind, gusts and turb), options: light, moderate, severe. If not provided, severity is sampled randomly')
     parser.add_argument("--ref-sampler", type=str, default='uniform',
         help="the distribution for sampling refs: uniform or beta")
     parser.add_argument('--cst-beta', type=float, default=None)
@@ -123,11 +125,6 @@ if __name__ == "__main__":
     args = parse_args()
     args.total_timesteps = int(args.total_timesteps)
     np.set_printoptions(suppress=True)
-
-    if args.env_id == "AttitudeControl-v0":
-        args.config = "config/ppo_caps.yaml"
-    else:
-        args.config = "config/ppo_caps_no_va.yaml"
 
     date_time = strftime('%d-%m_%H:%M:%S', localtime())
     run_name = f"ppo_{args.exp_name}_{args.seed}_{date_time}"
@@ -170,6 +167,7 @@ if __name__ == "__main__":
         [ppo.make_env(args.env_id, args.config, "none", None, eval=False, gamma=args.gamma) for i in range(args.num_envs)]
     )
     unwr_envs = [envs.envs[i].unwrapped for i in range(args.num_envs)]
+    print("Single Env Observation Space Shape = ", envs.single_observation_space.shape)
 
     assert isinstance(envs.single_action_space, gym.spaces.Box), "only continuous action space is supported"
     agent = ppo.Agent(envs).to(device)
@@ -193,8 +191,10 @@ if __name__ == "__main__":
     # TRY NOT TO MODIFY: start the game
     global_step = 0
     start_time = time.time()
+
     sim_options = {"atmosphere": {
-                        "variable": True,
+                        "variable": True if not args.severity else False,
+                        "severity": args.severity if args.severity else None,
                         "wind": {
                             "enable": args.wind,
                             "rand_continuous": args.wind_rand_cont
@@ -566,20 +566,25 @@ if __name__ == "__main__":
         np.random.seed(seed)
         torch.manual_seed(seed)
         torch.backends.cudnn.deterministic = True
-        sim_options = {"seed": seed,
-                       "atmosphere": {
-                            "variable": False,
+        sim_options = {"atmosphere": {
+                            "variable": True if not args.severity else False,
+                            "severity": args.severity if args.severity else None,
                             "wind": {
-                                "enable": False,
-                                "rand_continuous": False
+                                "enable": args.wind,
+                                "rand_continuous": args.wind_rand_cont
                             },
                             "turb": {
-                                    "enable": False
+                                "enable": args.turb
                             },
                             "gust": {
-                                "enable": False
-                            }
-                        }}
+                                "enable": args.gust
+                            },
+                    },
+                    "rand_fdm":
+                        {
+                            "enable": args.rand_fdm
+                        }
+                    }
 
         severity_range = ["off", "light", "moderate", "severe"]
         # severity_range = ["off"]
