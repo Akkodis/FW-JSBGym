@@ -7,11 +7,26 @@ JSBSimEnv:
     episode_length_s: 20.0
     viz_time_factor: 50.0
 
+    # JSBSim simulation env options - train
+    sim_options:
+        atmosphere:
+            severity:
+            variable:
+            wind:
+                enable:
+            rand_continuous:
+            turb:
+                enable:
+            gust:
+                enable:
+        rand_fdm:
+            enable:
+
 # task specific child class config: AttitudeControlTask
 AttitudeControlTask:
     obs_is_matrix: True
     obs_history_size: 5 # default 5
-    act_history_size: 5
+    act_history_size: 5 # default 5
 
     reward_weights: # bohn code | bohn paper | / max_error | unit
         roll:
