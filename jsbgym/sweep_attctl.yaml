@@ -16,7 +16,7 @@ metric:
 # Static parameters to pass to the program
 parameters:
   env-id:
-    value: AttitudeControl-v0
+    value: ACBohn-v0
   num-envs:
     value: 6
   total-timesteps:

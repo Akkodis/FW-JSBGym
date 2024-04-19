@@ -173,7 +173,7 @@ if __name__ == "__main__":
     agent = ppo.Agent(envs).to(device)
     optimizer = optim.Adam(agent.parameters(), lr=args.learning_rate, eps=1e-5)
     trim_point: TrimPoint = TrimPoint(aircraft_id='x8')
-    if args.env_id == "AttitudeControl-v0":
+    if args.env_id == "ACBohn-v0":
         trim_acts = torch.tensor([trim_point.aileron, trim_point.elevator, trim_point.throttle]).to(device)
     elif args.env_id == "ACBohnNoVa-v0" or args.env_id == "ACBohnNoVaIErr-v0":
         trim_acts = torch.tensor([trim_point.aileron, trim_point.elevator]).to(device)
@@ -508,7 +508,7 @@ if __name__ == "__main__":
         writer.add_scalar("losses/total_loss", loss.item(), global_step)
         writer.add_scalar("action_std/da", action_std[0], global_step)
         writer.add_scalar("action_std/de", action_std[1], global_step)
-        if args.env_id == "AttitudeControl-v0":
+        if args.env_id == "ACBohn-v0":
             writer.add_scalar("action_std/dt", action_std[2], global_step)
         print("SPS:", int(global_step / (time.time() - start_time)))
         writer.add_scalar("charts/SPS", int(global_step / (time.time() - start_time)), global_step)
@@ -541,7 +541,7 @@ if __name__ == "__main__":
                 r_per_step = info["episode"]["r"]/info["episode"]["l"]
                 # Save the best agents depending on the env
                 # if args.save_best:
-                #     if (args.env_id == "AttitudeControl-v0" and r_per_step > -0.20) or \
+                #     if (args.env_id == "ACBohn-v0" and r_per_step > -0.20) or \
                 #        ((args.env_id == "ACBohnNoVa-v0" or args.env_id == "ACBohnNoVaIErr-v0") and r_per_step > -0.06):
                 #         save_model(save_path, run_name, agent, pe_env, args.seed)
                 # else:

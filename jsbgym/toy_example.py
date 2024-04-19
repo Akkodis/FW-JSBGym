@@ -11,7 +11,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=str, default="config/ppo_caps.yaml",
         help="the config file of the environnement")
-    parser.add_argument("--env-id", type=str, default="AttitudeControl-v0", 
+    parser.add_argument("--env-id", type=str, default="ACBohn-v0", 
         help="the id of the environment")
     parser.add_argument('--render-mode', type=str, 
         choices=['plot_scale', 'plot', 'fgear', 'fgear_plot', 'fgear_plot_scale'],
@@ -28,7 +28,7 @@ def parse_args():
 
 if __name__ == '__main__':
     args = parse_args()
-    if args.env_id == "AttitudeControl-v0":
+    if args.env_id == "ACBohn-v0":
         args.config = "config/ppo_caps.yaml"
     elif args.env_id == "ACBohnNoVa-v0":
         args.config = "config/ppo_caps_no_va.yaml"
@@ -96,7 +96,7 @@ if __name__ == '__main__':
 # if __name__ == '__main__':
 #     env_id = "ACBohnNoVa-v0" 
 #     config = ""
-#     if env_id == "AttitudeControl-v0":
+#     if env_id == "ACBohn-v0":
 #         config = "config/ppo_caps.yaml"
 #     elif env_id == "ACBohnNoVa-v0":
 #         config = "config/ppo_caps_no_va.yaml"
