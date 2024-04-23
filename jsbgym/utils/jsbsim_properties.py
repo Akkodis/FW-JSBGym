@@ -96,7 +96,7 @@ windspeed_down_kph = HelperProperty('atmosphere/wind-down-kph', 'wind speed down
 # turbulences
 turb_north_fps = Property('atmosphere/turb-north-fps', 'turbulence wind speed north [ft/s]')
 turb_north_mps = HelperProperty('atmosphere/turb-north-mps', 'turbulence wind speed north [m/s]')
-turb_north_kph = HelperProperty('atmosphere/turb-north-fps', 'turbulence wind speed north [km/h]')
+turb_north_kph = HelperProperty('atmosphere/turb-north-kph', 'turbulence wind speed north [km/h]')
 turb_east_fps = Property('atmosphere/turb-east-fps', 'turbulence wind speed east [ft/s]')
 turb_east_mps = HelperProperty('atmosphere/turb-east-mps', 'turbulence wind speed east [m/s]')
 turb_east_kph = HelperProperty('atmosphere/turb-east-kph', 'turbulence wind speed east [km/h]')
