@@ -46,6 +46,9 @@ def animate(i, axis, args) -> None:
     roll_ref = df.get(prp.target_roll_rad.get_legal_name(), default=nan_arr)
     pitch_ref = df.get(prp.target_pitch_rad.get_legal_name(), default=nan_arr)
 
+    roll_integ_err = df.get(prp.roll_integ_err.get_legal_name(), default=nan_arr)
+    pitch_integ_err = df.get(prp.pitch_integ_err.get_legal_name(), default=nan_arr)
+
     r_total = df.get(prp.reward_total.get_legal_name(), default=nan_arr)
     r_roll = df.get(prp.reward_roll.get_legal_name(), default=nan_arr)
     r_pitch = df.get(prp.reward_pitch.get_legal_name(), default=nan_arr)
@@ -138,15 +141,23 @@ def animate(i, axis, args) -> None:
             axis[1, 0].set_ylabel("roll [rad]")
             axis[1, 0].legend()
             axis[1, 0].grid()
-
-        axis[1, 2].plot(tsteps, windspeed_n_kph, label='north' if not np.isnan(np.sum(windspeed_n_kph)) else '')
-        axis[1, 2].plot(tsteps, windspeed_e_kph, label='east' if not np.isnan(np.sum(windspeed_e_kph)) else '')
-        axis[1, 2].plot(tsteps, windspeed_d_kph, label='down' if not np.isnan(np.sum(windspeed_d_kph)) else '')
-        axis[1, 2].set_title('windspeeds')
+        
+        axis[1, 2].plot(tsteps, roll_integ_err, label='roll_integ_err' if not np.isnan(np.sum(roll_integ_err)) else '')
+        axis[1, 2].plot(tsteps, pitch_integ_err, label='pitch_integ_err' if not np.isnan(np.sum(pitch_integ_err)) else '')
+        axis[1, 2].set_title('integral errors')
         # axis[1, 2].set_xlabel("timestep")
-        axis[1, 2].set_ylabel("windspeed [km/h]")
+        axis[1, 2].set_ylabel("integral errors [rad]")
         axis[1, 2].legend()
         axis[1, 2].grid()
+
+        # axis[1, 2].plot(tsteps, windspeed_n_kph, label='north' if not np.isnan(np.sum(windspeed_n_kph)) else '')
+        # axis[1, 2].plot(tsteps, windspeed_e_kph, label='east' if not np.isnan(np.sum(windspeed_e_kph)) else '')
+        # axis[1, 2].plot(tsteps, windspeed_d_kph, label='down' if not np.isnan(np.sum(windspeed_d_kph)) else '')
+        # axis[1, 2].set_title('windspeeds')
+        # # axis[1, 2].set_xlabel("timestep")
+        # axis[1, 2].set_ylabel("windspeed [km/h]")
+        # axis[1, 2].legend()
+        # axis[1, 2].grid()
 
         axis[2, 0].plot(tsteps, aileron_cmd, label='aileron_cmd' if not np.isnan(np.sum(aileron_cmd)) else '')
         axis[2, 0].plot(tsteps, elevator_cmd, label='elevator_cmd' if not np.isnan(np.sum(elevator_cmd)) else '')
