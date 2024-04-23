@@ -148,15 +148,31 @@ class ACBohnNoVaTask(ACBohnTask):
             Based on the bohn PPO paper reward func no airspeed control.
         """
         r_w: dict = self.task_cfg["reward_weights"] # reward weights for each reward component
+        r_roll_clip_max = r_w["roll"].get("clip_max", None)
+        r_pitch_clip_max = r_w["pitch"].get("clip_max", None)
+
+        r_actvar = 0.0
+        # action fluctuation (penalty) reward component
+        if r_w["action_penalty"]["enabled"]:
+            r_actvar = np.mean(np.abs(action - np.array(self.action_hist[-1]))) / 2*self.action_space.high[0] # normalized by distance between min and max action value dist(-1, 1)=2
+            r_act_clip_max = r_w["action_penalty"].get("clip_max", None)
+            r_actvar = np.clip(r_actvar, 0.0, r_act_clip_max)
+            if r_roll_clip_max + r_pitch_clip_max + r_act_clip_max != 1.0:
+                print("WARNING: Reward components do not sum to 1.0")
+        elif r_roll_clip_max + r_pitch_clip_max != 1.0:
+            print("WARNING: Reward components do not sum to 1.0")
+
+        # roll and pitch error reward (penalty) components
         r_roll = np.clip(abs(self.sim[prp.roll_err]) / r_w["roll"]["scaling"], r_w["roll"]["clip_min"], r_w["roll"].get("clip_max", None)) # roll reward component
         r_pitch = np.clip(abs(self.sim[prp.pitch_err]) / r_w["pitch"]["scaling"], r_w["pitch"]["clip_min"], r_w["pitch"].get("clip_max", None)) # pitch reward component
 
         # return the negative sum of all reward components
-        r_total: float = -(r_roll + r_pitch)
+        r_total: float = -(r_roll + r_pitch + r_actvar)
 
         # populate properties
         self.sim[prp.reward_roll] = r_roll
         self.sim[prp.reward_pitch] = r_pitch
+        self.sim[prp.reward_actvar] = r_actvar
         self.sim[prp.reward_total] = r_total
 
         return r_total
