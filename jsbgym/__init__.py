@@ -43,6 +43,12 @@ gymnasium.register(
 )
 
 gymnasium.register(
+    id='ACVanillaThr-v0',
+    entry_point='jsbgym.envs.tasks.attitude_control.vanilla:ACVanillaThrTask',
+    # autoreset=True
+)
+
+gymnasium.register(
     id='ACBohn-v0',
     entry_point='jsbgym.envs.tasks.attitude_control.ac_bohn:ACBohnTask',
     # autoreset=True

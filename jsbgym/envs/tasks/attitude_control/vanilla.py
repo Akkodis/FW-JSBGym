@@ -1,13 +1,14 @@
 import numpy as np
 from typing import Tuple
 
+from jsbgym.envs.jsbsim_env import JSBSimEnv
 from jsbgym.envs.tasks.attitude_control.ac_bohn_nova import ACBohnNoVaTask, ACBohnNoVaIErrTask
 from jsbgym.utils import jsbsim_properties as prp
 from jsbgym.utils.jsbsim_properties import BoundedProperty
 
 class ACVanillaTask(ACBohnNoVaTask):
     """
-        Attitude control task with minimal state and action space.
+        Attitude control (without throttle control) task with minimal state and action space.
         No integral error, no wind states (alpha, beta), no past action nor action average.
     """
     def __init__(self, config_file: str, telemetry_file: str='', render_mode: str='none') -> None:
@@ -135,6 +136,53 @@ class ACVanillaAlphaBetaTask(ACVanillaTask):
 
         self.initialize()
         self.telemetry_setup(self.telemetry_file)
+
+
+class ACVanillaThrTask(ACBohnNoVaTask):
+    """
+        Attitude control (roll and pitch) task with minimal state space.
+        No integral error, no wind states (alpha, beta), no past action nor action average.
+        No airspeed reference is fed in the state space, only roll and pitch. But contrary to the parent class,
+        and to the ACBohnNoVaTask(s), the agent has to control on the throttle (instead of being a PI)
+    """
+    def __init__(self, config_file: str, telemetry_file: str='', render_mode: str='none') -> None:
+        super().__init__(config_file, telemetry_file, render_mode)
+
+        self.state_prps: Tuple[BoundedProperty, ...] = (
+            prp.roll_rad, prp.pitch_rad, # attitude
+            prp.airspeed_kph, # airspeed
+            prp.p_radps, prp.q_radps, prp.r_radps, # angular rates
+            prp.roll_err, prp.pitch_err # errors
+        )
+
+        self.action_prps: Tuple[BoundedProperty, ...] = (
+            prp.aileron_cmd, prp.elevator_cmd, # control surface commands normalized [-1, 1]
+            prp.throttle_cmd # throttle command normalized [0, 1]
+        )
+
+        self.target_prps: Tuple[BoundedProperty, ...] = (
+            prp.target_roll_rad, prp.target_pitch_rad, # target attitude
+        )
+
+        self.error_prps: Tuple[BoundedProperty, ...] = (
+            prp.roll_err, prp.pitch_err
+        )
+
+        # telemetry properties are an addition of the common telemetry properties, target properties and error properties
+        self.telemetry_prps = self.common_telemetry_prps + self.target_prps + self.error_prps
+
+        # set action and observation space from the task
+        self.action_space = self.get_action_space()
+        self.observation_space = self.get_observation_space()
+
+        self.initialize()
+        self.telemetry_setup(self.telemetry_file)
+
+
+    def apply_action(self, action: np.ndarray) -> None:
+        # Use the apply action method from the JSBSimEnv class 
+        # (not the direct parent class which adds up the output of a PI controller for the airspeed)
+        return JSBSimEnv.apply_action(self, action)
 
 
 class ACVanillaIErrTask(ACBohnNoVaIErrTask):
