@@ -8,7 +8,37 @@ gymnasium.register(
 
 gymnasium.register(
     id='ACVanilla-v0',
-    entry_point='jsbgym.envs.tasks.vanilla:ACVanillaTask',
+    entry_point='jsbgym.envs.tasks.attitude_control.vanilla:ACVanillaTask',
+    # autoreset=True
+)
+
+gymnasium.register(
+    id='ACVanillaIErr-v0',
+    entry_point='jsbgym.envs.tasks.attitude_control.vanilla:ACVanillaIErrTask',
+    # autoreset=True
+)
+
+gymnasium.register(
+    id='ACVanillaAct-v0',
+    entry_point='jsbgym.envs.tasks.attitude_control.vanilla:ACVanillaActTask',
+    # autoreset=True
+)
+
+gymnasium.register(
+    id='ACVanillaAlpha-v0',
+    entry_point='jsbgym.envs.tasks.attitude_control.vanilla:ACVanillaAlphaTask',
+    # autoreset=True
+)
+
+gymnasium.register(
+    id='ACVanillaBeta-v0',
+    entry_point='jsbgym.envs.tasks.attitude_control.vanilla:ACVanillaBetaTask',
+    # autoreset=True
+)
+
+gymnasium.register(
+    id='ACVanillaAlphaBeta-v0',
+    entry_point='jsbgym.envs.tasks.attitude_control.vanilla:ACVanillaAlphaBetaTask',
     # autoreset=True
 )
 
