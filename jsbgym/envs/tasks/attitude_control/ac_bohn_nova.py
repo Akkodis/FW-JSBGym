@@ -11,7 +11,7 @@ from jsbgym.models.aerodynamics import AeroModel
 
 class ACBohnNoVaTask(ACBohnTask):
     """
-        gym.Env wrapper task. Made for attitude control without airspeed control.
+        gym.Env wrapper task. Made for attitude control without airspeed control. Airspeed is controlled by a PI controller.
 
         Attr:
             - `state_vars`: Tuple of BoundedProperty objects, defining the structure of an aircraft state (to be observed by the agent)
@@ -49,19 +49,10 @@ class ACBohnNoVaTask(ACBohnTask):
             prp.roll_err, prp.pitch_err, # errors
         )
 
-        self.telemetry_prps: Tuple[BoundedProperty, ...] = (
-            prp.lat_gc_deg, prp.lng_gc_deg, prp.altitude_sl_m, # position
-            prp.roll_rad, prp.pitch_rad, prp.heading_rad, # attitude
-            prp.p_radps, prp.q_radps, prp.r_radps, # angular rates and airspeed
-            prp.aileron_cmd, prp.elevator_cmd, prp.throttle_cmd, # control surface commands
-            prp.reward_total, prp.reward_roll, prp.reward_pitch, # rewards
-            prp.airspeed_mps, prp.airspeed_kph, # airspeed
-            prp.total_windspeed_north_mps, prp.total_windspeed_east_mps, prp.total_windspeed_down_mps, # wind speed mps
-            prp.total_windspeed_north_kph, prp.total_windspeed_east_kph, prp.total_windspeed_down_kph, # wind speed kph
-            prp.turb_north_mps, prp.turb_east_mps, prp.turb_down_mps, # turbulence mps
-            prp.turb_north_kph, prp.turb_east_kph, prp.turb_down_kph, # turbulence kph
-        ) + self.target_prps + self.error_prps # target state variables
+        # telemetry properties are an addition of the common telemetry properties, target properties and error properties
+        self.telemetry_prps = self.common_telemetry_prps + self.target_prps + self.error_prps
 
+        # PI controller for airspeed
         self.pid_airspeed = PID(kp=0.5, ki=0.1, kd=0.0,
                            dt=self.fdm_dt, trim=TrimPoint(), 
                            limit=AeroModel().throttle_limit, is_throttle=True
@@ -79,7 +70,9 @@ class ACBohnNoVaTask(ACBohnTask):
 
 
     def apply_action(self, action: np.ndarray) -> None:
-        # apply the action to the simulation
+        """
+            Apply the action to the simulation + maintain airspeed at 60 kph with PI controller.
+        """
         for prop, command in zip(self.action_prps, action):
             self.sim[prop] = command
         # self.sim[prp.throttle_cmd] = TrimPoint().throttle # set throttle to trim point throttle
@@ -179,6 +172,11 @@ class ACBohnNoVaTask(ACBohnTask):
 
 
 class ACBohnNoVaIErrTask(ACBohnNoVaTask):
+    """
+        Same as the parent class.
+        Added integral errors to the state variables and re-implemented some methods to update the integral errors.
+        Added angle of attack and sideslip angle to the state variables.
+    """
     def __init__(self, config_file: str, telemetry_file: str='', render_mode: str='none') -> None:
         super().__init__(config_file, telemetry_file, render_mode)
 
@@ -197,18 +195,8 @@ class ACBohnNoVaIErrTask(ACBohnNoVaTask):
             prp.roll_integ_err, prp.pitch_integ_err # integral errors
         )
 
-        self.telemetry_prps: Tuple[BoundedProperty, ...] = (
-            prp.lat_gc_deg, prp.lng_gc_deg, prp.altitude_sl_m, # position
-            prp.roll_rad, prp.pitch_rad, prp.heading_rad, # attitude
-            prp.p_radps, prp.q_radps, prp.r_radps, # angular rates and airspeed
-            prp.aileron_cmd, prp.elevator_cmd, prp.throttle_cmd, # control surface commands
-            prp.reward_total, prp.reward_roll, prp.reward_pitch, # rewards
-            prp.airspeed_mps, prp.airspeed_kph, # airspeed
-            prp.total_windspeed_north_mps, prp.total_windspeed_east_mps, prp.total_windspeed_down_mps, # wind speed mps
-            prp.total_windspeed_north_kph, prp.total_windspeed_east_kph, prp.total_windspeed_down_kph, # wind speed kph
-            prp.turb_north_mps, prp.turb_east_mps, prp.turb_down_mps, # turbulence mps
-            prp.turb_north_kph, prp.turb_east_kph, prp.turb_down_kph, # turbulence kph
-        ) + self.target_prps + self.error_prps # target state variables
+        # telemetry properties are an addition of the common telemetry properties, target properties and error properties
+        self.telemetry_prps = self.common_telemetry_prps + self.target_prps + self.error_prps
 
         # set action and observation space from the task
         self.action_space = self.get_action_space()
@@ -221,6 +209,7 @@ class ACBohnNoVaIErrTask(ACBohnNoVaTask):
     def set_target_state(self, target_roll_rad: float, target_pitch_rad: float) -> None:
         """
             Set the target state of the aircraft, i.e. the target state variables defined in the `target_state_vars` tuple.
+            If the target state changes, reset the integral errors.
         """
         # if there's a change in target state, reset integral errors
         if target_roll_rad != self.prev_target_roll:
