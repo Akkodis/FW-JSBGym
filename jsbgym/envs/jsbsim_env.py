@@ -120,7 +120,7 @@ class JSBSimEnv(gym.Env, ABC):
             prp.roll_rad, prp.pitch_rad, prp.heading_rad, # attitude
             prp.p_radps, prp.q_radps, prp.r_radps, # angular rates and airspeed
             prp.aileron_cmd, prp.elevator_cmd, prp.throttle_cmd, # control surface commands
-            prp.reward_total, prp.reward_roll, prp.reward_pitch, # rewards
+            prp.reward_total, prp.reward_roll, prp.reward_pitch, prp.reward_actvar, # rewards
             prp.airspeed_mps, prp.airspeed_kph, # airspeed
             prp.total_windspeed_north_mps, prp.total_windspeed_east_mps, prp.total_windspeed_down_mps, # wind speed mps
             prp.total_windspeed_north_kph, prp.total_windspeed_east_kph, prp.total_windspeed_down_kph, # wind speed kph
@@ -178,6 +178,32 @@ class JSBSimEnv(gym.Env, ABC):
 
         # initialize telemetry fieldnames
         self.telemetry_fieldnames: Tuple[str, ...] = tuple([tele_prp.get_legal_name() for tele_prp in self.telemetry_prps]) 
+
+        self.print_MDP_info()
+
+
+    def print_MDP_info(self) -> None:
+        """
+            Print the MDP information of the environment.
+        """
+
+        # print the class name
+        print("\n *** MDP Info ***")
+        print("  States:")
+        for state_prp in self.state_prps:
+            print(f"    {state_prp.get_legal_name()}")
+
+        print("  Actions: ")
+        for action_prp in self.action_prps:
+            print(f"    {action_prp.get_legal_name()}")
+
+        print("  Targets: ")
+        for target_prp in self.target_prps:
+            print(f"    {target_prp.get_legal_name()}")
+
+        print("  Errors: ")
+        for error_prp in self.error_prps:
+            print(f"    {error_prp.get_legal_name()}")
 
 
     def reset(self, seed: int=None, options: dict=None) -> None:
