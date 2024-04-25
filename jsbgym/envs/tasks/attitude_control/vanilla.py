@@ -18,25 +18,14 @@ class ACVanillaTask(ACBohnNoVaTask):
             prp.roll_rad, prp.pitch_rad, # attitude
             prp.airspeed_kph, # airspeed
             prp.p_radps, prp.q_radps, prp.r_radps, # angular rates
-            prp.roll_err, prp.pitch_err, # errors
+            prp.roll_err, prp.pitch_err # errors
         )
 
         self.error_prps: Tuple[BoundedProperty, ...] = (
-            prp.roll_err, prp.pitch_err, # errors
+            prp.roll_err, prp.pitch_err # errors
         )
 
-        self.telemetry_prps: Tuple[BoundedProperty, ...] = (
-            prp.lat_gc_deg, prp.lng_gc_deg, prp.altitude_sl_m, # position
-            prp.roll_rad, prp.pitch_rad, prp.heading_rad, # attitude
-            prp.p_radps, prp.q_radps, prp.r_radps, # angular rates and airspeed
-            prp.aileron_cmd, prp.elevator_cmd, prp.throttle_cmd, # control surface commands
-            prp.reward_total, prp.reward_roll, prp.reward_pitch, # rewards
-            prp.airspeed_mps, prp.airspeed_kph, # airspeed
-            prp.total_windspeed_north_mps, prp.total_windspeed_east_mps, prp.total_windspeed_down_mps, # wind speed mps
-            prp.total_windspeed_north_kph, prp.total_windspeed_east_kph, prp.total_windspeed_down_kph, # wind speed kph
-            prp.turb_north_mps, prp.turb_east_mps, prp.turb_down_mps, # turbulence mps
-            prp.turb_north_kph, prp.turb_east_kph, prp.turb_down_kph, # turbulence kph
-        ) + self.target_prps + self.error_prps # target state variables
+        self.telemetry_prps += self.common_telemetry_prps + self.target_prps + self.error_prps # target state variables
 
         # set action and observation space from the task
         self.action_space = self.get_action_space()
@@ -53,13 +42,8 @@ class ACVanillaActTask(ACVanillaTask):
     def __init__(self, config_file: str, telemetry_file: str='', render_mode: str='none') -> None:
         super().__init__(config_file, telemetry_file, render_mode)
 
-        self.state_prps: Tuple[BoundedProperty, ...] = (
-            prp.roll_rad, prp.pitch_rad, # attitude
-            prp.airspeed_kph, # airspeed
-            prp.p_radps, prp.q_radps, prp.r_radps, # angular rates
-            prp.roll_err, prp.pitch_err, # errors
-            prp.aileron_cmd, prp.elevator_cmd
-        )
+        # add previous action to the pre-existing state properties
+        self.state_prps += (prp.aileron_cmd, prp.elevator_cmd)
 
         # set action and observation space from the task
         self.action_space = self.get_action_space()
@@ -76,13 +60,8 @@ class ACVanillaAlphaTask(ACVanillaTask):
     def __init__(self, config_file: str, telemetry_file: str='', render_mode: str='none') -> None:
         super().__init__(config_file, telemetry_file, render_mode)
 
-        self.state_prps: Tuple[BoundedProperty, ...] = (
-            prp.roll_rad, prp.pitch_rad, # attitude
-            prp.airspeed_kph, # airspeed
-            prp.p_radps, prp.q_radps, prp.r_radps, # angular rates
-            prp.roll_err, prp.pitch_err, # errors
-            prp.alpha_rad
-        )
+        # add alpha to the pre-existing state properties
+        self.state_prps += (prp.alpha_rad,)
 
         # set action and observation space from the task
         self.action_space = self.get_action_space()
@@ -99,13 +78,8 @@ class ACVanillaBetaTask(ACVanillaTask):
     def __init__(self, config_file: str, telemetry_file: str='', render_mode: str='none') -> None:
         super().__init__(config_file, telemetry_file, render_mode)
 
-        self.state_prps: Tuple[BoundedProperty, ...] = (
-            prp.roll_rad, prp.pitch_rad, # attitude
-            prp.airspeed_kph, # airspeed
-            prp.p_radps, prp.q_radps, prp.r_radps, # angular rates
-            prp.roll_err, prp.pitch_err, # errors
-            prp.beta_rad
-        )
+        # add beta to the pre-existing state properties
+        self.state_prps += (prp.beta_rad,)
 
         # set action and observation space from the task
         self.action_space = self.get_action_space()
@@ -122,13 +96,8 @@ class ACVanillaAlphaBetaTask(ACVanillaTask):
     def __init__(self, config_file: str, telemetry_file: str='', render_mode: str='none') -> None:
         super().__init__(config_file, telemetry_file, render_mode)
 
-        self.state_prps: Tuple[BoundedProperty, ...] = (
-            prp.roll_rad, prp.pitch_rad, # attitude
-            prp.airspeed_kph, # airspeed
-            prp.p_radps, prp.q_radps, prp.r_radps, # angular rates
-            prp.roll_err, prp.pitch_err, # errors
-            prp.alpha_rad, prp.beta_rad
-        )
+        # add alpha and beta to the pre-existing state properties
+        self.state_prps += (prp.alpha_rad, prp.beta_rad,)
 
         # set action and observation space from the task
         self.action_space = self.get_action_space()
@@ -148,6 +117,7 @@ class ACVanillaThrTask(ACBohnNoVaTask):
     def __init__(self, config_file: str, telemetry_file: str='', render_mode: str='none') -> None:
         super().__init__(config_file, telemetry_file, render_mode)
 
+        # redefine the state properties entirely to a minimal state space
         self.state_prps: Tuple[BoundedProperty, ...] = (
             prp.roll_rad, prp.pitch_rad, # attitude
             prp.airspeed_kph, # airspeed
@@ -158,14 +128,6 @@ class ACVanillaThrTask(ACBohnNoVaTask):
         self.action_prps: Tuple[BoundedProperty, ...] = (
             prp.aileron_cmd, prp.elevator_cmd, # control surface commands normalized [-1, 1]
             prp.throttle_cmd # throttle command normalized [0, 1]
-        )
-
-        self.target_prps: Tuple[BoundedProperty, ...] = (
-            prp.target_roll_rad, prp.target_pitch_rad, # target attitude
-        )
-
-        self.error_prps: Tuple[BoundedProperty, ...] = (
-            prp.roll_err, prp.pitch_err
         )
 
         # telemetry properties are an addition of the common telemetry properties, target properties and error properties
@@ -193,6 +155,7 @@ class ACVanillaIErrTask(ACBohnNoVaIErrTask):
     def __init__(self, config_file: str, telemetry_file: str='', render_mode: str='none') -> None:
         super().__init__(config_file, telemetry_file, render_mode)
 
+        # rewriting ACVanilla state space + integral errors
         self.state_prps: Tuple[BoundedProperty, ...] = (
             prp.roll_rad, prp.pitch_rad, # attitude
             prp.airspeed_kph, # airspeed
@@ -201,23 +164,7 @@ class ACVanillaIErrTask(ACBohnNoVaIErrTask):
             prp.roll_integ_err, prp.pitch_integ_err, # integral errors
         )
 
-        self.error_prps: Tuple[BoundedProperty, ...] = (
-            prp.roll_err, prp.pitch_err, # errors
-            prp.roll_integ_err, prp.pitch_integ_err # integral errors
-        )
-
-        self.telemetry_prps: Tuple[BoundedProperty, ...] = (
-            prp.lat_gc_deg, prp.lng_gc_deg, prp.altitude_sl_m, # position
-            prp.roll_rad, prp.pitch_rad, prp.heading_rad, # attitude
-            prp.p_radps, prp.q_radps, prp.r_radps, # angular rates and airspeed
-            prp.aileron_cmd, prp.elevator_cmd, prp.throttle_cmd, # control surface commands
-            prp.reward_total, prp.reward_roll, prp.reward_pitch, # rewards
-            prp.airspeed_mps, prp.airspeed_kph, # airspeed
-            prp.total_windspeed_north_mps, prp.total_windspeed_east_mps, prp.total_windspeed_down_mps, # wind speed mps
-            prp.total_windspeed_north_kph, prp.total_windspeed_east_kph, prp.total_windspeed_down_kph, # wind speed kph
-            prp.turb_north_mps, prp.turb_east_mps, prp.turb_down_mps, # turbulence mps
-            prp.turb_north_kph, prp.turb_east_kph, prp.turb_down_kph, # turbulence kph
-        ) + self.target_prps + self.error_prps # target state variables
+        self.telemetry_prps = self.common_telemetry_prps + self.target_prps + self.error_prps # target state variables
 
         # set action and observation space from the task
         self.action_space = self.get_action_space()

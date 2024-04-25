@@ -34,8 +34,14 @@ class ACBohnNoVaTask(ACBohnTask):
             prp.airspeed_kph, # airspeed
             prp.p_radps, prp.q_radps, prp.r_radps, # angular rates
             prp.roll_err, prp.pitch_err, # errors
-            prp.aileron_avg, prp.elevator_avg # average of past 5 fcs commands
+            prp.alpha_rad, prp.beta_rad # angle of attack and sideslip angle
         )
+
+        # if action_avg is enabled, use the average of the past N commands in the state space
+        if self.task_cfg.get("action_avg", False):
+            self.state_prps += (prp.aileron_avg, prp.elevator_avg)
+        else: # otherwise, use the last command in the state space
+            self.state_prps += (prp.aileron_cmd, prp.elevator_cmd)
 
         self.action_prps: Tuple[BoundedProperty, ...] = (
             prp.aileron_cmd, prp.elevator_cmd
@@ -57,7 +63,6 @@ class ACBohnNoVaTask(ACBohnTask):
                            dt=self.fdm_dt, trim=TrimPoint(), 
                            limit=AeroModel().throttle_limit, is_throttle=True
         )
-
         # set action and observation space from the task
         self.action_space = self.get_action_space()
         self.observation_space = self.get_observation_space()
@@ -147,7 +152,7 @@ class ACBohnNoVaTask(ACBohnTask):
         r_actvar = 0.0
         # action fluctuation (penalty) reward component
         if r_w["action_penalty"]["enabled"]:
-            r_actvar = np.mean(np.abs(action - np.array(self.action_hist[-1]))) / 2*self.action_space.high[0] # normalized by distance between min and max action value dist(-1, 1)=2
+            r_actvar = np.mean(np.abs(action - np.array(self.action_hist)[-2])) / 2*self.action_space.high[0] # normalized by distance between min and max action value dist(-1, 1)=2
             r_act_clip_max = r_w["action_penalty"].get("clip_max", None)
             r_actvar = np.clip(r_actvar, 0.0, r_act_clip_max)
             if r_roll_clip_max + r_pitch_clip_max + r_act_clip_max != 1.0:
@@ -180,15 +185,7 @@ class ACBohnNoVaIErrTask(ACBohnNoVaTask):
     def __init__(self, config_file: str, telemetry_file: str='', render_mode: str='none') -> None:
         super().__init__(config_file, telemetry_file, render_mode)
 
-        self.state_prps: Tuple[BoundedProperty, ...] = (
-            prp.roll_rad, prp.pitch_rad, # attitude
-            prp.airspeed_kph, # airspeed
-            prp.p_radps, prp.q_radps, prp.r_radps, # angular rates
-            prp.roll_err, prp.pitch_err, # errors
-            prp.roll_integ_err, prp.pitch_integ_err, # integral errors
-            prp.aileron_avg, prp.elevator_avg, # average of past 5 fcs commands
-            prp.alpha_rad, prp.beta_rad # angle of attack and sideslip angles
-        )
+        self.state_prps += (prp.roll_integ_err, prp.pitch_integ_err) # integral errors
 
         self.error_prps: Tuple[BoundedProperty, ...] = (
             prp.roll_err, prp.pitch_err, # errors
