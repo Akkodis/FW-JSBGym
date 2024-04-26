@@ -1,0 +1,13 @@
+ACBohnTask:
+    reward_weights: # bohn code | bohn paper | / max_error | unit
+        roll:
+            scaling: 3.3 # 3.2 | 3.3 | 1.047198 | 1.0
+            clip_min: 0.0
+            clip_max: 0.5
+        pitch:
+            scaling: 2.25 # 3.2 | 2.25 | 0.698132 | 1.0
+            clip_min: 0.0
+            clip_max: 0.5
+        action_penalty:
+            enabled: false
+            clip_max: 0.0
