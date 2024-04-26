@@ -1,9 +1,10 @@
 .idea/
-# .vscode/
+.vscode/
 __pycache__/
 telemetry/
 wandb/
 *.egg-info/
+outputs/
 JSBoutX8.csv
 a.py
 
