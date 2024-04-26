@@ -1,0 +1,35 @@
+# parent class JSBSimEnv config
+fdm_freq: 100.0 # 120 Hz being the default JSBSim freq
+agent_freq: 100.0
+episode_length_s: 20.0
+viz_time_factor: 50.0
+
+# JSBSim simulation env options - train
+train_sim_options:
+    atmosphere:
+        severity: None
+        variable: True
+        wind:
+            enable: False
+            rand_continuous: False
+        turb:
+            enable: False
+        gust:
+            enable: True
+    rand_fdm:
+        enable: False
+
+# JSBSim simulation env options - eval
+eval_sim_options:
+    atmosphere:
+        severity: None
+        variable: True
+        wind:
+            enable: False
+            rand_continuous: False
+        turb:
+            enable: False
+        gust:
+            enable: True
+    rand_fdm:
+        enable: False

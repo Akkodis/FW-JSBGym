@@ -6,7 +6,7 @@ PPO:
     cuda: True
     track: True # enable wandb tracking
     wandb_project_name: 'uav_rl'
-    wandb_entity: None
+    wandb_entity: thesedavid
     capture_video: False
     no_eval: False # evaluate the agent at the end of training
     no_eval_plot: False # plot an evaluation plot at the end of training
@@ -14,8 +14,8 @@ PPO:
     save_cp: True # save periodic checkpoints
 
     # CleanRL's PPO algo args
-    env_id: 'ACBohnNoVa-v0'
     total_timesteps: 2e6
+    env_id: 'ACBohnNoVa-v0'
     learning_rate: 3e-4
     num_envs: 6 # number of parallel environments
     num_steps: 2048 # num of steps to run in each env per policy rollout
@@ -23,6 +23,8 @@ PPO:
     gamma: 0.99 # discount factor
     gae_lambda: 0.95 # GAE lambda
     num_minibatches: 32 # number of minibatches to train the policy on
+    batch_size: ${eval:'${PPO.num_envs} * ${PPO.num_steps}'}
+    minibatch_size: ${eval:'${PPO.batch_size} // ${PPO.num_minibatches}'} # minibatch size
     update_epochs: 10 # number of epochs to train the policy on
     norm_adv: True # normalize the advantage
     clip_coef: 0.2 # surrogate clipping coefficient

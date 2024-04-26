@@ -1,4 +1,3 @@
 defaults:
     - rl_algo: ppo
-    - jsbsim: noatmo
-    - task: task_default
+    - env: env_default
