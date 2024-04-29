@@ -56,7 +56,7 @@ gymnasium.register(
 
 gymnasium.register(
     id='ACBohnNoVa-v0',
-    entry_point='jsbgym.envs.tasks.attitude_control.ac_bohn_nova:ACNoVaTask',
+    entry_point='jsbgym.envs.tasks.attitude_control.ac_bohn_nova:ACBohnNoVaTask',
     # autoreset=True
 )
 
