@@ -1,5 +1,6 @@
 import numpy as np
 from typing import Tuple
+from omegaconf import DictConfig
 
 from jsbgym.envs.tasks.attitude_control.ac_bohn import ACBohnTask
 from jsbgym.utils import jsbsim_properties as prp
@@ -20,14 +21,14 @@ class ACBohnNoVaTask(ACBohnTask):
             - `telemetry_vars`: Tuple of BoundedProperty objects, defining the telemetry state variables representing the state of the aircraft to be logged
             - `telemetry_file`: the name of the file containing the flight data to be logged
     """
-    def __init__(self, config_file: str, telemetry_file: str='', render_mode: str='none') -> None:
+    def __init__(self, cfg_env: DictConfig, telemetry_file: str='', render_mode: str='none') -> None:
         """
             Args: 
                 - `config_file`: the name of the config file containing the task parameters
                 - `telemetry_file`: the name of the file containing the flight data to be logged
                 - `render_mode`: the render mode for the task
         """
-        super().__init__(config_file, telemetry_file, render_mode)
+        super().__init__(cfg_env, telemetry_file, render_mode)
 
         self.state_prps: Tuple[BoundedProperty, ...] = (
             prp.roll_rad, prp.pitch_rad, # attitude
@@ -145,7 +146,7 @@ class ACBohnNoVaTask(ACBohnTask):
             Reward function
             Based on the bohn PPO paper reward func no airspeed control.
         """
-        r_w: dict = self.task_cfg["reward_weights"] # reward weights for each reward component
+        r_w: dict = self.task_cfg.reward.weights # reward weights for each reward component
         r_roll_clip_max = r_w["roll"].get("clip_max", None)
         r_pitch_clip_max = r_w["pitch"].get("clip_max", None)
 
@@ -182,8 +183,8 @@ class ACBohnNoVaIErrTask(ACBohnNoVaTask):
         Added integral errors to the state variables and re-implemented some methods to update the integral errors.
         Added angle of attack and sideslip angle to the state variables.
     """
-    def __init__(self, config_file: str, telemetry_file: str='', render_mode: str='none') -> None:
-        super().__init__(config_file, telemetry_file, render_mode)
+    def __init__(self, cfg_env: DictConfig, telemetry_file: str='', render_mode: str='none') -> None:
+        super().__init__(cfg_env, telemetry_file, render_mode)
 
         self.state_prps += (prp.roll_integ_err, prp.pitch_integ_err) # integral errors
 

@@ -3,6 +3,7 @@ import numpy as np
 import yaml
 from typing import Tuple, Deque, Dict
 from collections import deque
+from omegaconf import DictConfig
 
 from jsbgym.envs.jsbsim_env import JSBSimEnv
 from jsbgym.utils import jsbsim_properties as prp
@@ -28,27 +29,16 @@ class ACBohnTask(JSBSimEnv):
             - `action_space`: the action space of the task
 
     """
-    def __init__(self, config_file: str, telemetry_file: str='', render_mode: str='none') -> None:
+    def __init__(self, cfg_env: DictConfig, telemetry_file: str='', render_mode: str='none') -> None:
         """
             Args:
                 - `config_file`: the name of the config file containing the task parameters
                 - `telemetry_file`: the name of the file containing the flight data to be logged
                 - `render_mode`: the render mode for the task
         """
-        # load config file
-        with open(config_file, "r") as file:
-            cfg_all: dict = yaml.safe_load(file)
+        super().__init__(cfg_env, telemetry_file, render_mode)
 
-        super().__init__(cfg_all["JSBSimEnv"], telemetry_file, render_mode)
-
-        self.task_cfg: dict = cfg_all.get("ACBohnTask", {})
-
-        # by default, the observation is a vector, if obs_is_matrix is set to True, the observation is a matrix
-        self.obs_is_matrix: bool = self.task_cfg.get("obs_is_matrix", False)
-
-        # observation history size, by default = 1
-        self.obs_history_size: int = self.task_cfg.get("obs_history_size", 1)
-        self.act_history_size: int = self.task_cfg.get("act_history_size", 1)
+        self.task_cfg: DictConfig = cfg_env.task
 
         self.state_prps: Tuple[BoundedProperty, ...] = (
             prp.roll_rad, prp.pitch_rad, # attitude
@@ -76,10 +66,10 @@ class ACBohnTask(JSBSimEnv):
         self.telemetry_prps = self.common_telemetry_prps + self.target_prps + self.error_prps
 
         # declaring observation. Deque with a maximum length of obs_history_size
-        self.observation_deque: Deque[np.ndarray] = deque(maxlen=self.obs_history_size) # deque of 1D nparrays containing self.State
+        self.observation_deque: Deque[np.ndarray] = deque(maxlen=self.task_cfg.mdp.obs_hist_size) # deque of 1D nparrays containing self.State
 
         # declaring action history. Deque with a maximum length of act_history_size
-        self.action_hist: Deque[np.ndarray] = deque(maxlen=self.act_history_size) # action type: np.ndarray
+        self.action_hist: Deque[np.ndarray] = deque(maxlen=self.task_cfg.mdp.act_hist_size) # action type: np.ndarray
 
         # set action and observation space from the task
         self.action_space = self.get_action_space()
@@ -194,7 +184,7 @@ class ACBohnTask(JSBSimEnv):
         # if it's the first action -> action is None: fill action history with zeros
         init_action: np.ndarray = np.zeros(self.action_space.shape, dtype=np.float32)
         if action is None:
-            for _ in range(self.obs_history_size):
+            for _ in range(self.task_cfg.mdp.obs_hist_size):
                 self.action_hist.append(init_action)
         # else just append the newest action
         else:
@@ -210,14 +200,14 @@ class ACBohnTask(JSBSimEnv):
         state_highs: np.ndarray = np.array([state_var.max for state_var in self.state_prps], dtype=np.float32)
 
         # check if we want a matrix formatted observation space shape=(obs_history_size, state_vars) for CNN policy
-        if self.obs_is_matrix:
-            state_lows: np.ndarray = np.expand_dims(np.array([state_lows for _ in range(self.obs_history_size)]), axis=0)
-            state_highs: np.ndarray = np.expand_dims(np.array([state_highs for _ in range(self.obs_history_size)]), axis=0)
+        if self.task_cfg.mdp.obs_is_matrix:
+            state_lows: np.ndarray = np.expand_dims(np.array([state_lows for _ in range(self.task_cfg.mdp.obs_hist_size)]), axis=0)
+            state_highs: np.ndarray = np.expand_dims(np.array([state_highs for _ in range(self.task_cfg.mdp.obs_hist_size)]), axis=0)
             observation_space = gym.spaces.Box(low=np.array(state_lows), high=np.array(state_highs), dtype=np.float32)
         else: # else we want a vector formatted observation space len=(obs_history_size * state_vars) for MLP policy
             # multiply state_lows and state_highs by obs_history_size to get the observation space
-            observation_space = gym.spaces.Box(low=np.tile(state_lows, self.obs_history_size),
-                                            high=np.tile(state_highs, self.obs_history_size), 
+            observation_space = gym.spaces.Box(low=np.tile(state_lows, self.task_cfg.mdp.obs_hist_size),
+                                            high=np.tile(state_highs, self.task_cfg.mdp.obs_hist_size), 
                                             dtype=np.float32)
         return observation_space
 
@@ -233,14 +223,14 @@ class ACBohnTask(JSBSimEnv):
 
         # if it's the first observation i.e. following a reset(): fill observation with obs_history_size * state
         if first_obs:
-            for _ in range(self.obs_history_size):
+            for _ in range(self.task_cfg.mdp.obs_hist_size):
                 self.observation_deque.append(self.state)
         # else just append the newest state
         else:
             self.observation_deque.append(self.state)
 
         # return observation as a numpy array and add one channel dim for CNN policy
-        if self.obs_is_matrix:
+        if self.task_cfg.mdp.obs_is_matrix:
             obs: np.ndarray = np.expand_dims(np.array(self.observation_deque), axis=0).astype(np.float32)
         else:
             obs: np.ndarray = np.array(self.observation_deque).squeeze().astype(np.float32)
@@ -297,7 +287,7 @@ class ACBohnTask(JSBSimEnv):
             Reward function
             Based on the bohn PPO paper reward func, but without the actvar component (taken care by CAPS loss)
         """
-        r_w: dict = self.task_cfg["reward_weights"] # reward weights for each reward component
+        r_w: dict = self.task_cfg.reward.weights # reward weights for each reward component
         r_roll = np.clip(abs(self.sim[prp.roll_err]) / r_w["roll"]["scaling"], r_w["roll"]["clip_min"], r_w["roll"].get("clip_max", None)) # roll reward component
         r_pitch = np.clip(abs(self.sim[prp.pitch_err]) / r_w["pitch"]["scaling"], r_w["pitch"]["clip_min"], r_w["pitch"].get("clip_max", None)) # pitch reward component
         r_airspeed = np.clip(abs(self.sim[prp.airspeed_err]) / r_w["Va"]["scaling"], r_w["Va"]["clip_min"], r_w["Va"].get("clip_max", None)) # airspeed reward component
@@ -329,7 +319,7 @@ class ACBohnTask(JSBSimEnv):
         r_act_bounds: float = np.clip(r_act_bounds_raw / r_w["act_bounds"]["scaling"], 0, r_w["act_bounds"].get("clip_max", None))
 
         np_action_hist: np.ndarray = np.array(self.action_hist)
-        deltas: np.ndarray = np.diff(np_action_hist[-self.obs_history_size:], axis=0)
+        deltas: np.ndarray = np.diff(np_action_hist[-self.task_cfg.mdp.obs_hist_size:], axis=0)
         r_actvar_raw = np.sum(np.abs(deltas))
         r_actvar = np.clip(r_actvar_raw / r_w["act_var"]["scaling"], r_w["act_var"]["clip_min"], r_w["act_var"].get("clip_max", None)) # flight control surface reward component
 

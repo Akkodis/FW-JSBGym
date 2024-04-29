@@ -4,7 +4,7 @@ import os
 import random
 import time
 import hydra
-from omegaconf import OmegaConf
+from omegaconf import DictConfig, OmegaConf
 from omegaconf.errors import MissingMandatoryValue
 from time import strftime, localtime
 from distutils.util import strtobool
@@ -33,8 +33,9 @@ def save_model(save_path, run_name, agent, env, seed):
     train_dict["agent"] = agent.state_dict()
     torch.save(train_dict, f"{save_path}{run_name}.pt")
 
+
 @hydra.main(version_base=None, config_path="config", config_name="default")
-def train(cfg: OmegaConf):
+def train(cfg: DictConfig):
     cfg.rl_algo.PPO.batch_size = int(cfg.rl_algo.PPO.num_envs * cfg.rl_algo.PPO.num_steps)
     cfg.rl_algo.PPO.minibatch_size = int(cfg.rl_algo.PPO.batch_size // cfg.rl_algo.PPO.num_minibatches)
     cfg.rl_algo.PPO.total_timesteps = int(cfg.rl_algo.PPO.total_timesteps)
@@ -45,8 +46,9 @@ def train(cfg: OmegaConf):
         cfg.rl_algo.PPO.seed = random.randint(0, 9999)
         print(f"Seed not provided, using random seed {cfg.rl_algo.PPO.seed}")
 
-    # shortening the cfg_rl variable name
+    # shortening the cfg_rl and sim variable names
     cfg_rl = cfg.rl_algo.PPO
+    cfg_sim = cfg.env.jsbsim
 
     np.set_printoptions(suppress=True)
 
@@ -87,6 +89,7 @@ def train(cfg: OmegaConf):
     print(f"**** Using Device: {device} ****")
 
     # env setup
+    print(f"ENV ID: {cfg_rl.env_id}")
     envs = gym.vector.SyncVectorEnv(
         [ppo.make_env(cfg_rl.env_id, cfg.env, "none", None, eval=False, gamma=cfg_rl.gamma) for i in range(cfg_rl.num_envs)]
     )
@@ -420,7 +423,7 @@ def train(cfg: OmegaConf):
         writer.add_scalar("charts/SPS", int(global_step / (time.time() - start_time)), global_step)
 
 
-    # Evaluate the agent
+    # Evaluate the agent once
     if not cfg_rl.no_eval_plot:
         print("******** Plotting... ***********")
         pe_env = envs.envs[0]
@@ -484,7 +487,7 @@ def train(cfg: OmegaConf):
 
         for i, severity in enumerate(severity_range):
             e_env = envs.envs[0]
-            cfg.env.jsbsim.eval_sim_options.atmosphere = severity
+            cfg.env.jsbsim.eval_sim_options.atmosphere.severity = severity
             e_actions = np.ndarray((total_steps, e_env.action_space.shape[0]))
             e_obs = np.ndarray((total_steps, e_env.observation_space.shape[2]))
             eps_fcs_fluct = []

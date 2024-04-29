@@ -8,6 +8,7 @@ from math import ceil
 from typing import Dict, Tuple, NamedTuple
 from collections import namedtuple
 from abc import ABC, abstractmethod
+from omegaconf import DictConfig
 
 from jsbgym.simulation.jsb_simulation import Simulation
 from jsbgym.visualizers.visualizer import PlotVisualizer, FlightGearVisualizer
@@ -45,7 +46,7 @@ class JSBSimEnv(gym.Env, ABC):
     metadata: Dict[str, str] = {"render_modes": ["none", "log", "plot", "plot_scale", "fgear", "fgear_plot", "fgear_plot_scale"]}
 
     def __init__(self,
-                 jsbsim_config: dict,
+                 cfg_env: DictConfig,
                  telemetry_file: str,
                  render_mode: str=None,
                  aircraft_id: str='x8') -> None:
@@ -62,19 +63,18 @@ class JSBSimEnv(gym.Env, ABC):
             - `viz_time_factor`: the factor by which the simulation time is scaled for visualization, only taken into account if render mode is not "none"
        """
         # jsbsim level configuration
-        self.jsbsim_cfg: dict = jsbsim_config
+        self.jsbsim_cfg = cfg_env.jsbsim
 
-        # jsbsim sim options
-        self.sim_options: dict = self.jsbsim_cfg.get("sim_options", False)
-        # self.sim_options: dict = {}
+        # default, on object creation, jsbsim sim options. Can be modified at reset time through the options argument
+        self.sim_options: dict = self.jsbsim_cfg.train_sim_options
 
         # simulation attribute, will be initialized in reset() with a call to Simulation()
         self.sim: Simulation = None
 
         # setting up simulation parameters
-        self.episode_length_s: float = self.jsbsim_cfg["episode_length_s"]
-        self.agent_frequency: float = self.jsbsim_cfg["agent_freq"]
-        self.fdm_frequency: float = self.jsbsim_cfg["fdm_freq"]
+        self.episode_length_s: float = self.jsbsim_cfg.episode_length_s
+        self.agent_frequency: float = self.jsbsim_cfg.agent_freq
+        self.fdm_frequency: float = self.jsbsim_cfg.fdm_freq
         self.fdm_dt: float = 1 / self.fdm_frequency
         self.sim_steps_after_agent_action: int = int(self.fdm_frequency // self.agent_frequency)
         self.aircraft_id: str = aircraft_id
@@ -97,7 +97,7 @@ class JSBSimEnv(gym.Env, ABC):
         # set the visualization time factor (plot and/or flightgear visualization),default is None
         self.viz_time_factor: float = None
         if self.render_mode in self.metadata["render_modes"][2:]:
-            self.viz_time_factor: float = jsbsim_config["viz_time_factor"]
+            self.viz_time_factor: float = self.jsbsim_cfg.viz_time_factor
 
         self.max_episode_steps: int = ceil(self.episode_length_s * self.fdm_frequency)
         self.current_step = BoundedProperty("info/current_step", "current step in the current episode", 0, self.max_episode_steps)
@@ -142,14 +142,18 @@ class JSBSimEnv(gym.Env, ABC):
         self.errors: self.Errors = None
 
         self.reward: float = None
-
+        
+        # history of past actions (flight control surface) for action fluctuation metric
         self.fcs_pos_hist = []
 
+        # flag to indicate if the previous episode is out of bounds (legacy, not used anymore)
         self.prev_ep_oob = False
 
+        # seed for randomizing fdm coefs
         self.fdm_seed = None
         self.fdm_rng: np.random.Generator = None
 
+        # sets of fdm coefs to be randomized
         self.fdm_aero_1: Tuple[Property, ...] = (
             prp.aero_CDo, prp.aero_CDalpha, prp.aero_CDalpha2,
             prp.aero_CDbeta, prp.aero_CDbeta2, prp.aero_CDe,
@@ -179,7 +183,8 @@ class JSBSimEnv(gym.Env, ABC):
         # initialize telemetry fieldnames
         self.telemetry_fieldnames: Tuple[str, ...] = tuple([tele_prp.get_legal_name() for tele_prp in self.telemetry_prps]) 
 
-        self.print_MDP_info()
+        if self.jsbsim_cfg.debug:
+            self.print_MDP_info()
 
 
     def print_MDP_info(self) -> None:
@@ -226,7 +231,7 @@ class JSBSimEnv(gym.Env, ABC):
                                   viz_time_factor=self.viz_time_factor,
                                   enable_fgear_output=self.enable_fgear_output)
 
-        # TODO: improvement, remove the options argument and only pass the atmosphere options through setting the self.sim_options attirbute
+        # if reset arg "options" is provided, overwrite some of the sim_options fields
         if options is not None:
             if "render_mode" in options: 
                 self.render_mode = options["render_mode"]
@@ -234,14 +239,14 @@ class JSBSimEnv(gym.Env, ABC):
             # (the options argument is set to None when SyncVectorEnv autoresets the envs)
             # setup wind and turbulence
             if "seed" in options:
-                self.sim_options["seed"] = options["seed"]
+                self.sim_options.seed = options["seed"]
             if "atmosphere" in options:
-                self.sim_options["atmosphere"] = options["atmosphere"]
+                self.sim_options.atmosphere = options["atmosphere"]
             if "rand_fdm" in options:
-                self.sim_options["rand_fdm"] = options["rand_fdm"]
+                self.sim_options.rand_fdm = options["rand_fdm"]
 
         print("self.sim_options: ", self.sim_options)
-        if self.sim_options:
+        if len(self.sim_options) != 0:
             if "seed" in self.sim_options:
                 self.sim["simulation/randomseed"] = self.sim_options["seed"]
             else:
@@ -252,18 +257,17 @@ class JSBSimEnv(gym.Env, ABC):
                 self.randomize_fdm()
                 print(f"CD_alpha = {self.sim[prp.aero_CDalpha]}, Cmq = {self.sim[prp.aero_Cmq]}, Clr = {self.sim[prp.aero_Clr]}")
 
-
-        print(f"Seed: {self.sim['simulation/randomseed']}")
+        print(f"JSBSim Seed: {self.sim['simulation/randomseed']}")
 
         # set the atmospehere (wind and turbulences)
         print(f"Last Ep OOB: {self.prev_ep_oob}")
         if self.sim_options.get("atmosphere", False):
-            self.set_atmosphere(self.sim_options["atmosphere"])
+            self.set_atmosphere(self.sim_options.atmosphere)
         else:
             print("ERROR: No Atmosphere Options Found")
 
 
-    def set_atmosphere(self, atmo_options: dict={}) -> None:
+    def set_atmosphere(self, atmo_options: DictConfig) -> None:
         """
             Set the atmosphere (wind and turbulences) of the environment.
         """
@@ -273,6 +277,7 @@ class JSBSimEnv(gym.Env, ABC):
         severity_options = ["off", "light", "moderate", "severe"]
         wind_vec = np.zeros(3)
         if len(atmo_options) != 0:
+            print(f"Atmosphere Options: {atmo_options}")
             if atmo_options.get("variable", False): # random wind and turbulence magnitudes
                 severity = random.choice(severity_options)
                 print(f"Variable Severity")
@@ -430,7 +435,6 @@ class JSBSimEnv(gym.Env, ABC):
                                 self.sim[prp.aero_Cmq]-abs(self.sim[prp.aero_Cmq]) * 0.95, self.sim[prp.aero_Cmq]+abs(self.sim[prp.aero_Cmq]) * 0.95)
 
 
-    @abstractmethod
     def step(self, action: np.ndarray) -> None:
         """
             Run one timestep of the environment's dynamics. When end of episode is reached, you are responsible for calling `reset()`
@@ -442,7 +446,7 @@ class JSBSimEnv(gym.Env, ABC):
             Returns:
                 - The `obs` of the environment after the action, the `reward` obtained, whether the episode of terminated - `done`, and additional `info`
         """
-        atmo_options = self.sim_options["atmosphere"]
+        atmo_options = self.sim_options.atmosphere
         if len(atmo_options) != 0:
             if atmo_options["gust"].get("enable"):
                 curr_step = self.sim[self.current_step]

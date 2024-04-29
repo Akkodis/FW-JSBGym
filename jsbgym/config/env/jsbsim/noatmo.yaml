@@ -26,12 +26,12 @@ eval_sim_options:
         severity: "off"
         variable: False
         wind:
-            enable: False
+            enable: True
             rand_continuous: False
         turb:
-            enable: False
+            enable: True
         gust:
-            enable: False
+            enable: True
     rand_fdm:
         enable: False
 
