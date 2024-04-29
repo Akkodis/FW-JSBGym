@@ -15,7 +15,7 @@ PPO:
 
     # CleanRL's PPO algo args
     total_timesteps: 2e6
-    env_id: 'ACBohnNoVa-v0'
+    env_id: 'ACBohnNoVaIErr-v0'
     learning_rate: 3e-4
     num_envs: 6 # number of parallel environments
     num_steps: 2048 # num of steps to run in each env per policy rollout
@@ -32,7 +32,7 @@ PPO:
     ent_coef: 0.01 # entropy coefficient
     vf_coef: 0.5 # value function coefficient
     max_grad_norm: 0.5 # max gradient norm for gradient clipping
-    target_kl: None # target KL divergence threshold
+    target_kl: null # target KL divergence threshold
 
     # Personnal customizations to the algo
     ts_coef: 5e-2 # CAPS temporal smoothing coefficient
@@ -40,5 +40,5 @@ PPO:
     pa_coef: 0.0 # Pre activation coefficient (only in Bohn n2 paper)
     rand_targets: True # randomly sample references
     ref_sampler: 'uniform' # reference sampling distrib for the UAV
-    cst_beta: None # if ref_sampler is 'beta', set a constant beta.
+    cst_beta: null # if ref_sampler is 'beta', set a constant beta.
 

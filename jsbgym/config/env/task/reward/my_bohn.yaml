@@ -1,5 +1,5 @@
 # reward settings
-reward_weights: # bohn code | bohn paper | / max_error | unit
+weights: # bohn code | bohn paper | / max_error | unit
     roll:
         scaling: 3.3 # 3.2 | 3.3 | 1.047198 | 1.0
         clip_min: 0.0

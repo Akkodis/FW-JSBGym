@@ -1,6 +1,6 @@
 # task specific child class config: ACBohnTask
 obs_is_matrix: True
-obs_history_size: 15
+obs_hist_size: 15
 
 action_avg: True
-act_history_size: 5
+act_hist_size: 5
