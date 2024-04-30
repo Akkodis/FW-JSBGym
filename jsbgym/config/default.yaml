@@ -1,3 +1,5 @@
 defaults:
     - rl_algo: ppo
-    - env: env_default
+    - env/jsbsim: noatmo
+    - env/task/mdp: my_bohn
+    - env/task/reward: my_bohn
