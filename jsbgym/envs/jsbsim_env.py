@@ -277,7 +277,6 @@ class JSBSimEnv(gym.Env, ABC):
         severity_options = ["off", "light", "moderate", "severe"]
         wind_vec = np.zeros(3)
         if len(atmo_options) != 0:
-            print(f"Atmosphere Options: {atmo_options}")
             if atmo_options.get("variable", False): # random wind and turbulence magnitudes
                 severity = random.choice(severity_options)
                 print(f"Variable Severity")

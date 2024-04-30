@@ -1,5 +1,5 @@
 defaults:
-    - rl_algo: ppo
+    - rl: ppo
     - env/jsbsim: noatmo
     - env/task/mdp: my_bohn
     - env/task/reward: my_bohn
