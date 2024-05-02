@@ -32,7 +32,7 @@ class ACBohnTask(JSBSimEnv):
     def __init__(self, cfg_env: DictConfig, telemetry_file: str='', render_mode: str='none') -> None:
         """
             Args:
-                - `config_file`: the name of the config file containing the task parameters
+                - `cfg_env`: DictConfig object containing the environment configuration
                 - `telemetry_file`: the name of the file containing the flight data to be logged
                 - `render_mode`: the render mode for the task
         """

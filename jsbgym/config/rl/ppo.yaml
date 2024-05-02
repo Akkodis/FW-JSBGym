@@ -36,7 +36,7 @@ PPO:
 
     # Personnal customizations to the algo
     ts_coef: 5e-2 # CAPS temporal smoothing coefficient
-    ss_coef: 1e-1 # CAPS spatial smoothing coefficient
+    ss_coef: 0.0 # CAPS spatial smoothing coefficient
     pa_coef: 0.0 # Pre activation coefficient (only in Bohn n2 paper)
     rand_targets: True # randomly sample references
     ref_sampler: 'uniform' # reference sampling distrib for the UAV

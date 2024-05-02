@@ -1,5 +1,6 @@
 import numpy as np
 from typing import Tuple
+from omegaconf import DictConfig
 
 from jsbgym.envs.jsbsim_env import JSBSimEnv
 from jsbgym.envs.tasks.attitude_control.ac_bohn_nova import ACBohnNoVaTask, ACBohnNoVaIErrTask
@@ -11,8 +12,8 @@ class ACVanillaTask(ACBohnNoVaTask):
         Attitude control (without throttle control) task with minimal state and action space.
         No integral error, no wind states (alpha, beta), no past action nor action average.
     """
-    def __init__(self, config_file: str, telemetry_file: str='', render_mode: str='none') -> None:
-        super().__init__(config_file, telemetry_file, render_mode)
+    def __init__(self, cfg_env: DictConfig, telemetry_file: str='', render_mode: str='none') -> None:
+        super().__init__(cfg_env, telemetry_file, render_mode)
 
         self.state_prps: Tuple[BoundedProperty, ...] = (
             prp.roll_rad, prp.pitch_rad, # attitude
@@ -39,8 +40,8 @@ class ACVanillaActTask(ACVanillaTask):
     """
         Same as the parent class, but addition of previous action in the current state.
     """
-    def __init__(self, config_file: str, telemetry_file: str='', render_mode: str='none') -> None:
-        super().__init__(config_file, telemetry_file, render_mode)
+    def __init__(self, cfg_env: DictConfig, telemetry_file: str='', render_mode: str='none') -> None:
+        super().__init__(cfg_env, telemetry_file, render_mode)
 
         # add previous action to the pre-existing state properties
         self.state_prps += (prp.aileron_cmd, prp.elevator_cmd)
@@ -57,8 +58,8 @@ class ACVanillaAlphaTask(ACVanillaTask):
     """
         Same as the parent class, but with addition of the angle of attack in the state space.
     """
-    def __init__(self, config_file: str, telemetry_file: str='', render_mode: str='none') -> None:
-        super().__init__(config_file, telemetry_file, render_mode)
+    def __init__(self, cfg_env: DictConfig, telemetry_file: str='', render_mode: str='none') -> None:
+        super().__init__(cfg_env, telemetry_file, render_mode)
 
         # add alpha to the pre-existing state properties
         self.state_prps += (prp.alpha_rad,)
@@ -75,8 +76,8 @@ class ACVanillaBetaTask(ACVanillaTask):
     """
         Same as the parent class, but with addition of the sideslip angle in the state space.
     """
-    def __init__(self, config_file: str, telemetry_file: str='', render_mode: str='none') -> None:
-        super().__init__(config_file, telemetry_file, render_mode)
+    def __init__(self, cfg_env: DictConfig, telemetry_file: str='', render_mode: str='none') -> None:
+        super().__init__(cfg_env, telemetry_file, render_mode)
 
         # add beta to the pre-existing state properties
         self.state_prps += (prp.beta_rad,)
@@ -93,8 +94,8 @@ class ACVanillaAlphaBetaTask(ACVanillaTask):
     """
         Same as the parent class, but with addition of both AoA and sideslip angles in the state space.
     """
-    def __init__(self, config_file: str, telemetry_file: str='', render_mode: str='none') -> None:
-        super().__init__(config_file, telemetry_file, render_mode)
+    def __init__(self, cfg_env: DictConfig, telemetry_file: str='', render_mode: str='none') -> None:
+        super().__init__(cfg_env, telemetry_file, render_mode)
 
         # add alpha and beta to the pre-existing state properties
         self.state_prps += (prp.alpha_rad, prp.beta_rad,)
@@ -114,8 +115,8 @@ class ACVanillaThrTask(ACBohnNoVaTask):
         No airspeed reference is fed in the state space, only roll and pitch. But contrary to the parent class,
         and to the ACBohnNoVaTask(s), the agent has to control on the throttle (instead of being a PI)
     """
-    def __init__(self, config_file: str, telemetry_file: str='', render_mode: str='none') -> None:
-        super().__init__(config_file, telemetry_file, render_mode)
+    def __init__(self, cfg_env: DictConfig, telemetry_file: str='', render_mode: str='none') -> None:
+        super().__init__(cfg_env, telemetry_file, render_mode)
 
         # redefine the state properties entirely to a minimal state space
         self.state_prps: Tuple[BoundedProperty, ...] = (
@@ -152,8 +153,8 @@ class ACVanillaIErrTask(ACBohnNoVaIErrTask):
         Attitude control task with vanilla state and action space.
         But with integral error states.
     """
-    def __init__(self, config_file: str, telemetry_file: str='', render_mode: str='none') -> None:
-        super().__init__(config_file, telemetry_file, render_mode)
+    def __init__(self, cfg_env: DictConfig, telemetry_file: str='', render_mode: str='none') -> None:
+        super().__init__(cfg_env, telemetry_file, render_mode)
 
         # rewriting ACVanilla state space + integral errors
         self.state_prps: Tuple[BoundedProperty, ...] = (
