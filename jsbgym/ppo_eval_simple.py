@@ -4,42 +4,18 @@ import torch
 import numpy as np
 import os
 import csv
+import hydra
 
+from omegaconf import DictConfig
 from agents import ppo
 from jsbgym.trim.trim_point import TrimPoint
-from jsbgym.utils import jsbsim_properties as prp
-
-def parse_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--config", type=str, default="config/ppo_caps_no_va.yaml",
-        help="the config file of the environnement")
-    parser.add_argument("--env-id", type=str, default="ACBohnNoVa-v0", 
-        help="the id of the environment")
-    parser.add_argument('--train-model', type=str, required=True, 
-        help='agent model file name')
-    parser.add_argument('--render-mode', type=str, 
-        choices=['none','plot_scale', 'plot', 'fgear', 'fgear_plot', 'fgear_plot_scale'],
-        help='render mode')
-    parser.add_argument("--tele-file", type=str, default="telemetry/ppo_eval_telemetry.csv", 
-        help="telemetry csv file")
-    parser.add_argument('--ref-file', type=str, required=True,
-                        help='reference sequence file')
-    parser.add_argument('--severity', type=str, required=True,
-                        choices=['off', 'light', 'moderate', 'severe', 'all'],
-                        help='severity of the atmosphere (wind and turb)')
-    parser.add_argument('--out-file', type=str, default='eval_res_ppo.csv', 
-                        help='save results to file')
-    parser.add_argument('--rand-fdm', action='store_true',
-                        help='randomize the fdm coefs at the start of each episode')
-    args = parser.parse_args()
-    return args
 
 
-if __name__ == '__main__':
-    args = parse_args()
+@hydra.main(version_base=None, config_path="config", config_name="default")
+def eval(cfg: DictConfig):
     np.set_printoptions(precision=3)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"Using device: {device}")
+    print(f"**** Using Device: {device} ****")
 
     # seeding
     seed = 10
@@ -48,55 +24,40 @@ if __name__ == '__main__':
     torch.manual_seed(seed)
     torch.backends.cudnn.deterministic = True
 
+    # shorter cfg aliases
+    cfg_ppo = cfg.rl.PPO
+    cfg_sim = cfg.env.jsbsim
+
     # env setup
-    env = ppo.make_env(args.env_id, args.config, args.render_mode, args.tele_file, eval=True)()
+    env = ppo.make_env(cfg_ppo.env_id, cfg.env, cfg_sim.render_mode,
+                       'telemetry/telemetry.csv', eval=True)()
 
     # unwrapped_env = envs.envs[0].unwrapped
     trim_point = TrimPoint('x8')
 
-    train_dict = torch.load(args.train_model, map_location=device)
-
     # loading the agent
+    train_dict = torch.load(cfg_ppo.model_path, map_location=device)
     ppo_agent = ppo.Agent(env).to(device)
     ppo_agent.load_state_dict(train_dict['agent'])
     ppo_agent.eval()
 
     # load the reference sequence and initialize the evaluation arrays
-    simple_ref_data = np.load(args.ref_file)
+    simple_ref_data = np.load(f'eval/refs/{cfg_ppo.ref_file}')
 
     # set default target values
     # roll_ref: float = np.deg2rad(58)
     # pitch_ref: float = np.deg2rad(28)
 
     # if no render mode, run the simulation for the whole reference sequence given by the .npy file
-    if args.render_mode == "none":
+    if cfg_sim.render_mode == "none":
         total_steps = 50_000
     else: # otherwise, run the simulation for 8000 steps
         total_steps = 8000
 
-    sim_options = {"seed": seed,
-                   "atmosphere": {
-                       "variable": False,
-                       "wind": {
-                           "enable": True,
-                           "rand_continuous": False
-                       },
-                       "turb": {
-                            "enable": True
-                       },
-                       "gust": {
-                           "enable": True
-                       },
-                    },
-                   "rand_fdm": {
-                       "enable": args.rand_fdm,
-                   }
-                }
-
-    if args.severity == "all":
+    if cfg_sim.eval_sim_options.atmosphere.severity == "all":
         severity_range = ["off", "light", "moderate", "severe"]
     else:
-        severity_range = [args.severity]
+        severity_range = [cfg_sim.eval_sim_options.atmosphere.severity]
 
     all_mse = []
     all_rmse = []
@@ -105,7 +66,7 @@ if __name__ == '__main__':
     if not os.path.exists("eval/outputs"):
         os.makedirs("eval/outputs")
 
-    eval_res_csv = f"eval/outputs/{args.out_file}.csv"
+    eval_res_csv = f"eval/outputs/{cfg_ppo.res_file}.csv"
     eval_fieldnames = ["severity", "roll_mse", "pitch_mse", "roll_rmse", 
                         "pitch_rmse", "roll_fcs_fluct", "pitch_fcs_fluct"]
 
@@ -114,11 +75,11 @@ if __name__ == '__main__':
         csv_writer.writeheader()
 
     for i, severity in enumerate(severity_range):
-        sim_options["atmosphere"]["severity"] = severity
+        cfg_sim.eval_sim_options.atmosphere.severity = severity
         e_obs = []
         eps_fcs_fluct = []
         print(f"********** PPO METRICS {severity} **********")
-        obs, _ = env.reset(options=sim_options)
+        obs, _ = env.reset(options=cfg_sim.eval_sim_options)
         obs = torch.Tensor(obs).unsqueeze_(0).to(device)
         ep_cnt = 0 # episode counter
         ep_step = 0 # step counter within an episode
@@ -178,3 +139,7 @@ if __name__ == '__main__':
                                 "roll_fcs_fluct": fcs_fluct[0], "pitch_fcs_fluct": fcs_fluct[1]})
 
     env.close()
+
+
+if __name__ == '__main__':
+    eval()
