@@ -92,7 +92,7 @@ def train(cfg: DictConfig):
     # env setup
     print(f"ENV ID: {cfg_ppo.env_id}")
     envs = gym.vector.SyncVectorEnv(
-        [ppo.make_env(cfg_ppo.env_id, cfg.env, "none", None, eval=False, gamma=cfg_ppo.gamma) for i in range(cfg_ppo.num_envs)]
+        [ppo.make_env(cfg_ppo.env_id, cfg.env, cfg_sim.render_mode, None, eval=False, gamma=cfg_ppo.gamma) for i in range(cfg_ppo.num_envs)]
     )
     unwr_envs = [envs.envs[i].unwrapped for i in range(cfg_ppo.num_envs)]
     print("Single Env Observation Space Shape = ", envs.single_observation_space.shape)
