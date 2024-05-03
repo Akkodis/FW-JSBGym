@@ -1,4 +1,5 @@
-name: bohn_mod
+# reward settings
+name: bohn_orig
 weights: # bohn code | bohn paper | / max_error | unit
     roll:
         scaling: 3.3 # 3.2 | 3.3 | 1.047198 | 1.0
@@ -8,4 +9,5 @@ weights: # bohn code | bohn paper | / max_error | unit
         clip_max: 0.4
     act_var:
         enabled: true
+        scaling: 60
         clip_max: 0.2
