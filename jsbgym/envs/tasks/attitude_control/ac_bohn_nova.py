@@ -188,7 +188,12 @@ class ACBohnNoVaTask(ACBohnTask):
         r_roll_clip_max = r_w["roll"].get("clip_max", None)
         r_pitch_clip_max = r_w["pitch"].get("clip_max", None)
 
-        r_actvar = 0.0
+        # roll and pitch error reward (penalty) components
+        r_roll = np.clip(abs(self.sim[prp.roll_err]) / r_w["roll"]["scaling"], 0.0, r_roll_clip_max) # roll reward component
+        r_pitch = np.clip(abs(self.sim[prp.pitch_err]) / r_w["pitch"]["scaling"], 0.0, r_pitch_clip_max) # pitch reward component
+
+        r_actvar = np.nan
+        r_actvar_raw = np.nan
         # action fluctuation (penalty) reward component
         if r_w["act_var"]["enabled"]:
             r_act_clip_max = r_w["act_var"].get("clip_max", None)
@@ -203,21 +208,17 @@ class ACBohnNoVaTask(ACBohnTask):
                 deltas: np.ndarray = np.diff(np_action_hist[-self.task_cfg.mdp.act_hist_size:], axis=0)
                 r_actvar_raw = np.sum(np.abs(deltas))
                 r_actvar = np.clip(r_actvar_raw / r_w["act_var"]["scaling"], 0.0, r_w["act_var"].get("clip_max", None)) # flight control surface reward component
+            r_total: float = -(r_roll + r_pitch + r_actvar)
         else:
             if r_roll_clip_max + r_pitch_clip_max != 1.0:
                 print("WARNING: Reward components do not sum to 1.0")
-
-        # roll and pitch error reward (penalty) components
-        r_roll = np.clip(abs(self.sim[prp.roll_err]) / r_w["roll"]["scaling"], 0.0, r_roll_clip_max) # roll reward component
-        r_pitch = np.clip(abs(self.sim[prp.pitch_err]) / r_w["pitch"]["scaling"], 0.0, r_pitch_clip_max) # pitch reward component
-
-        # return the negative sum of all reward components
-        r_total: float = -(r_roll + r_pitch + r_actvar)
+            r_total: float = -(r_roll + r_pitch)
 
         # populate properties
         self.sim[prp.reward_roll] = r_roll
         self.sim[prp.reward_pitch] = r_pitch
         self.sim[prp.reward_actvar] = r_actvar
+        self.sim[prp.reward_actvar_raw] = r_actvar_raw # not actually returned as a reward component but useful for debugging
         self.sim[prp.reward_total] = r_total
 
         return r_total
@@ -299,3 +300,19 @@ class ACBohnNoVaIErrTask(ACBohnNoVaTask):
         self.sim[prp.roll_integ_err] = 0.0
         self.sim[prp.pitch_integ_err] = 0.0
 
+
+class ACBohnNoVaIErrYawTask(ACBohnNoVaIErrTask):
+    def __init__(self, cfg_env: DictConfig, telemetry_file: str='', render_mode: str='none') -> None:
+        super().__init__(cfg_env, telemetry_file, render_mode)
+
+        self.state_prps += (prp.heading_rad, ) # integral errors
+
+        # telemetry properties are an addition of the common telemetry properties, target properties and error properties
+        self.telemetry_prps = self.common_telemetry_prps + self.target_prps + self.error_prps
+
+        # set action and observation space from the task
+        self.action_space = self.get_action_space()
+        self.observation_space = self.get_observation_space()
+
+        self.initialize()
+        self.telemetry_setup(self.telemetry_file)

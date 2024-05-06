@@ -2,4 +2,4 @@ obs_is_matrix: True # in the case of my implementation of CleanRL PPO, I have CN
 obs_hist_size: 1
 
 action_avg: False
-act_hist_size: 2
+act_hist_size: 5
