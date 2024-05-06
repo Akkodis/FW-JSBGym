@@ -13,6 +13,12 @@ gymnasium.register(
 )
 
 gymnasium.register(
+    id='ACVanillaYaw-v0',
+    entry_point='jsbgym.envs.tasks.attitude_control.vanilla:ACVanillaYawTask',
+    # autoreset=True
+)
+
+gymnasium.register(
     id='ACVanillaIErr-v0',
     entry_point='jsbgym.envs.tasks.attitude_control.vanilla:ACVanillaIErrTask',
     # autoreset=True
@@ -63,6 +69,12 @@ gymnasium.register(
 gymnasium.register(
     id='ACBohnNoVaIErr-v0',
     entry_point='jsbgym.envs.tasks.attitude_control.ac_bohn_nova:ACBohnNoVaIErrTask',
+    # autoreset=True
+)
+
+gymnasium.register(
+    id='ACBohnNoVaIErrYaw-v0',
+    entry_point='jsbgym.envs.tasks.attitude_control.ac_bohn_nova:ACBohnNoVaIErrYawTask',
     # autoreset=True
 )
 

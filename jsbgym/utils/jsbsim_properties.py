@@ -41,7 +41,7 @@ altitude_sl_ft = BoundedProperty('position/h-sl-ft', 'altitude above mean sea le
 altitude_sl_m = BoundedProperty('position/h-sl-meters', 'altitude above mean sea level [m]', -427, 26000)
 pitch_rad = BoundedProperty('attitude/pitch-rad', 'pitch [rad]', -math.pi, math.pi)
 roll_rad = BoundedProperty('attitude/roll-rad', 'roll [rad]', -math.pi, math.pi)
-heading_rad = BoundedProperty('attitude/psi-rad', 'yaw [rad', -math.pi, math.pi)
+heading_rad = BoundedProperty('attitude/psi-rad', 'yaw [rad]', 0, 2*math.pi)
 heading_deg = BoundedProperty('attitude/psi-deg', 'heading [deg]', 0, 360)
 flight_path_rad: float = BoundedProperty('flight-path/psi-gt-rad', 'flight path angle [rad]', -math.pi, math.pi)
 sideslip_deg = BoundedProperty('aero/beta-deg', 'sideslip [deg]', -180, +180)
@@ -244,13 +244,14 @@ throttle_avg = BoundedProperty("fcs/throttle_avg", "throttle action average", th
 
 # reward properties
 reward_total = BoundedProperty("reward/total", "total reward", float('-inf'), 0)
-reward_roll = BoundedProperty("reward/roll", "roll reward", float('-inf'), 0)
-reward_pitch = BoundedProperty("reward/pitch", "pitch reward", float('-inf'), 0)
-reward_airspeed = BoundedProperty("reward/airspeed", "airspeed reward", float('-inf'), 0)
-reward_actvar = BoundedProperty("reward/act_var", "action variation reward", float('-inf'), 0)
-reward_act_bounds = BoundedProperty("reward/act_bounds", "action bound reward", float('-inf'), 0)
-reward_int_roll = BoundedProperty("reward/int_roll", "roll integral reward", float('-inf'), 0)
-reward_int_pitch = BoundedProperty("reward/int_pitch", "pitch integral reward", float('-inf'), 0)
+reward_roll = BoundedProperty("reward/roll", "roll reward", 0, float('+inf'))
+reward_pitch = BoundedProperty("reward/pitch", "pitch reward", 0, float('+inf'))
+reward_airspeed = BoundedProperty("reward/airspeed", "airspeed reward", 0, float('+inf'))
+reward_actvar = BoundedProperty("reward/act_var", "action variation reward", 0, float('+inf'))
+reward_actvar_raw = BoundedProperty("reward/act_var_raw", "raw action variation reward", 0, float('+inf'))
+reward_act_bounds = BoundedProperty("reward/act_bounds", "action bound reward", 0, float('+inf'))
+reward_int_roll = BoundedProperty("reward/int_roll", "roll integral reward", 0, float('+inf'))
+reward_int_pitch = BoundedProperty("reward/int_pitch", "pitch integral reward", 0, float('+inf'))
 
 # PID-RL properties no stability ensured
 kp_roll = BoundedProperty("pidrl/roll/kp", "roll kp", float('-inf'), float('+inf'))

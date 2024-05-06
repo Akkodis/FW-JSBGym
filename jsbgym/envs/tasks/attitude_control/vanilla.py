@@ -36,6 +36,29 @@ class ACVanillaTask(ACBohnNoVaTask):
         self.telemetry_setup(self.telemetry_file)
 
 
+class ACVanillaYawTask(ACVanillaTask):
+    """
+        Attitude control (without throttle control) task with minimal state and action space + yaw state.
+        No integral error, no wind states (alpha, beta), no past action nor action average.
+    """
+    def __init__(self, cfg_env: DictConfig, telemetry_file: str='', render_mode: str='none') -> None:
+        super().__init__(cfg_env, telemetry_file, render_mode)
+
+        self.state_prps += (prp.heading_rad,) # add yaw to the state properties
+
+        self.error_prps: Tuple[BoundedProperty, ...] = (
+            prp.roll_err, prp.pitch_err # errors
+        )
+
+        self.telemetry_prps += self.common_telemetry_prps + self.target_prps + self.error_prps # target state variables
+
+        # set action and observation space from the task
+        self.action_space = self.get_action_space()
+        self.observation_space = self.get_observation_space()
+
+        self.initialize()
+        self.telemetry_setup(self.telemetry_file)
+
 class ACVanillaActTask(ACVanillaTask):
     """
         Same as the parent class, but addition of previous action in the current state.
