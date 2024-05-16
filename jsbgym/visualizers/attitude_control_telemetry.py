@@ -42,6 +42,13 @@ def animate(i, axis, args) -> None:
     elevator_cmd = df.get(prp.elevator_cmd.get_legal_name(), default=nan_arr)
     aileron_cmd = df.get(prp.aileron_cmd.get_legal_name(), default=nan_arr)
 
+    elevator_pos_rad = df.get(prp.elevator_pos_rad.get_legal_name(), default=nan_arr)
+    aileron_pos_rad = df.get(prp.aileron_combined_pos_rad.get_legal_name(), default=nan_arr)
+
+    elevator_pos_norm = df.get(prp.elevator_pos_norm.get_legal_name(), default=nan_arr)
+    aileron_pos_norm = df.get(prp.aileron_combined_pos_norm.get_legal_name(), default=nan_arr)
+    throttle_pos = df.get(prp.throttle_pos.get_legal_name(), default=nan_arr)
+
     airspeed_ref = df.get(prp.target_airspeed_kph.get_legal_name(), default=nan_arr)
     roll_ref = df.get(prp.target_roll_rad.get_legal_name(), default=nan_arr)
     pitch_ref = df.get(prp.target_pitch_rad.get_legal_name(), default=nan_arr)
@@ -159,9 +166,13 @@ def animate(i, axis, args) -> None:
         axis[1, 2].legend()
         axis[1, 2].grid()
 
-        axis[2, 0].plot(tsteps, aileron_cmd, label='aileron_cmd' if not np.isnan(np.sum(aileron_cmd)) else '')
-        axis[2, 0].plot(tsteps, elevator_cmd, label='elevator_cmd' if not np.isnan(np.sum(elevator_cmd)) else '')
-        axis[2, 0].plot(tsteps, throttle_cmd, label='throttle_cmd' if not np.isnan(np.sum(throttle_cmd)) else '')
+        # axis[2, 0].plot(tsteps, aileron_cmd, label='aileron_cmd' if not np.isnan(np.sum(aileron_cmd)) else '')
+        # axis[2, 0].plot(tsteps, elevator_cmd, label='elevator_cmd' if not np.isnan(np.sum(elevator_cmd)) else '')
+        # axis[2, 0].plot(tsteps, throttle_cmd, label='throttle_cmd' if not np.isnan(np.sum(throttle_cmd)) else '')
+        axis[2, 0].plot(tsteps, aileron_pos_norm, label='aileron_pos_norm' if not np.isnan(np.sum(aileron_pos_norm)) else '')
+        axis[2, 0].plot(tsteps, elevator_pos_norm, label='elevator_pos_norm' if not np.isnan(np.sum(elevator_pos_norm)) else '')
+        axis[2, 0].plot(tsteps, throttle_pos, label='throttle_pos' if not np.isnan(np.sum(throttle_pos)) else '')
+
         axis[2, 0].set_title('commands')
         # axis[2, 0].set_xlabel("timestep")
         axis[2, 0].set_ylabel("commands [-]")

@@ -8,18 +8,22 @@ PPO:
     wandb_project_name: 'uav_rl'
     wandb_entity: thesedavid
     capture_video: False # not working, legacy of cleanRL's implementation
-    no_eval: False # evaluate the agent at the end of training
-    no_eval_plot: False # plot an evaluation plot at the end of training
+
+    # eval while training
+    periodic_eval: True
+    eval_freq: 37_500
+    final_eval: False # evaluate the agent at the end of training
+    final_traj_plot: True # plot an evaluation plot at the end of training
     save_best: False # save the best model
     save_cp: False # save periodic checkpoints
 
-    # Eval args
+    # eval
     model_path: null # path to a pretrained model for eval
     ref_file: simple_easy.npy # path to a reference file for eval
     res_file: test.csv # path to a results file for eval
 
     # CleanRL's PPO algo args
-    total_timesteps: 2e6
+    total_timesteps: 750_000
     env_id: 'ACBohnNoVaIErr-v0'
     learning_rate: 3e-4
     num_envs: 6 # number of parallel environments

@@ -120,6 +120,8 @@ class JSBSimEnv(gym.Env, ABC):
             prp.roll_rad, prp.pitch_rad, prp.heading_rad, # attitude
             prp.p_radps, prp.q_radps, prp.r_radps, # angular rates and airspeed
             prp.aileron_cmd, prp.elevator_cmd, prp.throttle_cmd, # control surface commands
+            prp.aileron_combined_pos_rad, prp.elevator_pos_rad, prp.throttle_pos, # control surface positions
+            prp.aileron_combined_pos_norm, prp.elevator_pos_norm, # control surface positions normalized
             prp.reward_total, prp.reward_roll, prp.reward_pitch, prp.reward_actvar, # rewards
             prp.airspeed_mps, prp.airspeed_kph, # airspeed
             prp.total_windspeed_north_mps, prp.total_windspeed_east_mps, prp.total_windspeed_down_mps, # wind speed mps

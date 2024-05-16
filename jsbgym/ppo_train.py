@@ -1,13 +1,10 @@
 # docs and experiment results can be found at https://docs.cleanrl.dev/rl-algorithms/ppo/#ppo_continuous_actionpy
-import argparse
 import os
 import random
 import time
 import hydra
 from omegaconf import DictConfig, OmegaConf
-from omegaconf.errors import MissingMandatoryValue
 from time import strftime, localtime
-from distutils.util import strtobool
 from tqdm import tqdm
 from jsbgym.trim.trim_point import TrimPoint
 from jsbgym.agents import ppo
@@ -25,6 +22,29 @@ import torch.optim as optim
 from torch.distributions.normal import Normal
 from torch.utils.tensorboard import SummaryWriter
 
+# Global variables
+# Sequence of roll and pitch references for the the periodic evaluation
+ref_seq: np.ndarray = np.array([
+												[	# roll			,pitch
+													[np.deg2rad(25), np.deg2rad(15)], # easy
+													[np.deg2rad(-25), np.deg2rad(-15)],
+													[np.deg2rad(25), np.deg2rad(-15)],
+													[np.deg2rad(-25), np.deg2rad(15)]
+												],
+												[
+													[np.deg2rad(40), np.deg2rad(22)], # medium
+													[np.deg2rad(-40), np.deg2rad(-22)],
+													[np.deg2rad(40), np.deg2rad(-22)],
+													[np.deg2rad(-40), np.deg2rad(22)]
+												],
+												[
+													[np.deg2rad(55), np.deg2rad(28)], # hard
+													[np.deg2rad(-55), np.deg2rad(-28)],
+													[np.deg2rad(55), np.deg2rad(-28)],
+													[np.deg2rad(-55), np.deg2rad(28)]
+												]
+											])
+
 
 def save_model(save_path, run_name, agent, env, seed):
     print("saving agent...")
@@ -32,6 +52,71 @@ def save_model(save_path, run_name, agent, env, seed):
     train_dict["seed"] = seed
     train_dict["agent"] = agent.state_dict()
     torch.save(train_dict, f"{save_path}{run_name}.pt")
+
+
+def periodic_eval(cfg_mdp, env, agent, device):
+    """Evaluate a TD-MPC2 agent."""
+    print("*** Evaluating the agent ***")
+    env.eval = True
+    ep_rewards = []
+    dif_obs = []
+    dif_fcs_fluct = [] # dicts storing all obs across all episodes and fluctuation of the flight controls for all episodes
+    i = 0
+    for dif_idx, ref_dif in enumerate(ref_seq): # iterate over the difficulty levels
+        dif_obs.append([])
+        dif_fcs_fluct.append([])
+        for ref_idx, ref_ep in enumerate(ref_dif): # iterate over the ref for 1 episode
+            obs, info = env.reset()
+            obs, info, done, ep_reward, t = torch.Tensor(obs).unsqueeze(0).to(device), info, False, 0, 0
+            while not done:
+                # Set roll and pitch references
+                env.set_target_state(ref_ep[0], ref_ep[1]) # 0: roll, 1: pitch
+                action = agent.get_action_and_value(obs)[1].squeeze_(0).detach().cpu().numpy()
+                obs, reward, term, trunc, info = env.step(action)
+                obs = torch.Tensor(obs).unsqueeze(0).to(device)
+                done = np.logical_or(term, trunc)
+                dif_obs[dif_idx].append(info['non_norm_obs']) # append the non-normalized observation to the list
+                ep_reward += reward
+                t += 1
+
+            ep_fcs_pos_hist = np.array(info['fcs_pos_hist'])
+            dif_fcs_fluct[dif_idx].append(np.mean(np.abs(np.diff(ep_fcs_pos_hist, axis=0)), axis=0)) # compute the fcs fluctuation of the episode being reset and append to the list
+
+            ep_rewards.append(ep_reward)
+            i += 1
+
+    # computing the mean fcs fluctuation across all episodes for each difficulty level
+    dif_fcs_fluct = np.array(dif_fcs_fluct)
+    easy_fcs_fluct = np.mean(np.array(dif_fcs_fluct[0]), axis=0)
+    medium_fcs_fluct = np.mean(np.array(dif_fcs_fluct[1]), axis=0)
+    hard_fcs_fluct = np.mean(np.array(dif_fcs_fluct[2]), axis=0)
+
+    # computing the rmse of the roll and pitch angles across all episodes for each difficulty level
+    obs_hist_size = cfg_mdp.obs_hist_size
+    dif_obs = np.array(dif_obs)
+    easy_roll_rmse = np.sqrt(np.mean(np.square(dif_obs[0, :, :, obs_hist_size-1, 6])))
+    easy_pitch_rmse = np.sqrt(np.mean(np.square(dif_obs[0, :, :, obs_hist_size-1, 7])))
+    medium_roll_rmse = np.sqrt(np.mean(np.square(dif_obs[1, :, :, obs_hist_size-1, 6])))
+    medium_pitch_rmse = np.sqrt(np.mean(np.square(dif_obs[1, :, :, obs_hist_size-1, 7])))
+    hard_roll_rmse = np.sqrt(np.mean(np.square(dif_obs[2, :, :, obs_hist_size-1, 6])))
+    hard_pitch_rmse = np.sqrt(np.mean(np.square(dif_obs[2, :, :, obs_hist_size-1, 7])))
+    env.eval = False
+
+    return dict(
+        episode_reward=np.nanmean(ep_rewards),
+        easy_roll_rmse=easy_roll_rmse,
+        easy_pitch_rmse=easy_pitch_rmse,
+        medium_roll_rmse=medium_roll_rmse,
+        medium_pitch_rmse=medium_pitch_rmse,
+        hard_roll_rmse=hard_roll_rmse,
+        hard_pitch_rmse=hard_pitch_rmse,
+        easy_ail_fluct=easy_fcs_fluct[0],
+        easy_ele_fluct=easy_fcs_fluct[1],
+        medium_ail_fluct=medium_fcs_fluct[0],
+        medium_ele_fluct=medium_fcs_fluct[1],
+        hard_ail_fluct=hard_fcs_fluct[0],
+        hard_ele_fluct=hard_fcs_fluct[1],
+    )
 
 
 @hydra.main(version_base=None, config_path="config", config_name="default")
@@ -50,6 +135,7 @@ def train(cfg: DictConfig):
     # shorter cfg aliases
     cfg_ppo = cfg.rl.PPO
     cfg_sim = cfg.env.jsbsim
+    cfg_mdp = cfg.env.task.mdp
 
     np.set_printoptions(suppress=True)
 
@@ -119,6 +205,7 @@ def train(cfg: DictConfig):
 
     # TRY NOT TO MODIFY: start the game
     global_step = 0
+    prev_gl_step = 0
     start_time = time.time()
 
     next_obs, _ = envs.reset(options=cfg_sim.train_sim_options)
@@ -151,6 +238,18 @@ def train(cfg: DictConfig):
         if cfg_ppo.save_cp and update % 8 == 0:
             run_name = f"ppo_{cfg_ppo.exp_name}_cp{global_step}_{cfg_ppo.seed}_{date_time}"
             save_model(save_path, run_name, agent, envs.envs[0], cfg_ppo.seed)
+
+        # run periodic evaluation
+        prev_div, _ = divmod(prev_gl_step, cfg_ppo.eval_freq)
+        curr_div, _ = divmod(global_step, cfg_ppo.eval_freq)
+        print(f"prev_gl_step = {prev_gl_step}, global_step = {global_step}, prev_div = {prev_div}, curr_div = {curr_div}")
+        if cfg_ppo.periodic_eval and (prev_div != curr_div or global_step == 0):
+            eval_dict = periodic_eval(cfg_mdp, envs.envs[0], agent, device)
+            _eval_dict = dict()
+            for k, v in eval_dict.items():
+                _eval_dict["eval/" + k] = v
+            wandb.log(_eval_dict)
+        prev_gl_step = global_step
 
         # a = b = -0.01 * update + 1.01
         # dydx = (a_b_min - a_b_max) / num_updates
@@ -425,7 +524,7 @@ def train(cfg: DictConfig):
 
 
     # Evaluate the agent once
-    if not cfg_ppo.no_eval_plot:
+    if cfg_ppo.final_traj_plot:
         print("******** Plotting... ***********")
         pe_env = envs.envs[0]
         pe_env.eval = True
@@ -459,15 +558,15 @@ def train(cfg: DictConfig):
                 break
         telemetry_df = pd.read_csv(telemetry_file)
         telemetry_table = wandb.Table(dataframe=telemetry_df)
-        wandb.log({"telemetry": telemetry_table})
+        wandb.log({"FinalTraj/telemetry": telemetry_table})
     # Even if we don't evaluate, we still want to save the model
     else:
         save_model(save_path, run_name, agent, envs.envs[0], cfg_ppo.seed)
 
 
-    if not cfg_ppo.no_eval:
+    if cfg_ppo.final_eval:
         # load the reference sequence and initialize the evaluation arrays
-        simple_ref_data = np.load("eval/simple_ref_seq_arr.npy")
+        simple_ref_data = np.load("eval/refs/simple_easy.npy")
 
         # if no render mode, run the simulation for the whole reference sequence given by the .npy file
         # total_steps = ref_data.shape[0]

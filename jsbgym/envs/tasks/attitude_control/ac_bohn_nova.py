@@ -30,6 +30,7 @@ class ACBohnNoVaTask(ACBohnTask):
         """
         super().__init__(cfg_env, telemetry_file, render_mode)
 
+    ### STATE SPACE ###
         self.state_prps: Tuple[BoundedProperty, ...] = (
             prp.roll_rad, prp.pitch_rad, # attitude
             prp.airspeed_kph, # airspeed
@@ -41,8 +42,11 @@ class ACBohnNoVaTask(ACBohnTask):
         # if action_avg is enabled, use the average of the past N commands in the state space
         if self.task_cfg.get("action_avg", False):
             self.state_prps += (prp.aileron_avg, prp.elevator_avg)
-        else: # otherwise, use the last command in the state space
+        else: # otherwise, use the fcs positions variables
             self.state_prps += (prp.aileron_cmd, prp.elevator_cmd)
+            # self.state_prps += (prp.aileron_combined_pos_rad, prp.elevator_pos_rad) # fcs positions
+            # self.state_prps += (prp.aileron_combined_pos_norm, prp.elevator_pos_norm) # fcs positions normalized
+    ### STATE SPACE ###
 
         self.action_prps: Tuple[BoundedProperty, ...] = (
             prp.aileron_cmd, prp.elevator_cmd
