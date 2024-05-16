@@ -171,6 +171,21 @@
                 <output>fcs/elevator-pos-rad</output>
             </second_order_filter>
 
+            <summer name="passthrough-clip">
+                <input>fcs/elevator-pos-rad</input>
+                <clipto>
+                    <min>-0.5235</min>
+                    <max>0.5235</max>
+                </clipto>
+                <output>fcs/elevator-pos-rad</output>
+            </summer>
+
+            <pure_gain name="normalized-elevator-pos">
+                <input>fcs/elevator-pos-rad</input>
+                <gain>1.9102196</gain> <!-- so 0.5235rad = 1 -->
+                <output>fcs/elevator-pos-norm</output>
+            </pure_gain>
+
             <!-- <actuator name="fcs/elevator-actuator">
                 <description>Converting the actuator command to a control surface movement</description>
                 <input>fcs/elevator-control</input>
@@ -207,16 +222,6 @@
                 <output>fcs/left-aileron-pos-rad</output>
             </actuator>
 
-            <aerosurface_scale name="fcs/right-aileron-control">
-                <description>The Starboard aileron output is in radians</description>
-                <input>fcs/roll-sum</input>
-                <range>
-                    <min>-30</min>
-                    <max>30</max>
-                </range>
-                <gain>0.01745</gain>
-            </aerosurface_scale>
-
             <second_order_filter name="fcs/left-aileron-filter">
                 <input>fcs/left-aileron-control</input>
                 <c1>0</c1>
@@ -227,6 +232,16 @@
                 <c6>10000</c6>
                 <output>fcs/left-aileron-pos-rad</output>
             </second_order_filter>
+
+            <aerosurface_scale name="fcs/right-aileron-control">
+                <description>The Starboard aileron output is in radians</description>
+                <input>fcs/roll-sum</input>
+                <range>
+                    <min>-30</min>
+                    <max>30</max>
+                </range>
+                <gain>0.01745</gain>
+            </aerosurface_scale>
 
             <!-- Not sure it's doing anything -->
             <actuator name="fcs/right-aileron-actuator">
@@ -257,7 +272,17 @@
             <pure_gain name="fcs/effective_aileron_pos_gain">
                 <input>fcs/effective-aileron-pos</input>
                 <gain>0.5</gain>
+                <clipto>
+                    <min>-0.5235</min>
+                    <max>0.5235</max>
+                </clipto>
                 <output>fcs/effective-aileron-pos</output>
+            </pure_gain>
+
+            <pure_gain name="normalized-elevator-pos">
+                <input>fcs/effective-aileron-pos</input>
+                <gain>1.9102196</gain> <!-- so 0.5235rad = 1 -->
+                <output>fcs/effective-aileron-pos-norm</output>
             </pure_gain>
 
         </channel>
