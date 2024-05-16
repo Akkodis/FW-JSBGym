@@ -142,7 +142,7 @@ class ACBohnTask(JSBSimEnv):
             self.sim[self.current_step] += 1
 
         # append the fcs commands to the fcs history for this episode
-        self.fcs_pos_hist.append([self.sim[prp.aileron_combined_rad], self.sim[prp.elevator_rad]])
+        self.fcs_pos_hist.append([self.sim[prp.aileron_combined_pos_rad], self.sim[prp.elevator_pos_rad]])
 
         # update the action_avg
         self.update_action_avg()

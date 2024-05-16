@@ -123,13 +123,15 @@ aileron_left = BoundedProperty('fcs/left-aileron-pos-norm', 'left aileron positi
 aileron_right = BoundedProperty('fcs/right-aileron-pos-norm', 'right aileron position, normalised', -1, 1)
 elevator = BoundedProperty('fcs/elevator-pos-norm', 'elevator position, normalised', -1, 1)
 rudder = BoundedProperty('fcs/rudder-pos-norm', 'rudder position, normalised', -1, 1)
-throttle = BoundedProperty('fcs/throttle-pos-norm', 'throttle position, normalised', 0, 1)
+throttle_pos = BoundedProperty('fcs/throttle-pos-norm', 'throttle position, normalised', 0, 1)
 gear = BoundedProperty('gear/gear-pos-norm', 'landing gear position, normalised', 0, 1)
 
 aileron_left_rad = Property('fcs/left-aileron-pos-rad', 'left aileron deflection [rad]')
 aileron_right_rad = Property('fcs/right-aileron-pos-rad', 'right aileron deflection [rad]')
-aileron_combined_rad = BoundedProperty('fcs/effective-aileron-pos', 'combined effective aileron deflection [rad]', -1.04, 1.04)
-elevator_rad = BoundedProperty('fcs/elevator-pos-rad', 'elevator deflection [rad]', -0.52, 0.52)
+aileron_combined_pos_rad = BoundedProperty('fcs/effective-aileron-pos', 'combined effective aileron deflection [rad]', -0.5235, 0.5235)
+elevator_pos_rad = BoundedProperty('fcs/elevator-pos-rad', 'elevator deflection [rad]', -0.5235, 0.5235)
+aileron_combined_pos_norm = BoundedProperty('fcs/effective-aileron-pos-norm', 'combined effective aileron deflection, normalised', -1, 1)
+elevator_pos_norm = BoundedProperty('fcs/elevator-pos-norm', 'elevator deflection, normalised', -1, 1)
 rudder_rad = Property('fcs/rudder-pos-rad', 'rudder deflection [rad]')
 
 # engines
