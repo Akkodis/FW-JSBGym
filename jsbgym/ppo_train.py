@@ -61,29 +61,28 @@ def periodic_eval(cfg_mdp, env, agent, device):
     ep_rewards = []
     dif_obs = []
     dif_fcs_fluct = [] # dicts storing all obs across all episodes and fluctuation of the flight controls for all episodes
-    i = 0
     for dif_idx, ref_dif in enumerate(ref_seq): # iterate over the difficulty levels
         dif_obs.append([])
         dif_fcs_fluct.append([])
         for ref_idx, ref_ep in enumerate(ref_dif): # iterate over the ref for 1 episode
             obs, info = env.reset()
-            obs, info, done, ep_reward, t = torch.Tensor(obs).unsqueeze(0).to(device), info, False, 0, 0
+            obs, info, done, ep_reward = torch.Tensor(obs).unsqueeze(0).to(device), info, False, 0
             while not done:
                 # Set roll and pitch references
                 env.set_target_state(ref_ep[0], ref_ep[1]) # 0: roll, 1: pitch
-                action = agent.get_action_and_value(obs)[1].squeeze_(0).detach().cpu().numpy()
+                with torch.no_grad():
+                    action = agent.get_action_and_value(obs)[1].squeeze_(0).detach().cpu().numpy()
                 obs, reward, term, trunc, info = env.step(action)
                 obs = torch.Tensor(obs).unsqueeze(0).to(device)
                 done = np.logical_or(term, trunc)
                 dif_obs[dif_idx].append(info['non_norm_obs']) # append the non-normalized observation to the list
-                ep_reward += reward
-                t += 1
+                ep_reward += info['non_norm_reward']
 
             ep_fcs_pos_hist = np.array(info['fcs_pos_hist'])
             dif_fcs_fluct[dif_idx].append(np.mean(np.abs(np.diff(ep_fcs_pos_hist, axis=0)), axis=0)) # compute the fcs fluctuation of the episode being reset and append to the list
 
             ep_rewards.append(ep_reward)
-            i += 1
+    env.reset()
 
     # computing the mean fcs fluctuation across all episodes for each difficulty level
     dif_fcs_fluct = np.array(dif_fcs_fluct)
@@ -94,12 +93,20 @@ def periodic_eval(cfg_mdp, env, agent, device):
     # computing the rmse of the roll and pitch angles across all episodes for each difficulty level
     obs_hist_size = cfg_mdp.obs_hist_size
     dif_obs = np.array(dif_obs)
-    easy_roll_rmse = np.sqrt(np.mean(np.square(dif_obs[0, :, :, obs_hist_size-1, 6])))
-    easy_pitch_rmse = np.sqrt(np.mean(np.square(dif_obs[0, :, :, obs_hist_size-1, 7])))
-    medium_roll_rmse = np.sqrt(np.mean(np.square(dif_obs[1, :, :, obs_hist_size-1, 6])))
-    medium_pitch_rmse = np.sqrt(np.mean(np.square(dif_obs[1, :, :, obs_hist_size-1, 7])))
-    hard_roll_rmse = np.sqrt(np.mean(np.square(dif_obs[2, :, :, obs_hist_size-1, 6])))
-    hard_pitch_rmse = np.sqrt(np.mean(np.square(dif_obs[2, :, :, obs_hist_size-1, 7])))
+    if obs_hist_size == 1 and not cfg_mdp.obs_is_matrix:
+        easy_roll_rmse = np.sqrt(np.mean(np.square(dif_obs[0, :, 6])))
+        easy_pitch_rmse = np.sqrt(np.mean(np.square(dif_obs[0, :, 7])))
+        medium_roll_rmse = np.sqrt(np.mean(np.square(dif_obs[1, :, 6])))
+        medium_pitch_rmse = np.sqrt(np.mean(np.square(dif_obs[1, :, 7])))
+        hard_roll_rmse = np.sqrt(np.mean(np.square(dif_obs[2, :, 6])))
+        hard_pitch_rmse = np.sqrt(np.mean(np.square(dif_obs[2, :, 7])))
+    elif obs_hist_size > 1 and cfg_mdp.obs_is_matrix:
+        easy_roll_rmse = np.sqrt(np.mean(np.square(dif_obs[0, :, :, obs_hist_size-1, 6])))
+        easy_pitch_rmse = np.sqrt(np.mean(np.square(dif_obs[0, :, :, obs_hist_size-1, 7])))
+        medium_roll_rmse = np.sqrt(np.mean(np.square(dif_obs[1, :, :, obs_hist_size-1, 6])))
+        medium_pitch_rmse = np.sqrt(np.mean(np.square(dif_obs[1, :, :, obs_hist_size-1, 7])))
+        hard_roll_rmse = np.sqrt(np.mean(np.square(dif_obs[2, :, :, obs_hist_size-1, 6])))
+        hard_pitch_rmse = np.sqrt(np.mean(np.square(dif_obs[2, :, :, obs_hist_size-1, 7])))
     env.eval = False
 
     return dict(
@@ -184,7 +191,7 @@ def train(cfg: DictConfig):
     print("Single Env Observation Space Shape = ", envs.single_observation_space.shape)
 
     assert isinstance(envs.single_action_space, gym.spaces.Box), "only continuous action space is supported"
-    agent = ppo.Agent(envs).to(device)
+    agent = ppo.Agent(envs, cfg).to(device)
     optimizer = optim.Adam(agent.parameters(), lr=cfg_ppo.learning_rate, eps=1e-5)
     trim_point: TrimPoint = TrimPoint(aircraft_id='x8')
     if "NoVa" in cfg_ppo.env_id or "Vanilla" in cfg_ppo.env_id:

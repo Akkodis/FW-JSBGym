@@ -9,6 +9,9 @@ PPO:
     wandb_entity: thesedavid
     capture_video: False # not working, legacy of cleanRL's implementation
 
+    # model
+    input_arch: 'mlp' # 'cnn' or 'mlp'
+
     # eval while training
     periodic_eval: True
     eval_freq: 37_500
