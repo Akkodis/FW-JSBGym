@@ -192,7 +192,7 @@ def train(cfg: DictConfig):
     print("Single Env Observation Space Shape = ", envs.single_observation_space.shape)
 
     assert isinstance(envs.single_action_space, gym.spaces.Box), "only continuous action space is supported"
-    agent = ppo.Agent(envs, cfg).to(device)
+    agent = ppo.Agent_PPO(envs, cfg).to(device)
     optimizer = optim.Adam(agent.parameters(), lr=cfg_ppo.learning_rate, eps=1e-5)
     trim_point: TrimPoint = TrimPoint(aircraft_id='x8')
     if "NoVa" in cfg_ppo.env_id or "Vanilla" in cfg_ppo.env_id:

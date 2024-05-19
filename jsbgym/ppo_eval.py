@@ -57,7 +57,7 @@ if __name__ == '__main__':
     #                 train_dict['norm_obs_rms']['var'])
 
     # loading the agent
-    ppo_agent = ppo.Agent(env).to(device)
+    ppo_agent = ppo.Agent_PPO(env).to(device)
     ppo_agent.load_state_dict(train_dict['agent'])
     ppo_agent.eval()
 

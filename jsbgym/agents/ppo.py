@@ -26,7 +26,7 @@ def layer_init(layer, std=np.sqrt(2), bias_const=0.0):
     return layer
 
 
-class Agent(nn.Module):
+class Agent_PPO(nn.Module):
     def __init__(self, envs, cfg):
         super().__init__()
         # if the envs arg is a vector env, we need to get the single env action and obs space

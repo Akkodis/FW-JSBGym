@@ -38,7 +38,7 @@ def eval(cfg: DictConfig):
 
     # loading the agent
     train_dict = torch.load(cfg_ppo.model_path, map_location=device)
-    ppo_agent = ppo.Agent(env, cfg).to(device)
+    ppo_agent = ppo.Agent_PPO(env, cfg).to(device)
     ppo_agent.load_state_dict(train_dict['agent'])
     ppo_agent.eval()
 
