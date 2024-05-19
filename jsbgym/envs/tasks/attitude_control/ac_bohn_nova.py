@@ -40,7 +40,7 @@ class ACBohnNoVaTask(ACBohnTask):
         )
 
         # if action_avg is enabled, use the average of the past N commands in the state space
-        if self.task_cfg.get("action_avg", False):
+        if self.task_cfg.mdp.get("action_avg", False):
             self.state_prps += (prp.aileron_avg, prp.elevator_avg)
         else: # otherwise, use the fcs positions variables
             self.state_prps += (prp.aileron_cmd, prp.elevator_cmd)
