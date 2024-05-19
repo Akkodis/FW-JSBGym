@@ -1,9 +1,9 @@
 SAC:
-    exp_name: sac_default
+    exp_name: default
     seed: ???
     torch_deterministic: True
     cuda: True
-    track: False
+    track: True
     wandb_project_name: sac_ac
     wandb_entity: thesedavid
     capture_video: False
@@ -23,3 +23,9 @@ SAC:
     noise_clip: 0.5 # noise clip parameter of the Target Policy Smoothing Regularization
     alpha: 0.2 # Entropy regularization coefficient.
     autotune: True # automatic tuning of the entropy coefficient
+
+    # periodic evaluation during training
+    periodic_eval: True
+    eval_freq: 37_500
+
+    final_traj_plot: True # uploading a test traj telemetry of the agent at the end of training, in wandb

@@ -5,88 +5,18 @@ from time import strftime, localtime
 
 import gymnasium as gym
 import numpy as np
+import pandas as pd
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 import hydra
 from omegaconf import DictConfig, OmegaConf
 from stable_baselines3.common.buffers import ReplayBuffer
 from torch.utils.tensorboard import SummaryWriter
+from jsbgym.utils.train_utils import periodic_eval, save_model_SAC, make_env
+from jsbgym.agents.sac import Actor_SAC, SoftQNetwork_SAC
 
 
-def make_env(env_id, cfg_env, render_mode, telemetry_file=None, eval=False, gamma=0.99, run_name='', idx=0):
-    def thunk():
-        env = gym.make(env_id, cfg_env=cfg_env, telemetry_file=telemetry_file,
-                        render_mode=render_mode)
-        env = gym.wrappers.RecordEpisodeStatistics(env)
-        env = gym.wrappers.ClipAction(env)
-        # env = MyNormalizeObservation(env, eval=eval)
-        if not eval:
-            env = gym.wrappers.NormalizeReward(env, gamma=gamma)
-        return env
-
-    return thunk
-
-
-# ALGO LOGIC: initialize agent here:
-class SoftQNetwork(nn.Module):
-    def __init__(self, env):
-        super().__init__()
-        self.fc1 = nn.Linear(np.array(env.single_observation_space.shape).prod() + np.prod(env.single_action_space.shape), 256)
-        self.fc2 = nn.Linear(256, 256)
-        self.fc3 = nn.Linear(256, 1)
-
-    def forward(self, x, a):
-        x = torch.cat([x, a], 1)
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        x = self.fc3(x)
-        return x
-
-
-LOG_STD_MAX = 2
-LOG_STD_MIN = -5
-
-
-class Actor(nn.Module):
-    def __init__(self, env):
-        super().__init__()
-        self.fc1 = nn.Linear(np.array(env.single_observation_space.shape).prod(), 256)
-        self.fc2 = nn.Linear(256, 256)
-        self.fc_mean = nn.Linear(256, np.prod(env.single_action_space.shape))
-        self.fc_logstd = nn.Linear(256, np.prod(env.single_action_space.shape))
-        # action rescaling
-        self.register_buffer(
-            "action_scale", torch.tensor((env.action_space.high - env.action_space.low) / 2.0, dtype=torch.float32)
-        )
-        self.register_buffer(
-            "action_bias", torch.tensor((env.action_space.high + env.action_space.low) / 2.0, dtype=torch.float32)
-        )
-
-    def forward(self, x):
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        mean = self.fc_mean(x)
-        log_std = self.fc_logstd(x)
-        log_std = torch.tanh(log_std)
-        log_std = LOG_STD_MIN + 0.5 * (LOG_STD_MAX - LOG_STD_MIN) * (log_std + 1)  # From SpinUp / Denis Yarats
-
-        return mean, log_std
-
-    def get_action(self, x):
-        mean, log_std = self(x)
-        std = log_std.exp()
-        normal = torch.distributions.Normal(mean, std)
-        x_t = normal.rsample()  # for reparameterization trick (mean + std * N(0,1))
-        y_t = torch.tanh(x_t)
-        action = y_t * self.action_scale + self.action_bias
-        log_prob = normal.log_prob(x_t)
-        # Enforcing Action Bound
-        log_prob -= torch.log(self.action_scale * (1 - y_t.pow(2)) + 1e-6)
-        log_prob = log_prob.sum(1, keepdim=True)
-        mean = torch.tanh(mean) * self.action_scale + self.action_bias
-        return action, log_prob, mean
 
 @hydra.main(version_base=None, config_path="config", config_name="default")
 def train(cfg: DictConfig):
@@ -99,7 +29,7 @@ def train(cfg: DictConfig):
             """
         )
 
-    if OmegaConf.is_missing(cfg.rl.PPO, "seed"):
+    if OmegaConf.is_missing(cfg.rl.SAC, "seed"):
         cfg.rl.SAC.seed = random.randint(0, 9999)
         print(f"Seed not provided, using random seed: {cfg.rl.SAC.seed}")
     else:
@@ -109,7 +39,6 @@ def train(cfg: DictConfig):
     cfg_sac = cfg.rl.SAC
     cfg_sim = cfg.env.jsbsim
     cfg_mdp = cfg.env.task.mdp
-
 
     np.set_printoptions(suppress=True)
 
@@ -145,20 +74,23 @@ def train(cfg: DictConfig):
     torch.backends.cudnn.deterministic = cfg_sac.torch_deterministic
 
     device = torch.device("cuda" if torch.cuda.is_available() and cfg_sac.cuda else "cpu")
+    print(f"**** Using Device: {device} ****")
 
     # env setup
     envs = gym.vector.SyncVectorEnv(
         [make_env(cfg_sac.env_id, cfg.env, cfg_sim.render_mode, None, eval=False, gamma=cfg_sac.gamma)]
     )
     assert isinstance(envs.single_action_space, gym.spaces.Box), "only continuous action space is supported"
+    print("Single Env Observation Space Shape = ", envs.single_observation_space.shape)
+    unwr_envs = envs.envs[0].unwrapped
 
     max_action = float(envs.single_action_space.high[0])
 
-    actor = Actor(envs).to(device)
-    qf1 = SoftQNetwork(envs).to(device)
-    qf2 = SoftQNetwork(envs).to(device)
-    qf1_target = SoftQNetwork(envs).to(device)
-    qf2_target = SoftQNetwork(envs).to(device)
+    actor = Actor_SAC(envs).to(device)
+    qf1 = SoftQNetwork_SAC(envs).to(device)
+    qf2 = SoftQNetwork_SAC(envs).to(device)
+    qf1_target = SoftQNetwork_SAC(envs).to(device)
+    qf2_target = SoftQNetwork_SAC(envs).to(device)
     qf1_target.load_state_dict(qf1.state_dict())
     qf2_target.load_state_dict(qf2.state_dict())
     q_optimizer = optim.Adam(list(qf1.parameters()) + list(qf2.parameters()), lr=cfg_sac.q_lr)
@@ -175,18 +107,40 @@ def train(cfg: DictConfig):
 
     envs.single_observation_space.dtype = np.float32
     rb = ReplayBuffer(
-        cfg_sac.buffer_size,
+        int(cfg_sac.buffer_size),
         envs.single_observation_space,
         envs.single_action_space,
         device,
         handle_timeout_termination=False,
     )
+
+    # initial roll and pitch references
+    roll_limit = np.deg2rad(60)
+    pitch_limit = np.deg2rad(30)
+    roll_ref = np.random.uniform(-roll_limit, roll_limit)
+    pitch_ref = np.random.uniform(-pitch_limit, pitch_limit)
+    global_step = 0
+    prev_gl_step = 0
+
     start_time = time.time()
 
     # TRY NOT TO MODIFY: start the game
     obs, _ = envs.reset(seed=cfg_sac.seed)
     for global_step in range(cfg_sac.total_timesteps):
+
+        # run periodic evaluation
+        prev_div, _ = divmod(prev_gl_step, cfg_sac.eval_freq)
+        curr_div, _ = divmod(global_step, cfg_sac.eval_freq)
+        if cfg_sac.periodic_eval and (prev_div != curr_div or global_step == 0):
+            print(f"prev_gl_step = {prev_gl_step}, global_step = {global_step}, prev_div = {prev_div}, curr_div = {curr_div}")
+            eval_dict = periodic_eval(cfg_mdp, envs.envs[0], actor, device)
+            _eval_dict = dict()
+            for k, v in eval_dict.items():
+                writer.add_scalar("eval/" + k, v, global_step)
+        prev_gl_step = global_step
+
         # ALGO LOGIC: put action logic here
+        unwr_envs.set_target_state(roll_ref, pitch_ref)
         if global_step < cfg_sac.learning_starts:
             actions = np.array([envs.single_action_space.sample() for _ in range(envs.num_envs)])
         else:
@@ -196,11 +150,20 @@ def train(cfg: DictConfig):
         # TRY NOT TO MODIFY: execute the game and log data.
         next_obs, rewards, terminations, truncations, infos = envs.step(actions)
 
+        done = np.logical_or(terminations, truncations)
+        if done:
+            roll_ref = np.random.uniform(-roll_limit, roll_limit)
+            pitch_ref = np.random.uniform(-pitch_limit, pitch_limit)
+            print(f"Env Done, new refs : roll = {roll_ref}, pitch = {pitch_ref}")
+
         # TRY NOT TO MODIFY: record rewards for plotting purposes
         if "final_info" in infos:
             for info in infos["final_info"]:
-                print(f"global_step={global_step}, episodic_return={info['episode']['r']}")
+                print(f"global_step={global_step}, episodic_return={info['episode']['r']}, episodic_length={info['episode']['l']} \n" + \
+                      f"episode_end={info['episode_end']}, out_of_bounds={info['out_of_bounds']}\n********")
                 writer.add_scalar("charts/episodic_return", info["episode"]["r"], global_step)
+                r_per_step = info["episode"]["r"]/info["episode"]["l"]
+                writer.add_scalar("charts/reward_per_step", r_per_step, global_step)
                 writer.add_scalar("charts/episodic_length", info["episode"]["l"], global_step)
                 break
 
@@ -279,6 +242,32 @@ def train(cfg: DictConfig):
                 if cfg_sac.autotune:
                     writer.add_scalar("losses/alpha_loss", alpha_loss.item(), global_step)
 
+    if cfg_sac.final_traj_plot:
+        print("******** Plotting... ***********")
+        pe_env = envs.envs[0]
+        pe_env.eval = True
+        telemetry_file = f"telemetry/{run_name}.csv"
+        pe_obs, _ = pe_env.reset(options={"render_mode": "log"})
+        pe_env.unwrapped.telemetry_setup(telemetry_file)
+        roll_ref = np.deg2rad(30)
+        pitch_ref = np.deg2rad(15)
+        for step in range(4000):
+            pe_env.unwrapped.set_target_state(roll_ref, pitch_ref)
+
+            action = actor.get_action(torch.Tensor(pe_obs).unsqueeze(0).to(device))[2].squeeze_().detach().cpu().numpy()
+            pe_obs, reward, truncated, terminated, info = pe_env.step(action)
+            done = np.logical_or(truncated, terminated)
+
+            if done:
+                print(f"Episode reward: {info['episode']['r']}")
+                r_per_step = info["episode"]["r"]/info["episode"]["l"]
+                break
+        telemetry_df = pd.read_csv(telemetry_file)
+        telemetry_table = wandb.Table(dataframe=telemetry_df)
+        wandb.log({"FinalTraj/telemetry": telemetry_table})
+
+
+    save_model_SAC(run_name, actor, qf1, qf2)
     envs.close()
     writer.close()
 
