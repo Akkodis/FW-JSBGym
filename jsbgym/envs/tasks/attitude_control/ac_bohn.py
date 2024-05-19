@@ -233,7 +233,7 @@ class ACBohnTask(JSBSimEnv):
         if self.task_cfg.mdp.obs_is_matrix:
             obs: np.ndarray = np.expand_dims(np.array(self.observation_deque), axis=0).astype(np.float32)
         else:
-            obs: np.ndarray = np.array(self.observation_deque).squeeze().astype(np.float32)
+            obs: np.ndarray = np.array(self.observation_deque).squeeze().flatten().astype(np.float32)
         return obs
 
 
