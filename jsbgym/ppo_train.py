@@ -166,6 +166,7 @@ def train(cfg: DictConfig):
         wandb.define_metric("global_step")
         wandb.define_metric("charts/*", step_metric="global_step")
         wandb.define_metric("losses/*", step_metric="global_step")
+        wandb.define_metric("eval/*", step_metric="global_step")
 
     writer = SummaryWriter(f"runs/{run_name}")
     writer.add_text(
@@ -254,8 +255,8 @@ def train(cfg: DictConfig):
             eval_dict = periodic_eval(cfg_mdp, envs.envs[0], agent, device)
             _eval_dict = dict()
             for k, v in eval_dict.items():
-                _eval_dict["eval/" + k] = v
-            wandb.log(_eval_dict)
+                writer.add_scalar("eval/" + k, v, global_step)
+
         prev_gl_step = global_step
 
         # a = b = -0.01 * update + 1.01
