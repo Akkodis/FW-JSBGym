@@ -2,10 +2,10 @@ name: bohn_mod
 weights: # bohn code | bohn paper | / max_error | unit
     roll:
         scaling: 3.3 # 3.2 | 3.3 | 1.047198 | 1.0
-        clip_max: 0.4
+        clip_max: 0.25
     pitch:
         scaling: 2.25 # 3.2 | 2.25 | 0.698132 | 1.0
-        clip_max: 0.4
+        clip_max: 0.25
     act_var:
         enabled: true
-        clip_max: 0.2
+        clip_max: 0.5
