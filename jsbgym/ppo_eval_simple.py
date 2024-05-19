@@ -27,6 +27,7 @@ def eval(cfg: DictConfig):
     # shorter cfg aliases
     cfg_ppo = cfg.rl.PPO
     cfg_sim = cfg.env.jsbsim
+    cfg_task = cfg.env.task
 
     # env setup
     env = ppo.make_env(cfg_ppo.env_id, cfg.env, cfg_sim.render_mode,
@@ -37,7 +38,7 @@ def eval(cfg: DictConfig):
 
     # loading the agent
     train_dict = torch.load(cfg_ppo.model_path, map_location=device)
-    ppo_agent = ppo.Agent(env).to(device)
+    ppo_agent = ppo.Agent(env, cfg).to(device)
     ppo_agent.load_state_dict(train_dict['agent'])
     ppo_agent.eval()
 
@@ -90,7 +91,10 @@ def eval(cfg: DictConfig):
             env.set_target_state(roll_ref, pitch_ref)
             action = ppo_agent.get_action_and_value(obs)[1].squeeze_(0).detach().cpu().numpy()
             obs, reward, terminated, truncated, info = env.step(action)
-            e_obs.append(info["non_norm_obs"][0, -1])
+            if cfg_task.mdp.obs_is_matrix:
+                e_obs.append(info["non_norm_obs"][0, -1])
+            else:
+                e_obs.append(info["non_norm_obs"])
             obs = torch.Tensor(obs).unsqueeze_(0).to(device)
 
             done = np.logical_or(terminated, truncated)
