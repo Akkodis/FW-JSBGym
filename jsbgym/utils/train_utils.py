@@ -29,7 +29,7 @@ ref_seq: np.ndarray = np.array([
 											])
 
 # Run periodic evaluation during training
-def periodic_eval(cfg_mdp, env, agent, device):
+def periodic_eval(cfg_mdp, cfg_sim, env, agent, device):
     """Evaluate a TD-MPC2 agent."""
     print("*** Evaluating the agent ***")
     env.eval = True
@@ -40,7 +40,7 @@ def periodic_eval(cfg_mdp, env, agent, device):
         dif_obs.append([])
         dif_fcs_fluct.append([])
         for ref_idx, ref_ep in enumerate(ref_dif): # iterate over the ref for 1 episode
-            obs, info = env.reset()
+            obs, info = env.reset(options=cfg_sim.eval_sim_options)
             obs, info, done, ep_reward = torch.Tensor(obs).unsqueeze(0).to(device), info, False, 0
             while not done:
                 # Set roll and pitch references
@@ -60,7 +60,7 @@ def periodic_eval(cfg_mdp, env, agent, device):
             dif_fcs_fluct[dif_idx].append(np.mean(np.abs(np.diff(ep_fcs_pos_hist, axis=0)), axis=0)) # compute the fcs fluctuation of the episode being reset and append to the list
 
             ep_rewards.append(ep_reward)
-    env.reset()
+    env.reset(options=cfg_sim.train_sim_options) # reset the env with the training options for the following of the training
 
     # computing the mean fcs fluctuation across all episodes for each difficulty level
     dif_fcs_fluct = np.array(dif_fcs_fluct)
