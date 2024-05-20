@@ -3,6 +3,7 @@ import numpy as np
 import random
 import os
 import csv
+from copy import deepcopy
 from math import ceil
 
 from typing import Dict, Tuple, NamedTuple
@@ -66,7 +67,7 @@ class JSBSimEnv(gym.Env, ABC):
         self.jsbsim_cfg = cfg_env.jsbsim
 
         # default, on object creation, jsbsim sim options. Can be modified at reset time through the options argument
-        self.sim_options: dict = self.jsbsim_cfg.train_sim_options
+        self.sim_options: dict = deepcopy(self.jsbsim_cfg.train_sim_options)
 
         # simulation attribute, will be initialized in reset() with a call to Simulation()
         self.sim: Simulation = None
@@ -242,6 +243,8 @@ class JSBSimEnv(gym.Env, ABC):
             # setup wind and turbulence
             if "seed" in options:
                 self.sim_options.seed = options["seed"]
+            else:
+                self.sim_options.seed = np.random.randint(0, 9999)
             if "atmosphere" in options:
                 self.sim_options.atmosphere = options["atmosphere"]
             if "rand_fdm" in options:
@@ -251,8 +254,6 @@ class JSBSimEnv(gym.Env, ABC):
         if len(self.sim_options) != 0:
             if "seed" in self.sim_options:
                 self.sim["simulation/randomseed"] = self.sim_options["seed"]
-            else:
-                self.sim["simulation/randomseed"] = np.random.randint(0, 10000)
             if self.fdm_rng is None:
                 self.fdm_rng = np.random.default_rng(int(self.sim["simulation/randomseed"]))
             if self.sim_options["rand_fdm"]["enable"]:
