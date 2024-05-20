@@ -55,6 +55,7 @@ def train(cfg: DictConfig):
             name=run_name,
             monitor_gym=True,
             save_code=True,
+            tags=["SAC"]
         )
         wandb.define_metric("global_step")
         wandb.define_metric("charts/*", step_metric="global_step")
@@ -125,15 +126,17 @@ def train(cfg: DictConfig):
     start_time = time.time()
 
     # TRY NOT TO MODIFY: start the game
-    obs, _ = envs.reset(seed=cfg_sac.seed)
+    obs, _ = envs.reset(options=cfg_sim.train_sim_options)
     for global_step in range(cfg_sac.total_timesteps):
+        if cfg_sac.track:
+            wandb.log({"global_step": global_step})
 
         # run periodic evaluation
         prev_div, _ = divmod(prev_gl_step, cfg_sac.eval_freq)
         curr_div, _ = divmod(global_step, cfg_sac.eval_freq)
         if cfg_sac.periodic_eval and (prev_div != curr_div or global_step == 0):
             print(f"prev_gl_step = {prev_gl_step}, global_step = {global_step}, prev_div = {prev_div}, curr_div = {curr_div}")
-            eval_dict = periodic_eval(cfg_mdp, envs.envs[0], actor, device)
+            eval_dict = periodic_eval(cfg_mdp, cfg_sim, envs.envs[0], actor, device)
             _eval_dict = dict()
             for k, v in eval_dict.items():
                 writer.add_scalar("eval/" + k, v, global_step)
@@ -163,7 +166,7 @@ def train(cfg: DictConfig):
                       f"episode_end={info['episode_end']}, out_of_bounds={info['out_of_bounds']}\n********")
                 writer.add_scalar("charts/episodic_return", info["episode"]["r"], global_step)
                 r_per_step = info["episode"]["r"]/info["episode"]["l"]
-                writer.add_scalar("charts/reward_per_step", r_per_step, global_step)
+                # writer.add_scalar("charts/reward_per_step", r_per_step, global_step)
                 writer.add_scalar("charts/episodic_length", info["episode"]["l"], global_step)
                 break
 
@@ -247,7 +250,7 @@ def train(cfg: DictConfig):
         pe_env = envs.envs[0]
         pe_env.eval = True
         telemetry_file = f"telemetry/{run_name}.csv"
-        pe_obs, _ = pe_env.reset(options={"render_mode": "log"})
+        pe_obs, _ = pe_env.reset(options={"render_mode": "log"}+cfg_sim.eval_sim_options)
         pe_env.unwrapped.telemetry_setup(telemetry_file)
         roll_ref = np.deg2rad(30)
         pitch_ref = np.deg2rad(15)
