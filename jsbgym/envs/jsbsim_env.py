@@ -249,6 +249,8 @@ class JSBSimEnv(gym.Env, ABC):
                 self.sim_options.atmosphere = options["atmosphere"]
             if "rand_fdm" in options:
                 self.sim_options.rand_fdm = options["rand_fdm"]
+        else:
+            self.sim_options.seed = np.random.randint(0, 9999)
 
         print("self.sim_options: ", self.sim_options)
         if len(self.sim_options) != 0:

@@ -8,6 +8,7 @@ render_mode: "none"
 
 # JSBSim simulation env options - train
 train_sim_options:
+    seed: ???
     atmosphere:
         severity: null
         variable: True
@@ -23,6 +24,7 @@ train_sim_options:
 
 # JSBSim simulation env options - eval
 eval_sim_options:
+    seed: 10
     atmosphere:
         severity: null
         variable: True
