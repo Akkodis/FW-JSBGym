@@ -4,7 +4,7 @@ SAC:
     torch_deterministic: True
     cuda: True
     track: True
-    wandb_project_name: sac_ac
+    wandb_project_name: uav_rl
     wandb_entity: thesedavid
     capture_video: False
 
