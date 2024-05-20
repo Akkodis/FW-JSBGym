@@ -232,7 +232,7 @@ class ACBohnTask(JSBSimEnv):
         # return observation as a numpy array and add one channel dim for CNN policy
         if self.task_cfg.mdp.obs_is_matrix:
             obs: np.ndarray = np.expand_dims(np.array(self.observation_deque), axis=0).astype(np.float32)
-        else:
+        else: # else return observation as a vector for MLP policy
             obs: np.ndarray = np.array(self.observation_deque).squeeze().flatten().astype(np.float32)
         return obs
 
