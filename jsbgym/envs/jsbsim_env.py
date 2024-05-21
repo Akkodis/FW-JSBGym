@@ -363,8 +363,8 @@ class JSBSimEnv(gym.Env, ABC):
                     gust_startup_duration_sec = 0.25
                     gust_steady_duration_sec = 0.5
                     gust_end_duration_sec = 0.25
-                    # gust_frame = 3 # 1: Body frame, 2: Wind frame, 3: inertial NED frame
-                    gust_frame = 1 # 1: Body frame, 2: Wind frame, 3: inertial NED frame
+                    gust_frame = 3 # 1: Body frame, 2: Wind frame, 3: inertial NED frame
+                    # gust_frame = 1 # 1: Body frame, 2: Wind frame, 3: inertial NED frame
                     match severity:
                         case "off": # no gust
                             gust_mag_fps = 0
@@ -413,15 +413,15 @@ class JSBSimEnv(gym.Env, ABC):
 
 
     def gust_start(self):
-        # gust_dir = self.random_wind_direction()
-        # self.sim[prp.gust_dir_x_fps] = gust_dir[0]
-        # self.sim[prp.gust_dir_y_fps] = gust_dir[1]
-        # self.sim[prp.gust_dir_z_fps] = gust_dir[2]
-        # self.sim[prp.gust_start] = 1
-        self.sim[prp.gust_dir_x_fps] = 0
-        self.sim[prp.gust_dir_y_fps] = 1
-        self.sim[prp.gust_dir_z_fps] = 0
+        gust_dir = self.random_wind_direction()
+        self.sim[prp.gust_dir_x_fps] = gust_dir[0]
+        self.sim[prp.gust_dir_y_fps] = gust_dir[1]
+        self.sim[prp.gust_dir_z_fps] = gust_dir[2]
         self.sim[prp.gust_start] = 1
+        # self.sim[prp.gust_dir_x_fps] = 0
+        # self.sim[prp.gust_dir_y_fps] = 1
+        # self.sim[prp.gust_dir_z_fps] = 0
+        # self.sim[prp.gust_start] = 1
         print("Gust Start")
 
 
