@@ -8,7 +8,7 @@ import hydra
 from omegaconf import DictConfig
 from agents import ppo
 from jsbgym.trim.trim_point import TrimPoint
-
+from jsbgym.utils.train_utils import make_env
 
 @hydra.main(version_base=None, config_path="config", config_name="default")
 def eval(cfg: DictConfig):
@@ -29,7 +29,7 @@ def eval(cfg: DictConfig):
     cfg_task = cfg.env.task
 
     # env setup
-    env = ppo.make_env(cfg_ppo.env_id, cfg.env, cfg_sim.render_mode,
+    env = make_env(cfg_ppo.env_id, cfg.env, cfg_sim.render_mode,
                        'telemetry/telemetry.csv', eval=True)()
 
     # unwrapped_env = envs.envs[0].unwrapped
@@ -43,6 +43,10 @@ def eval(cfg: DictConfig):
 
     # load the reference sequence and initialize the evaluation arrays
     simple_ref_data = np.load(f'eval/refs/{cfg.ref_file}')
+
+    # load the jsbsim seeds to apply at each reset and set the first seed
+    jsbsim_seeds = np.load(f'eval/refs/jsbsim_seeds.npy')
+    cfg_sim.eval_sim_options.seed = float(jsbsim_seeds[0])
 
     # set default target values
     # roll_ref: float = np.deg2rad(58)
@@ -109,7 +113,7 @@ def eval(cfg: DictConfig):
                 print(f"Episode reward: {info['episode']['r']}")
                 print(f"******* {step}/{total_steps} *******")
                 # break
-                obs, last_info = env.reset()
+                obs, last_info = env.reset(options={"seed": float(jsbsim_seeds[ep_cnt])})
                 obs = torch.Tensor(obs).unsqueeze_(0).to(device)
                 ep_fcs_pos_hist = np.array(last_info["fcs_pos_hist"]) # get fcs pos history of the finished episode
                 eps_fcs_fluct.append(np.mean(np.abs(np.diff(ep_fcs_pos_hist, axis=0)), axis=0)) # get fcs fluctuation of the episode and append it to the list of all fcs fluctuations
