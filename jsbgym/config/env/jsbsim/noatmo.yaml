@@ -24,7 +24,7 @@ train_sim_options:
 
 # JSBSim simulation env options - eval
 eval_sim_options:
-    seed: 10
+    seed: ???
     atmosphere:
         severity: "off"
         variable: False
