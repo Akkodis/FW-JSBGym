@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
+import gymnasium as gym
 
 # ALGO LOGIC: initialize agent here:
 class SoftQNetwork_SAC(nn.Module):
@@ -26,16 +27,29 @@ LOG_STD_MIN = -5
 class Actor_SAC(nn.Module):
     def __init__(self, env):
         super().__init__()
-        self.fc1 = nn.Linear(np.array(env.single_observation_space.shape).prod(), 256)
+        # if the envs arg is a vector env, we need to get the single env action and obs space
+        # usually used in parallized envs for training
+        if isinstance(env, gym.vector.SyncVectorEnv):
+            self.single_action_space = env.single_action_space
+            self.single_obs_space = env.single_observation_space
+            self.action_space_high = env.action_space.high
+            self.action_space_low = env.action_space.low
+        else: # single env usually used for evaluation
+            self.single_action_space = env.action_space
+            self.single_obs_space = env.observation_space
+            self.action_space_high = np.expand_dims(env.action_space.high, axis=0)
+            self.action_space_low = np.expand_dims(env.action_space.low, axis=0)
+
+        self.fc1 = nn.Linear(np.array(self.single_obs_space.shape).prod(), 256)
         self.fc2 = nn.Linear(256, 256)
-        self.fc_mean = nn.Linear(256, np.prod(env.single_action_space.shape))
-        self.fc_logstd = nn.Linear(256, np.prod(env.single_action_space.shape))
+        self.fc_mean = nn.Linear(256, np.prod(self.single_action_space.shape))
+        self.fc_logstd = nn.Linear(256, np.prod(self.single_action_space.shape))
         # action rescaling
         self.register_buffer(
-            "action_scale", torch.tensor((env.action_space.high - env.action_space.low) / 2.0, dtype=torch.float32)
+            "action_scale", torch.tensor((self.action_space_high - self.action_space_low) / 2.0, dtype=torch.float32)
         )
         self.register_buffer(
-            "action_bias", torch.tensor((env.action_space.high + env.action_space.low) / 2.0, dtype=torch.float32)
+            "action_bias", torch.tensor((self.action_space_high + self.action_space_low) / 2.0, dtype=torch.float32)
         )
 
     def forward(self, x):

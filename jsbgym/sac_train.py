@@ -205,11 +205,19 @@ def train(cfg: DictConfig):
                 for _ in range(
                     cfg_sac.policy_frequency
                 ):  # compensate for the delay by doing 'actor_update_interval' instead of 1
+                    # SAC policy loss
                     pi, log_pi, _ = actor.get_action(data.observations)
                     qf1_pi = qf1(data.observations, pi)
                     qf2_pi = qf2(data.observations, pi)
                     min_qf_pi = torch.min(qf1_pi, qf2_pi)
-                    actor_loss = ((alpha * log_pi) - min_qf_pi).mean()
+
+                    # CAPS loss ts
+                    act_mean = actor.get_action(data.observations)[2]
+                    next_act_mean = actor.get_action(data.next_observations)[2]
+                    ts_loss = F.mse_loss(act_mean, next_act_mean)
+                    # ts_loss = torch.linalg.norm(act_mean - next_act_mean, ord=2)
+
+                    actor_loss = ((alpha * log_pi) - min_qf_pi).mean() + cfg_sac.ts_coef * ts_loss
 
                     actor_optimizer.zero_grad()
                     actor_loss.backward()
@@ -250,7 +258,7 @@ def train(cfg: DictConfig):
         pe_env = envs.envs[0]
         pe_env.eval = True
         telemetry_file = f"telemetry/{run_name}.csv"
-        pe_obs, _ = pe_env.reset(options={"render_mode": "log"}+cfg_sim.eval_sim_options)
+        pe_obs, _ = pe_env.reset(options={"render_mode": "log"} | OmegaConf.to_container(cfg_sim.eval_sim_options, resolve=True))
         pe_env.unwrapped.telemetry_setup(telemetry_file)
         roll_ref = np.deg2rad(30)
         pitch_ref = np.deg2rad(15)

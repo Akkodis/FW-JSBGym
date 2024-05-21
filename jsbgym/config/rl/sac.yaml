@@ -29,3 +29,6 @@ SAC:
     eval_freq: 37_500
 
     final_traj_plot: True # uploading a test traj telemetry of the agent at the end of training, in wandb
+
+    # CAPS loss
+    ts_coef: 0.05
