@@ -30,7 +30,7 @@ ref_seq: np.ndarray = np.array([
 
 # Run periodic evaluation during training
 def periodic_eval(cfg_mdp, cfg_sim, env, agent, device):
-    """Evaluate a TD-MPC2 agent."""
+    """Periodically evaluate a given agent."""
     print("*** Evaluating the agent ***")
     env.eval = True
     ep_rewards = []
