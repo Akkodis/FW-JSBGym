@@ -20,11 +20,6 @@ PPO:
     save_best: False # save the best model
     save_cp: False # save periodic checkpoints
 
-    # eval
-    model_path: null # path to a pretrained model for eval
-    ref_file: simple_easy.npy # path to a reference file for eval
-    res_file: test.csv # path to a results file for eval
-
     # CleanRL's PPO algo args
     total_timesteps: 750_000
     env_id: 'ACBohnNoVaIErr-v0'

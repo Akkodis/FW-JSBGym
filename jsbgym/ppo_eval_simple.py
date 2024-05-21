@@ -1,4 +1,3 @@
-import argparse
 import random
 import torch
 import numpy as np
@@ -37,13 +36,13 @@ def eval(cfg: DictConfig):
     trim_point = TrimPoint('x8')
 
     # loading the agent
-    train_dict = torch.load(cfg_ppo.model_path, map_location=device)
+    train_dict = torch.load(cfg.model_path, map_location=device)
     ppo_agent = ppo.Agent_PPO(env, cfg).to(device)
     ppo_agent.load_state_dict(train_dict['agent'])
     ppo_agent.eval()
 
     # load the reference sequence and initialize the evaluation arrays
-    simple_ref_data = np.load(f'eval/refs/{cfg_ppo.ref_file}')
+    simple_ref_data = np.load(f'eval/refs/{cfg.ref_file}')
 
     # set default target values
     # roll_ref: float = np.deg2rad(58)
@@ -67,7 +66,7 @@ def eval(cfg: DictConfig):
     if not os.path.exists("eval/outputs"):
         os.makedirs("eval/outputs")
 
-    eval_res_csv = f"eval/outputs/{cfg_ppo.res_file}.csv"
+    eval_res_csv = f"eval/outputs/{cfg.res_file}.csv"
     eval_fieldnames = ["severity", "roll_mse", "pitch_mse", "roll_rmse", 
                         "pitch_rmse", "roll_fcs_fluct", "pitch_fcs_fluct"]
 
