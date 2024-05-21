@@ -1,6 +1,5 @@
 import gymnasium as gym
 import numpy as np
-import random
 import os
 import csv
 from copy import deepcopy
@@ -155,6 +154,7 @@ class JSBSimEnv(gym.Env, ABC):
         # seed for randomizing fdm coefs
         self.fdm_seed = None
         self.fdm_rng: np.random.Generator = None
+        self.sim_rng: np.random.Generator = None
 
         # sets of fdm coefs to be randomized
         self.fdm_aero_1: Tuple[Property, ...] = (
@@ -233,6 +233,8 @@ class JSBSimEnv(gym.Env, ABC):
                                   aircraft_id=self.aircraft_id,
                                   viz_time_factor=self.viz_time_factor,
                                   enable_fgear_output=self.enable_fgear_output)
+        
+        print(f"options arg: {options}")
 
         # if reset arg "options" is provided, overwrite some of the sim_options fields
         if options is not None:
@@ -251,6 +253,9 @@ class JSBSimEnv(gym.Env, ABC):
                 self.sim_options.rand_fdm = options["rand_fdm"]
         else:
             self.sim_options.seed = np.random.randint(0, 9999)
+
+        # set the jsbsim env internal number generator
+        self.sim_rng = np.random.default_rng(int(self.sim_options.seed))
 
         print("self.sim_options: ", self.sim_options)
         if len(self.sim_options) != 0:
@@ -283,7 +288,8 @@ class JSBSimEnv(gym.Env, ABC):
         wind_vec = np.zeros(3)
         if len(atmo_options) != 0:
             if atmo_options.get("variable", False): # random wind and turbulence magnitudes
-                severity = random.choice(severity_options)
+                severity_id = self.sim_rng.choice(np.arange(0, 4))
+                severity = severity_options[severity_id]
                 print(f"Variable Severity")
             else: # fixed wind and turbulence magnitudes
                 severity = atmo_options.get("severity", None)
@@ -401,13 +407,13 @@ class JSBSimEnv(gym.Env, ABC):
 
     def random_wind_vector(self, windspeed_limit = 82.8):
         wind_dir = self.random_wind_direction()
-        wind_norm = np.random.uniform(0, windspeed_limit)
+        wind_norm = self.sim_rng.uniform(0, windspeed_limit)
         wind_vec = wind_dir * wind_norm
         return wind_vec
 
 
     def random_wind_direction(self):
-        rand_vec = np.random.uniform(-1, 1, size=(3))
+        rand_vec = self.sim_rng.uniform(-1, 1, size=(3))
         unit_vector = rand_vec / np.linalg.norm(rand_vec)
         return unit_vector
 
