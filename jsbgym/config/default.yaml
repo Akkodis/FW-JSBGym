@@ -6,5 +6,10 @@ defaults:
 
 # eval
 model_path: null # path to a pretrained model for eval
-ref_file: simple_easy.npy # path to a reference file for eval
-res_file: test.csv # path to a results file for eval
+ref_file: simple_easy # path to a reference file for eval
+res_file: test # path to a results file for eval
+
+
+# to be changed, env_id should be out of the agents (PID/RL) dict
+PID:
+    env_id: ACBohnNoVaIErr-v0

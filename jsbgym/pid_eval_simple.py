@@ -1,38 +1,16 @@
-import argparse
 import gymnasium as gym
 import numpy as np
 import torch
 import random
 import os
 import csv
+import hydra
 
+from omegaconf import DictConfig
 from agents.pid import PID
 from models import aerodynamics
 from trim.trim_point import TrimPoint
 
-
-def parse_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--config", type=str, default="config/ppo_caps_no_va.yaml",
-        help="the config file of the environnement")
-    parser.add_argument("--env-id", type=str, default="ACBohnNoVa-v0", 
-        help="the id of the environment")
-    parser.add_argument('--render-mode', type=str, 
-        choices=['none','plot_scale', 'plot', 'fgear', 'fgear_plot', 'fgear_plot_scale'],
-        help='render mode')
-    parser.add_argument("--tele-file", type=str, default="telemetry/pid_eval_telemetry.csv", 
-        help="telemetry csv file")
-    parser.add_argument('--ref-file', type=str, required=True,
-                        help='reference sequence file')
-    parser.add_argument('--severity', type=str, required=True,
-                        choices=['off', 'light', 'moderate', 'severe', 'all'],
-                        help='severity of the atmosphere (wind and turb)')
-    parser.add_argument('--out-file', type=str, default='eval_res_pid.csv', 
-                        help='save results to file')
-    parser.add_argument('--rand-fdm', action='store_true',
-                        help='randomize the fdm coefs at the start of each episode')
-    args = parser.parse_args()
-    return args
 
 
 def rearrange_obs(obs: np.ndarray) -> tuple[float, float, float, float, float]:
@@ -44,8 +22,8 @@ def rearrange_obs(obs: np.ndarray) -> tuple[float, float, float, float, float]:
     return Va, roll, pitch, roll_rate, pitch_rate
 
 
-if __name__ == '__main__':
-    args = parse_args()
+@hydra.main(version_base=None, config_path="config", config_name="default")
+def eval(cfg: DictConfig):
     np.set_printoptions(precision=3)
 
     # seeding
@@ -55,9 +33,15 @@ if __name__ == '__main__':
     torch.manual_seed(seed)
     torch.backends.cudnn.deterministic = True
 
-    env = gym.make(args.env_id, config_file=args.config, render_mode=args.render_mode,
-                    telemetry_file=args.tele_file)
+    # shorter cfg aliases
+    cfg_sim = cfg.env.jsbsim
+    cfg_task = cfg.env.task
+
+    env = gym.make(cfg.PID.env_id, cfg_env=cfg.env, render_mode=cfg_sim.render_mode,
+                    telemetry_file='telemetry/telemetry.csv')
     env = gym.wrappers.RecordEpisodeStatistics(env)
+
+    assert cfg_task.mdp.obs_is_matrix == False, "Only single observation history is supported, observation has to be 1D vector"
 
     # refSeq = RefSequence(num_refs=5)
     # refSeq.sample_steps()
@@ -93,7 +77,11 @@ if __name__ == '__main__':
                     )
 
     # load reference sequence and initialize evaluation arrays
-    simple_ref_data = np.load(args.ref_file)
+    simple_ref_data = np.load(f'eval/refs/{cfg.ref_file}.npy')
+
+    # load the jsbsim seeds to apply at each reset and set the first seed
+    jsbsim_seeds = np.load(f'eval/refs/jsbsim_seeds.npy')
+    cfg_sim.eval_sim_options.seed = float(jsbsim_seeds[0])
 
     # set default target values
     roll_ref: float = simple_ref_data[0, 0]
@@ -103,33 +91,15 @@ if __name__ == '__main__':
     # pitch_ref: float = np.deg2rad(28)
 
     # if no render mode, run the simulation for the whole reference sequence given by the .npy file
-    if args.render_mode == "none":
+    if cfg_sim.render_mode == "none":
         total_steps = 50_000
     else: # otherwise, run the simulation for 8000 steps
         total_steps = 8000
-    sim_options = {"seed": seed,
-                   "atmosphere": {
-                       "variable": False,
-                       "wind": {
-                           "enable": True,
-                           "rand_continuous": False
-                       },
-                       "turb": {
-                            "enable": True
-                       },
-                       "gust": {
-                            "enable": True
-                       },
-                    },
-                   "rand_fdm": {
-                       "enable": args.rand_fdm,
-                   }
-                  }
 
-    if args.severity == "all":
+    if cfg_sim.eval_sim_options.atmosphere.severity == "all":
         severity_range = ["off", "light", "moderate", "severe"]
     else:
-        severity_range = [args.severity]
+        severity_range = [cfg_sim.eval_sim_options.atmosphere.severity]
 
     all_mse = []
     all_rmse = []
@@ -138,7 +108,7 @@ if __name__ == '__main__':
     if not os.path.exists("eval/outputs"):
         os.makedirs("eval/outputs")
 
-    eval_res_csv = f"eval/outputs/{args.out_file}.csv"
+    eval_res_csv = f"eval/outputs/{cfg.res_file}.csv"
     eval_fieldnames = ["severity", "roll_mse", "pitch_mse", "roll_rmse", 
                         "pitch_rmse", "roll_fcs_fluct", "pitch_fcs_fluct"]
 
@@ -150,12 +120,12 @@ if __name__ == '__main__':
     print(f"min pitch: {np.min(simple_ref_data[:, 1])}, max pitch: {np.max(simple_ref_data[:, 1])}")
 
     for i, severity in enumerate(severity_range):
-        sim_options["atmosphere"]["severity"] = severity
+        cfg_sim.eval_sim_options.atmosphere.severity = severity
         e_obs = []
         eps_fcs_fluct = []
         print(f"********** PID METRICS {severity} **********")
-        obs, _ = env.reset(options=sim_options)
-        Va, roll, pitch, roll_rate, pitch_rate = rearrange_obs(obs)
+        obs, _ = env.reset(options=cfg_sim.eval_sim_options)
+        roll, pitch, Va, roll_rate, pitch_rate = obs[0], obs[1], obs[2], obs[3], obs[4]
         ep_cnt = 0 # episode counter
         ep_step = 0
         step = 0
@@ -172,8 +142,8 @@ if __name__ == '__main__':
 
             action = np.array([aileron_cmd, elevator_cmd])
             obs, reward, terminated, truncated, info = env.step(action)
-            e_obs.append(obs[0, -1])
-            Va, roll, pitch, roll_rate, pitch_rate = rearrange_obs(obs)
+            roll, pitch, Va, roll_rate, pitch_rate = obs[0], obs[1], obs[2], obs[3], obs[4]
+            e_obs.append(obs)
 
             done = np.logical_or(terminated, truncated)
             if done:
@@ -188,7 +158,7 @@ if __name__ == '__main__':
                 print(f"Episode reward: {info['episode']['r']}")
                 print(f"******* {step}/{total_steps} *******")
                 # break
-                obs, last_info = env.reset()
+                obs, last_info = env.reset(options={"seed": float(jsbsim_seeds[ep_cnt])})
                 ep_fcs_pos_hist = np.array(last_info["fcs_pos_hist"]) # get fcs pos history of the finished episode
                 eps_fcs_fluct.append(np.mean(np.abs(np.diff(ep_fcs_pos_hist, axis=0)), axis=0)) # get fcs fluctuation of the episode and append it to the list of all fcs fluctuations
                 pitch_pid.reset()
@@ -222,3 +192,7 @@ if __name__ == '__main__':
                                 "roll_fcs_fluct": fcs_fluct[0], "pitch_fcs_fluct": fcs_fluct[1]})
 
     env.close()
+
+
+if __name__ == '__main__':
+    eval()
