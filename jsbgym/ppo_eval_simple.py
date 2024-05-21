@@ -42,7 +42,7 @@ def eval(cfg: DictConfig):
     ppo_agent.eval()
 
     # load the reference sequence and initialize the evaluation arrays
-    simple_ref_data = np.load(f'eval/refs/{cfg.ref_file}')
+    simple_ref_data = np.load(f'eval/refs/{cfg.ref_file}.npy')
 
     # load the jsbsim seeds to apply at each reset and set the first seed
     jsbsim_seeds = np.load(f'eval/refs/jsbsim_seeds.npy')
