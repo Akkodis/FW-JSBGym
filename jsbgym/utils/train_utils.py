@@ -70,6 +70,15 @@ def periodic_eval(cfg_mdp, cfg_sim, env, agent, device):
 
     # computing the rmse of the roll and pitch angles across all episodes for each difficulty level
     obs_hist_size = cfg_mdp.obs_hist_size
+
+    if isinstance(agent, Actor_SAC):
+    # Check if dif_obs has an inhomogeneous shape and pad the dif_obs array with np.pi (if episode truncated fill the errors with np.pi)
+    # only happens with SAC
+    # (copilot generated snippet careful)
+        if len(set(np.shape(obs) for obs in dif_obs)) > 1:
+            max_shape = max(np.shape(obs) for obs in dif_obs)
+            dif_obs = [np.pad(obs, [(0, max_shape[0]-np.shape(obs)[0]), (0, max_shape[1]-np.shape(obs)[1])], constant_values=np.pi) for obs in dif_obs]
+
     dif_obs = np.array(dif_obs)
     if obs_hist_size == 1 and not cfg_mdp.obs_is_matrix:
         easy_roll_rmse = np.sqrt(np.mean(np.square(dif_obs[0, :, 6])))
