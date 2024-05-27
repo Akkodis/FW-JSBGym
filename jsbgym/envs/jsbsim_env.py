@@ -233,8 +233,8 @@ class JSBSimEnv(gym.Env, ABC):
                                   aircraft_id=self.aircraft_id,
                                   viz_time_factor=self.viz_time_factor,
                                   enable_fgear_output=self.enable_fgear_output)
-        
-        print(f"options arg: {options}")
+
+        # print(f"options arg: {options}")
 
         # if reset arg "options" is provided, overwrite some of the sim_options fields
         if options is not None:
@@ -303,7 +303,12 @@ class JSBSimEnv(gym.Env, ABC):
                         wspeed_d = wind_vec[2] * 0.9115 # kmh to fps
                     else: # if discrete wind parameters
                         wind_dir = self.random_wind_direction()
-                        match severity:
+                        # set wind severity to the selected severity by default
+                        wind_severity = severity
+                        # overwrite wind severity if it's defined in the wind options
+                        if atmo_options["wind"].get("wind_severity", False):
+                            wind_severity = atmo_options.wind.wind_severity
+                        match wind_severity:
                             case "off": # no wind
                                 wspeed_n= 0.0
                                 wspeed_e = 0.0
