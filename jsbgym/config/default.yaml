@@ -1,4 +1,5 @@
 defaults:
+    - _self_
     - rl: ppo
     - env/jsbsim: noatmo
     - env/task/mdp: my_bohn
