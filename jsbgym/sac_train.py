@@ -258,6 +258,7 @@ def train(cfg: DictConfig):
         pe_env = envs.envs[0]
         pe_env.eval = True
         telemetry_file = f"telemetry/{run_name}.csv"
+        cfg.env.jsbsim.eval_sim_options.seed = 10 # set a specific seed for the test traj plot
         pe_obs, _ = pe_env.reset(options={"render_mode": "log"} | OmegaConf.to_container(cfg_sim.eval_sim_options, resolve=True))
         pe_env.unwrapped.telemetry_setup(telemetry_file)
         roll_ref = np.deg2rad(30)
