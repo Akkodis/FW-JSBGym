@@ -49,9 +49,6 @@ def eval(cfg: DictConfig):
     jsbsim_seeds = np.load(f'eval/refs/jsbsim_seeds.npy')
     cfg_sim.eval_sim_options.seed = float(jsbsim_seeds[0])
 
-    # set default target values
-    # roll_ref: float = np.deg2rad(58)
-    # pitch_ref: float = np.deg2rad(28)
 
     # if no render mode, run the simulation for the whole reference sequence given by the .npy file
     if cfg_sim.render_mode == "none":
@@ -90,6 +87,10 @@ def eval(cfg: DictConfig):
         step = 0
         refs = simple_ref_data[ep_cnt]
         roll_ref, pitch_ref = refs[0], refs[1]
+        # set default target values
+        # roll_ref: float = np.deg2rad(-15)
+        # pitch_ref: float = np.deg2rad(-10)
+
         while step < total_steps:
             env.set_target_state(roll_ref, pitch_ref)
             action = sac_agent.get_action(torch.Tensor(obs).unsqueeze(0).to(device))[2].squeeze_().detach().cpu().numpy()
