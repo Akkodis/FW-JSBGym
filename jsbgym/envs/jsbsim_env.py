@@ -428,6 +428,8 @@ class JSBSimEnv(gym.Env, ABC):
         self.sim[prp.gust_dir_x_fps] = gust_dir[0]
         self.sim[prp.gust_dir_y_fps] = gust_dir[1]
         self.sim[prp.gust_dir_z_fps] = gust_dir[2]
+        # print(f"Gust Start, direction: x: {gust_dir[0]}, y: {gust_dir[1]}, z: {gust_dir[2]}")
+        # print(f"Gust Start, direction: x: {self.sim[prp.gust_dir_x_fps]}, y: {self.sim[prp.gust_dir_y_fps]}, z: {self.sim[prp.gust_dir_z_fps]}")
         self.sim[prp.gust_start] = 1
         # self.sim[prp.gust_dir_x_fps] = 0
         # self.sim[prp.gust_dir_y_fps] = 1
