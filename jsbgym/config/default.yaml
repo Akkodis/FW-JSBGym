@@ -2,7 +2,7 @@ defaults:
     - _self_
     - rl: ppo
     - env/jsbsim: noatmo
-    - env/task/mdp: my_bohn
+    - env/task/mdp: no_hist_all
     - env/task/reward: my_bohn
 
 # eval
