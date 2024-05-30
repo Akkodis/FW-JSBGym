@@ -63,7 +63,6 @@ def eval(cfg: DictConfig):
     else:
         severity_range = [cfg_sim.eval_sim_options.atmosphere.severity]
 
-    all_mse = []
     all_rmse = []
     all_fcs_fluct = []
 
@@ -71,8 +70,9 @@ def eval(cfg: DictConfig):
         os.makedirs("eval/outputs")
 
     eval_res_csv = f"eval/outputs/{cfg.res_file}.csv"
-    eval_fieldnames = ["severity", "roll_mse", "pitch_mse", "roll_rmse", 
-                        "pitch_rmse", "roll_fcs_fluct", "pitch_fcs_fluct"]
+    eval_fieldnames = ["severity", "roll_rmse", "pitch_rmse",
+                        "roll_fcs_fluct", "pitch_fcs_fluct",
+                        "avg_rmse", "avg_fcs_fluct"]
 
     with open(eval_res_csv, "w") as csvfile:
         csv_writer = csv.DictWriter(csvfile, fieldnames=eval_fieldnames)
@@ -127,23 +127,21 @@ def eval(cfg: DictConfig):
         e_obs = np.array(e_obs)
         print(f"e_obs shape: {e_obs.shape}")
         print(f"eps_fcs_fluct shape: {np.array(eps_fcs_fluct).shape}")
-        roll_mse = np.mean(np.square(e_obs[:, 6]))
-        pitch_mse = np.mean(np.square(e_obs[:, 7]))
-        all_mse.append([roll_mse, pitch_mse])
-        roll_rmse = np.sqrt(roll_mse)
-        pitch_rmse = np.sqrt(pitch_mse)
+        roll_rmse = np.sqrt(np.mean(np.square(e_obs[:, 6])))
+        pitch_rmse = np.sqrt(np.mean(np.square(e_obs[:, 7])))
         all_rmse.append([roll_rmse, pitch_rmse])
 
-    for mse, rmse, fcs_fluct, severity in zip(all_mse, all_rmse, all_fcs_fluct, severity_range):
+    for rmse, fcs_fluct, severity in zip(all_rmse, all_fcs_fluct, severity_range):
         print("\nSeverity: ", severity)
-        print(f"  Roll MSE: {mse[0]:.4f}\n  Pitch MSE: {mse[1]:.4f}")
         print(f"  Roll RMSE: {rmse[0]:.4f}\n  Pitch RMSE: {rmse[1]:.4f}")
         print(f"  Roll fluctuation: {fcs_fluct[0]:.4f}\n  Pitch fluctuation: {fcs_fluct[1]:.4f}")
+        print(f"  Average RMSE: {np.mean(rmse):.4f}\n  Average fluctuation: {np.mean(fcs_fluct):.4f}")
         with open(eval_res_csv, "a") as csvfile:
             csv_writer = csv.DictWriter(csvfile, fieldnames=eval_fieldnames)
-            csv_writer.writerow({"severity": severity, "roll_mse": mse[0], "pitch_mse": mse[1], 
+            csv_writer.writerow({"severity": severity, 
                                 "roll_rmse": rmse[0], "pitch_rmse": rmse[1], 
-                                "roll_fcs_fluct": fcs_fluct[0], "pitch_fcs_fluct": fcs_fluct[1]})
+                                "roll_fcs_fluct": fcs_fluct[0], "pitch_fcs_fluct": fcs_fluct[1],
+                                "avg_rmse": np.mean(rmse), "avg_fcs_fluct": np.mean(fcs_fluct)})
 
     env.close()
 
