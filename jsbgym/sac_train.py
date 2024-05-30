@@ -215,7 +215,6 @@ def train(cfg: DictConfig):
                     act_mean = actor.get_action(data.observations)[2]
                     next_act_mean = actor.get_action(data.next_observations)[2]
                     ts_loss = F.mse_loss(act_mean, next_act_mean)
-                    # ts_loss = torch.linalg.norm(act_mean - next_act_mean, ord=2)
 
                     actor_loss = ((alpha * log_pi) - min_qf_pi).mean() + cfg_sac.ts_coef * ts_loss
 

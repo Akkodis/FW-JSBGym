@@ -19,6 +19,7 @@ import pandas as pd
 import numpy as np
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import torch.optim as optim
 from torch.distributions.normal import Normal
 from torch.utils.tensorboard import SummaryWriter
@@ -336,7 +337,7 @@ def train(cfg: DictConfig):
                 ts_loss = torch.Tensor([0.0]).to(device)
                 b_cmd = torch.zeros((cfg_ppo.minibatch_size, 2)).to(device)
                 if cfg_ppo.env_id not in ["ACNoVaPIDRLAdd-v0", "ACNoVaPIDRL-v0"]:
-                    ts_loss = torch.linalg.norm(act_means - next_act_means, ord=2)
+                    ts_loss = F.mse_loss(act_means, next_act_means)
                 else:
                     # get all the relevant variables for computing the PID output given the PIDRL action at time t
                     roll_gains = act_means[:, 0:3]
