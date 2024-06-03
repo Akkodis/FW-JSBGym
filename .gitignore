@@ -4,7 +4,7 @@ __pycache__/
 telemetry/
 wandb/
 *.egg-info/
-outputs/
+jsbgym/outputs/
 JSBoutX8.csv
 a.py
 
@@ -22,3 +22,4 @@ jsbgym/models/train/*
 !jsbgym/fdm_descriptions/engine/eng_io320.xml
 !jsbgym/fdm_descriptions/engine/direct.xml
 !jsbgym/eval/outputs/saves/
+!jsbgym/eval/outputs/icinco/
