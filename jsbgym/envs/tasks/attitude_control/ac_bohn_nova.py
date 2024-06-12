@@ -118,9 +118,9 @@ class ACBohnNoVaTask(ACBohnTask):
             Set the target state of the aircraft, i.e. the target state variables defined in the `target_state_vars` tuple.
         """
         if target_roll_rad != self.prev_target_roll:
-            print("Target roll: ", target_roll_rad)
+            print("Target roll: ", np.rad2deg(target_roll_rad))
         if target_pitch_rad != self.prev_target_pitch:
-            print("Target pitch: ", target_pitch_rad)
+            print("Target pitch: ", np.rad2deg(target_pitch_rad))
 
         # set target state sim properties
         self.sim[prp.target_roll_rad] = target_roll_rad
@@ -263,10 +263,10 @@ class ACBohnNoVaIErrTask(ACBohnNoVaTask):
         # if there's a change in target state, reset integral errors
         if target_roll_rad != self.prev_target_roll:
             self.sim[prp.roll_integ_err] = 0.0
-            print("Target roll: ", target_roll_rad)
+            print("Target roll: ", np.rad2deg(target_roll_rad))
         if target_pitch_rad != self.prev_target_pitch:
             self.sim[prp.pitch_integ_err] = 0.0
-            print("Target pitch: ", target_pitch_rad)
+            print("Target pitch: ", np.rad2deg(target_pitch_rad))
 
         self.sim[prp.target_roll_rad] = target_roll_rad
         self.sim[prp.target_pitch_rad] = target_pitch_rad
