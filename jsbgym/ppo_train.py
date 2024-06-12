@@ -151,8 +151,8 @@ def train(cfg: DictConfig):
         refSeqs[_].sample_steps()
 
     # initial roll and pitch references
-    roll_limit = np.deg2rad(60)
-    pitch_limit = np.deg2rad(30)
+    roll_limit = np.deg2rad(cfg.roll_limit)
+    pitch_limit = np.deg2rad(cfg.pitch_limit)
     roll_ref = np.random.uniform(-roll_limit, roll_limit)
     pitch_ref = np.random.uniform(-pitch_limit, pitch_limit)
     roll_refs = np.ones(cfg_ppo.num_envs) * roll_ref
@@ -241,7 +241,9 @@ def train(cfg: DictConfig):
                             roll_refs[env_i] = np.random.beta(a, b) * roll_limit*2 - roll_limit
                             pitch_refs[env_i] = np.random.beta(a, b) * pitch_limit*2 - pitch_limit
 
-                    print(f"Env Done, new refs : roll = {roll_refs[env_i]}, pitch = {pitch_refs[env_i]} sampled for env {env_i}")
+                    print(f"Env Done, new refs : \
+                          roll = {np.rad2deg(roll_refs[env_i])}, \
+                          pitch = {np.rad2deg(pitch_refs[env_i])} sampled for env {env_i}")
                 else:
                     obs_t1[step][env_i] = next_obs[env_i]
 

@@ -116,8 +116,8 @@ def train(cfg: DictConfig):
     )
 
     # initial roll and pitch references
-    roll_limit = np.deg2rad(60)
-    pitch_limit = np.deg2rad(30)
+    roll_limit = np.deg2rad(cfg.roll_limit)
+    pitch_limit = np.deg2rad(cfg.pitch_limit)
     roll_ref = np.random.uniform(-roll_limit, roll_limit)
     pitch_ref = np.random.uniform(-pitch_limit, pitch_limit)
     global_step = 0
