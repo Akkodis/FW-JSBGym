@@ -24,11 +24,23 @@ def animate(i, axis, args) -> None:
     pitch = df.get(prp.pitch_rad.get_legal_name(), default=nan_arr)
     heading = df.get(prp.heading_rad.get_legal_name(), default=nan_arr)
 
+    roll_dec = df.get("dec_" + prp.roll_rad.get_legal_name(), default=nan_arr)
+    pitch_dec = df.get("dec_" + prp.pitch_rad.get_legal_name(), default=nan_arr)
+    heading_dec = df.get("dec_" + prp.heading_rad.get_legal_name(), default=nan_arr)
+    roll_im_dec = df.get("im_dec_" + prp.roll_rad.get_legal_name(), default=nan_arr)
+    pitch_im_dec = df.get("im_dec_" + prp.pitch_rad.get_legal_name(), default=nan_arr)
+    heading_im_dec = df.get("im_dec_" + prp.heading_rad.get_legal_name(), default=nan_arr)
+
     roll_rate = df.get(prp.p_radps.get_legal_name(), default=nan_arr)
     pitch_rate = df.get(prp.q_radps.get_legal_name(), default=nan_arr)
     yaw_rate = df.get(prp.r_radps.get_legal_name(), default=nan_arr)
 
+    roll_rate_dec = df.get("dec_" + prp.p_radps.get_legal_name(), default=nan_arr)
+    pitch_rate_dec = df.get("dec_" + prp.q_radps.get_legal_name(), default=nan_arr)
+    yaw_rate_dec = df.get("dec_" + prp.r_radps.get_legal_name(), default=nan_arr)
+
     airspeed = df.get(prp.airspeed_kph.get_legal_name(), default=nan_arr)
+    airspeed_dec = df.get("dec_" + prp.airspeed_kph.get_legal_name(), default=nan_arr)
 
     windspeed_n_kph = df.get(prp.total_windspeed_north_kph.get_legal_name(), default=nan_arr)
     windspeed_e_kph = df.get(prp.total_windspeed_east_kph.get_legal_name(), default=nan_arr)
@@ -55,6 +67,13 @@ def animate(i, axis, args) -> None:
 
     roll_integ_err = df.get(prp.roll_integ_err.get_legal_name(), default=nan_arr)
     pitch_integ_err = df.get(prp.pitch_integ_err.get_legal_name(), default=nan_arr)
+
+    alpha = df.get(prp.alpha_rad.get_legal_name(), default=nan_arr)
+    beta = df.get(prp.beta_rad.get_legal_name(), default=nan_arr)
+    alpha_dec = df.get("dec_" + prp.alpha_rad.get_legal_name(), default=nan_arr)
+    beta_dec = df.get("dec_" + prp.beta_rad.get_legal_name(), default=nan_arr)
+    alpha_im_dec = df.get("im_dec_" + prp.alpha_rad.get_legal_name(), default=nan_arr)
+    beta_im_dec = df.get("im_dec_" + prp.beta_rad.get_legal_name(), default=nan_arr)
 
     r_total = df.get(prp.reward_total.get_legal_name(), default=nan_arr)
     r_roll = df.get(prp.reward_roll.get_legal_name(), default=nan_arr)
@@ -98,6 +117,7 @@ def animate(i, axis, args) -> None:
 
         if np.isnan(np.sum(kp_pitch)): # if we not are plottting PIDRL gains plot heading data
             axis[0, 1].plot(tsteps, heading, label='course' if not np.isnan(np.sum(heading)) else '')
+            axis[0, 1].plot(tsteps, heading_dec, label='course_dec' if not np.isnan(np.sum(heading_dec)) else '')
             axis[0, 1].set_title("Heading (psi) control [rad]")
             # axis[0, 1].set_xlabel("timestep")
             axis[0, 1].set_ylabel("heading [rad]")
@@ -115,6 +135,7 @@ def animate(i, axis, args) -> None:
 
         axis[0, 2].plot(tsteps, airspeed, label='airspeed' if not np.isnan(np.sum(airspeed)) else '')
         axis[0, 2].plot(tsteps, airspeed_ref, color='r', linestyle='--', label='airspeed_ref' if not np.isnan(np.sum(airspeed_ref)) else '')
+        axis[0, 2].plot(tsteps, airspeed_dec, color='g', label='airspeed_dec' if not np.isnan(np.sum(airspeed_dec)) else '')
         axis[0, 2].set_title('airspeed control')
         # axis[0, 2].set_xlabel("timestep")
         axis[0, 2].set_ylabel("airspeed [km/h]")
@@ -133,6 +154,8 @@ def animate(i, axis, args) -> None:
         if df.index.size > 1:
             axis[1, 1].plot(tsteps, pitch, label='pitch' if not np.isnan(np.sum(pitch)) else '')
             axis[1, 1].plot(tsteps, pitch_ref, color='r', linestyle='--', label='pitch_ref' if not np.isnan(np.sum(pitch_ref)) else '')
+            axis[1, 1].plot(tsteps, pitch_dec, color='g', label='pitch_dec' if not np.isnan(np.sum(pitch_dec)) else '')
+            axis[1, 1].plot(tsteps, pitch_im_dec, color='b', label='pitch_im_dec' if not np.isnan(np.sum(pitch_im_dec)) else '')
             axis[1, 1].fill_between(tsteps, pitch_ref - np.deg2rad(5), pitch_ref + np.deg2rad(5), color='r', alpha=0.2)
             axis[1, 1].set_title('pitch control')
             # axis[1, 1].set_xlabel("timestep")
@@ -142,6 +165,8 @@ def animate(i, axis, args) -> None:
 
             axis[1, 0].plot(tsteps, roll, label='roll' if not np.isnan(np.sum(roll)) else '')
             axis[1, 0].plot(tsteps, roll_ref, color='r', linestyle='--', label='roll_ref' if not np.isnan(np.sum(roll_ref)) else '')
+            axis[1, 0].plot(tsteps, roll_dec, color='g', label='roll_dec' if not np.isnan(np.sum(roll_dec)) else '')
+            axis[1, 0].plot(tsteps, roll_im_dec, color='b', label='roll_im_dec' if not np.isnan(np.sum(roll_im_dec)) else '')
             axis[1, 0].fill_between(tsteps, roll_ref - np.deg2rad(5), roll_ref + np.deg2rad(5), color='r', alpha=0.2)
             axis[1, 0].set_title('roll control')
             # axis[1, 0].set_xlabel("timestep")
@@ -174,7 +199,7 @@ def animate(i, axis, args) -> None:
         axis[2, 0].plot(tsteps, throttle_pos, label='throttle_pos' if not np.isnan(np.sum(throttle_pos)) else '')
 
         axis[2, 0].set_title('commands')
-        # axis[2, 0].set_xlabel("timestep")
+        axis[2, 0].set_xlabel("timestep")
         axis[2, 0].set_ylabel("commands [-]")
         axis[2, 0].legend()
         axis[2, 0].grid()
@@ -182,20 +207,35 @@ def animate(i, axis, args) -> None:
         axis[2, 1].plot(tsteps, roll_rate, label='roll_rate' if not np.isnan(np.sum(roll_rate)) else '')
         axis[2, 1].plot(tsteps, pitch_rate, label='pitch_rate' if not np.isnan(np.sum(pitch_rate)) else '')
         axis[2, 1].plot(tsteps, yaw_rate, label='yaw_rate' if not np.isnan(np.sum(yaw_rate)) else '')
+        axis[2, 1].plot(tsteps, roll_rate_dec, label='roll_rate_dec' if not np.isnan(np.sum(roll_rate_dec)) else '')
+        axis[2, 1].plot(tsteps, pitch_rate_dec, label='pitch_rate_dec' if not np.isnan(np.sum(pitch_rate_dec)) else '')
+        axis[2, 1].plot(tsteps, yaw_rate_dec, label='yaw_rate_dec' if not np.isnan(np.sum(yaw_rate_dec)) else '')
         axis[2, 1].set_title('angular velocities')
-        # axis[2, 1].set_xlabel("timestep")
+        axis[2, 1].set_xlabel("timestep")
         axis[2, 1].set_ylabel("angular velocities [rad/s]")
         axis[2, 1].legend()
         axis[2, 1].grid()
 
-        axis[2, 2].plot(tsteps, r_total, label='r_total' if not np.isnan(np.sum(r_total)) else '')
-        axis[2, 2].plot(tsteps, r_roll, label='r_roll' if not np.isnan(np.sum(r_roll)) else '')
-        axis[2, 2].plot(tsteps, r_pitch, label='r_pitch' if not np.isnan(np.sum(r_pitch)) else '')
-        axis[2, 2].plot(tsteps, r_airspeed, label='r_airspeed' if not np.isnan(np.sum(r_airspeed)) else '')
-        axis[2, 2].plot(tsteps, r_actvar, label='r_actvar' if not np.isnan(np.sum(r_actvar)) else '')
-        axis[2, 2].set_title('rewards')
+        axis[2, 2].plot(tsteps, alpha, label='alpha' if not np.isnan(np.sum(alpha)) else '')
+        axis[2, 2].plot(tsteps, alpha_dec, label='alpha_dec' if not np.isnan(np.sum(alpha_dec)) else '')
+        axis[2, 2].plot(tsteps, beta, label='beta' if not np.isnan(np.sum(beta)) else '')
+        axis[2, 2].plot(tsteps, beta_dec, label='beta_dec' if not np.isnan(np.sum(beta_dec)) else '')
+        axis[2, 2].plot(tsteps, alpha_im_dec, label='alpha_im_dec' if not np.isnan(np.sum(alpha_im_dec)) else '')
+        axis[2, 2].plot(tsteps, beta_im_dec, label='beta_im_dec' if not np.isnan(np.sum(beta_im_dec)) else '')
+        axis[2, 2].set_xlabel("timestep")
+        axis[2, 2].set_title('AoA and Sideslip')
         axis[2, 2].legend()
         axis[2, 2].grid()
+
+        # axis[2, 2].plot(tsteps, r_total, label='r_total' if not np.isnan(np.sum(r_total)) else '')
+        # axis[2, 2].plot(tsteps, r_roll, label='r_roll' if not np.isnan(np.sum(r_roll)) else '')
+        # axis[2, 2].plot(tsteps, r_pitch, label='r_pitch' if not np.isnan(np.sum(r_pitch)) else '')
+        # axis[2, 2].plot(tsteps, r_airspeed, label='r_airspeed' if not np.isnan(np.sum(r_airspeed)) else '')
+        # axis[2, 2].plot(tsteps, r_actvar, label='r_actvar' if not np.isnan(np.sum(r_actvar)) else '')
+        # axis[2, 2].set_xlabel("timestep")
+        # axis[2, 2].set_title('rewards')
+        # axis[2, 2].legend()
+        # axis[2, 2].grid()
 
 
 # parse command line arguments
