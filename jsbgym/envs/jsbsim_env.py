@@ -43,7 +43,7 @@ class JSBSimEnv(gym.Env, ABC):
             - `errors`: namedtuple containing the errors of the environment, initialized and updated from task child classes
             - `reward`: the reward of the environment, updated from task child classes
     """
-    metadata: Dict[str, str] = {"render_modes": ["none", "log", "plot", "plot_scale", "fgear", "fgear_plot", "fgear_plot_scale"]}
+    metadata: Dict[str, str] = {"render_modes": ["none", "ext_log", "ext_log_plot", "log", "plot", "plot_scale", "fgear", "fgear_plot", "fgear_plot_scale"]}
 
     def __init__(self,
                  cfg_env: DictConfig,
@@ -55,7 +55,8 @@ class JSBSimEnv(gym.Env, ABC):
         Gymnasium JSBSim environment for reinforcement learning.
 
         Args: 
-            - `render_mode`: the mode to render the environment, can be one of the following: `["none", "plot", "plot_scale", "fgear", "fgear_plot", "fgear_plot_scale"]`
+            - `render_mode`: the mode to render the environment, can be one of the following: `["none", "ext_log", "plot", "plot_scale", "fgear", "fgear_plot", "fgear_plot_scale"]`
+              "ext_log" is for calling telemetry_logging() outside of the env if needed.
             - `fdm_frequency`: the frequency of the flight dynamics model (JSBSim) simulation
             - `agent_frequency`: the frequency of the agent (controller) at which it interacts with the environment
             - `episode_length_s`: the duration of the episode in seconds
@@ -118,6 +119,7 @@ class JSBSimEnv(gym.Env, ABC):
         self.common_telemetry_prps: Tuple[BoundedProperty, ...] = (
             prp.lat_gc_deg, prp.lng_gc_deg, prp.altitude_sl_m, # position
             prp.roll_rad, prp.pitch_rad, prp.heading_rad, # attitude
+            prp.alpha_rad, prp.beta_rad, # angle of attack and sideslip
             prp.p_radps, prp.q_radps, prp.r_radps, # angular rates and airspeed
             prp.aileron_cmd, prp.elevator_cmd, prp.throttle_cmd, # control surface commands
             prp.aileron_combined_pos_rad, prp.elevator_pos_rad, prp.throttle_pos, # control surface positions
@@ -502,6 +504,9 @@ class JSBSimEnv(gym.Env, ABC):
         if self.render_mode == 'plot':
             if not self.plot_viz:
                 self.plot_viz = PlotVisualizer(False, self.telemetry_file)
+        if self.render_mode == 'ext_log_plot':
+            if not self.plot_viz:
+                self.plot_viz = PlotVisualizer(False, self.telemetry_file)
         if self.render_mode == 'fgear':
             if not self.fgear_viz:
                 self.fgear_viz = FlightGearVisualizer(self.sim)
@@ -573,18 +578,27 @@ class JSBSimEnv(gym.Env, ABC):
         raise NotImplementedError
 
 
-    def telemetry_logging(self) -> None:
+    def telemetry_logging(self, additional_tele:dict[str, float]={}) -> dict[str, float]:
         """
             Log flight data to telemetry csv.
         """
-        if self.render_mode in self.metadata["render_modes"][1:]:
-            # write flight data to csv
-            with open(self.telemetry_file, 'a') as csv_file:
-                csv_writer: csv.DictWriter = csv.DictWriter(csv_file, fieldnames=self.telemetry_fieldnames)
-                info: dict[str, float] = {}
-                for fieldname, prop in zip(self.telemetry_fieldnames, self.telemetry_prps):
-                    info[fieldname] = self.sim[prop]
-                csv_writer.writerow(info)
+        telemetry: dict[str, float] = {}
+
+        # update telemetry field names with additional telemetry field names
+        if len(self.telemetry_fieldnames) < len(self.telemetry_prps) + len(additional_tele.keys()):
+            self.telemetry_fieldnames += tuple(additional_tele.keys())
+            with open(self.telemetry_file, 'w') as csvfile:
+                csv_writer = csv.DictWriter(csvfile, fieldnames=self.telemetry_fieldnames)
+                csv_writer.writeheader()
+
+        # write flight data to csv
+        with open(self.telemetry_file, 'a') as csv_file:
+            csv_writer: csv.DictWriter = csv.DictWriter(csv_file, fieldnames=self.telemetry_fieldnames)
+            for fieldname, prop in zip(self.telemetry_fieldnames, self.telemetry_prps):
+                telemetry[fieldname] = self.sim[prop]
+            telemetry.update(additional_tele)
+            csv_writer.writerow(telemetry)
+        return telemetry
 
 
     def telemetry_setup(self, telemetry_file: str) -> None:

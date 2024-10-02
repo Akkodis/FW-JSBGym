@@ -162,7 +162,8 @@ class ACBohnTask(JSBSimEnv):
         self.prev_ep_oob = out_of_bounds # save the last episode oob status (True: it did oob, False: it didn't)
 
         # write telemetry to a csv file every agent step
-        self.telemetry_logging()
+        if self.render_mode in self.metadata["render_modes"][3:]:
+            self.telemetry_logging()
 
         # info dict for debugging and misc infos
         info: Dict = {"steps_left": self.sim[self.steps_left],
