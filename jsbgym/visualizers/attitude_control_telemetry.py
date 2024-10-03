@@ -41,6 +41,7 @@ def animate(i, axis, args) -> None:
 
     airspeed = df.get(prp.airspeed_kph.get_legal_name(), default=nan_arr)
     airspeed_dec = df.get("dec_" + prp.airspeed_kph.get_legal_name(), default=nan_arr)
+    airspeed_im_dec = df.get("im_dec_" + prp.airspeed_kph.get_legal_name(), default=nan_arr)
 
     windspeed_n_kph = df.get(prp.total_windspeed_north_kph.get_legal_name(), default=nan_arr)
     windspeed_e_kph = df.get(prp.total_windspeed_east_kph.get_legal_name(), default=nan_arr)
@@ -136,6 +137,7 @@ def animate(i, axis, args) -> None:
         axis[0, 2].plot(tsteps, airspeed, label='airspeed' if not np.isnan(np.sum(airspeed)) else '')
         axis[0, 2].plot(tsteps, airspeed_ref, color='r', linestyle='--', label='airspeed_ref' if not np.isnan(np.sum(airspeed_ref)) else '')
         axis[0, 2].plot(tsteps, airspeed_dec, color='g', label='airspeed_dec' if not np.isnan(np.sum(airspeed_dec)) else '')
+        axis[0, 2].plot(tsteps, airspeed_im_dec, color='b', label='airspeed_im_dec' if not np.isnan(np.sum(airspeed_im_dec)) else '')
         axis[0, 2].set_title('airspeed control')
         # axis[0, 2].set_xlabel("timestep")
         axis[0, 2].set_ylabel("airspeed [km/h]")
