@@ -14,5 +14,5 @@ pip install -e .
 ```
 
 ## Useful files
-jsbgym/envs/ contains the gymnasium envs and tasks.
-jsbgym/ppo_train, jsbgym/td3_train.py are the training scripts.
+fw_jsbgym/envs/ contains the gymnasium envs and tasks.
+fw_jsbgym/ppo_train, fw_jsbgym/td3_train.py are the training scripts.
