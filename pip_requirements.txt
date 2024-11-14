@@ -10,7 +10,7 @@ backports.functools-lru-cache==1.6.5
 blinker==1.6.2
 brotlipy==0.7.0
 cachetools==5.3.1
-certifi==2023.11.17
+certifi==2024.7.4
 cffi==1.15.1
 charset-normalizer==3.2.0
 click==8.1.7
