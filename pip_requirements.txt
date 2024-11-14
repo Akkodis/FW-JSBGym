@@ -127,7 +127,7 @@ tzdata==2023.3
 urllib3==1.26.15
 wandb==0.15.12
 wcwidth==0.2.6
-Werkzeug==2.3.7
+Werkzeug==3.0.6
 wheel==0.41.2
 yarl==1.9.2
 zipp==3.16.2
