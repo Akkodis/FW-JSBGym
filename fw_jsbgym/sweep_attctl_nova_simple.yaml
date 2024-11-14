@@ -1,0 +1,49 @@
+# The program to run
+program: ppo_train.py
+
+# Method can be grid, random or bayes
+method: random
+
+# Projet this sweep is part of
+project: ppo_uav_sweep
+entity: thesedavid
+
+# Metric to optimize
+metric:
+  name: total_mse
+  goal: minimize
+
+# Static parameters to pass to the program
+parameters:
+  env-id:
+    value: ACBohnNoVaIErr-v0
+  num-envs:
+    value: 6
+  total-timesteps:
+    value: 1e6
+  exp-name:
+    value: "caps_sweep_mse_ie2"
+  track:
+    value: True
+  turb:
+    value: False
+  wind:
+    value: False
+  rand-targets:
+    value: True
+  wind-rand-cont:
+    value: False
+
+# Parameter space to sweep over
+  ts-coef:
+    distribution: uniform
+    min: 0.0
+    max: 1.2e-2
+  ss-coef:
+    distribution: uniform
+    min: 0.0
+    max: 1e-2
+  pa-coef:
+    distribution: uniform
+    min: 0.0
+    max: 2.7e-5

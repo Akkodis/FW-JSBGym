@@ -1,23 +1,25 @@
 .idea/
-# .vscode/
+.vscode/
 __pycache__/
 telemetry/
 wandb/
 *.egg-info/
+fw_jsbgym/outputs/
 JSBoutX8.csv
 a.py
 
 # ignore those folders
-jsbgym/fdm_descriptions/aircraft/*
-jsbgym/fdm_descriptions/engine/*
-jsbgym/eval/outputs/*.csv
+fw_jsbgym/fdm_descriptions/aircraft/*
+fw_jsbgym/fdm_descriptions/engine/*
+fw_jsbgym/eval/outputs/*.csv
 runs/
-jsbgym/models/train/*
+fw_jsbgym/models/train/*
 
 # but except those folders and those files
-!jsbgym/fdm_descriptions/aircraft/x8/
-!jsbgym/fdm_descriptions/aircraft/c172p/
-!jsbgym/fdm_descriptions/engine/electric800W.xml
-!jsbgym/fdm_descriptions/engine/eng_io320.xml
-!jsbgym/fdm_descriptions/engine/direct.xml
-!jsbgym/eval/outputs/saves/
+!fw_jsbgym/fdm_descriptions/aircraft/x8/
+!fw_jsbgym/fdm_descriptions/aircraft/c172p/
+!fw_jsbgym/fdm_descriptions/engine/electric800W.xml
+!fw_jsbgym/fdm_descriptions/engine/eng_io320.xml
+!fw_jsbgym/fdm_descriptions/engine/direct.xml
+!fw_jsbgym/eval/outputs/saves/
+!fw_jsbgym/eval/outputs/icinco/
