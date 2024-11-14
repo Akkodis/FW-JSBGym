@@ -130,4 +130,4 @@ wcwidth==0.2.6
 Werkzeug==2.3.7
 wheel==0.41.2
 yarl==1.9.2
-zipp==3.16.2
+zipp==3.19.1
