@@ -187,7 +187,7 @@ pyu2f==0.1.5
 rsa==4.9
 yarl==1.9.4
 async-timeout==4.0.3
-cryptography==43.0.0
+cryptography==43.0.1
 Markdown==3.6
 aiohttp==3.10.5
 oauthlib==3.2.2
