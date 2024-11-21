@@ -213,5 +213,5 @@ platformdirs==4.2.2
 tomli==2.0.1
 typeguard==4.3.0
 typing_extensions==4.12.2
-wheel==0.43.0
+wheel==0.38.1
 zipp==3.19.2
