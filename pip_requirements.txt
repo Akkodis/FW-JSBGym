@@ -75,7 +75,7 @@ proglog==0.1.10
 pandas==2.1.4
 pandas==2.2.2
 Werkzeug==3.0.1
-Werkzeug==3.0.4
+Werkzeug==3.0.6
 fonttools==4.50.0
 fonttools==4.53.1
 moviepy==1.0.3
