@@ -21,11 +21,22 @@ pip install -e .
 ## Directory organization
 - `envs/` contains the `JSBSimEnv` abstract class, describing the basis of a JSBSim env.
     - `tasks/attitude_control` contains the child classes of JSBSimEnv for the attitude control tasks.
-    - `fdm_descriptions/` JSBSim description of the c172p and x8 aircrafts.
-    - `fgdata/` FlightGear visualization files.
-    - `models/` Saves of NN models.
-    - `simulation/jsb_simulation.py` contains core functions of JSBSim for setting up, stepping the simulation, accessing properties and converting units.
-    - `utils/jsbsim_properties.py` references properties to be accessed, inspired from existing work: https://github.com/Gor-Ren/gym-jsbsim/blob/master/gym_jsbsim/properties.py
-    - `visualizers/`
-        - `attitude_control_telemetry.py` handles the 'live' plot visualization of a flight.
-        - `visualizer.py` handles FlightGear viz or calls the live plot visualizer.
+- `fdm_descriptions/` JSBSim description of the c172p and x8 aircrafts.
+- `fgdata/` FlightGear visualization files.
+- `models/` Saves of NN models.
+- `simulation/jsb_simulation.py` contains core functions of JSBSim for setting up, stepping the simulation, accessing properties and converting units.
+- `utils/jsbsim_properties.py` references properties to be accessed, inspired from existing work: https://github.com/Gor-Ren/gym-jsbsim/blob/master/gym_jsbsim/properties.py
+- `visualizers/`
+    - `attitude_control_telemetry.py` handles the 'live' plot visualization of a flight.
+    - `visualizer.py` handles FlightGear viz or calls the live plot visualizer.
+
+
+## Citation
+```
+@inproceedings{olivares2024mfvsmb,
+  title={Model-Free versus Model-Based Reinforcement Learning for Fixed-Wing UAV Attitude Control Under Varying Wind Conditions}, 
+  author={David Olivares and Pierre Fournier and Pavan Vasishta and Julien Marzat},
+  booktitle={International Conference on Informatics in Control, Automation and Robotics (ICINCO)},
+  year={2024}
+}
+```
