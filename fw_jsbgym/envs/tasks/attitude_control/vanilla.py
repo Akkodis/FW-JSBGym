@@ -197,3 +197,66 @@ class ACVanillaIErrTask(ACBohnNoVaIErrTask):
         self.initialize()
         self.telemetry_setup(self.telemetry_file)
 
+
+class ACVanillaActIErrTask(ACVanillaIErrTask):
+    """
+        Attitude control task with vanilla state + last action
+        + integral error states.
+    """
+    def __init__(self, cfg_env: DictConfig, telemetry_file: str='', render_mode: str='none') -> None:
+        super().__init__(cfg_env, telemetry_file, render_mode)
+
+        # rewriting ACVanilla state space + integral errors
+        self.state_prps += (prp.aileron_cmd, prp.elevator_cmd,)
+
+        self.telemetry_prps = self.common_telemetry_prps + self.target_prps + self.error_prps # target state variables
+
+        # set action and observation space from the task
+        self.action_space = self.get_action_space()
+        self.observation_space = self.get_observation_space()
+
+        self.initialize()
+        self.telemetry_setup(self.telemetry_file)
+
+
+class ACVanillaActIErrAlphaTask(ACVanillaActIErrTask):
+    """
+        Attitude control task with vanilla state + last action
+        + integral error states and alpha in the state space.
+    """
+    def __init__(self, cfg_env: DictConfig, telemetry_file: str='', render_mode: str='none') -> None:
+        super().__init__(cfg_env, telemetry_file, render_mode)
+
+        # rewriting ACVanilla state space + integral errors + alpha
+        self.state_prps += (prp.alpha_rad,)
+
+        self.telemetry_prps = self.common_telemetry_prps + self.target_prps + self.error_prps # target state variables
+
+        # set action and observation space from the task
+        self.action_space = self.get_action_space()
+        self.observation_space = self.get_observation_space()
+
+        self.initialize()
+        self.telemetry_setup(self.telemetry_file)
+
+
+class ACVanillaActIErrBetaTask(ACVanillaActIErrTask):
+    """
+        Attitude control task with vanilla state + last action
+        + integral error states and beta in the state space.
+    """
+    def __init__(self, cfg_env: DictConfig, telemetry_file: str='', render_mode: str='none') -> None:
+        super().__init__(cfg_env, telemetry_file, render_mode)
+
+        # rewriting ACVanilla state space + integral errors + beta
+        self.state_prps += (prp.beta_rad,)
+
+        self.telemetry_prps = self.common_telemetry_prps + self.target_prps + self.error_prps # target state variables
+
+        # set action and observation space from the task
+        self.action_space = self.get_action_space()
+        self.observation_space = self.get_observation_space()
+
+        self.initialize()
+        self.telemetry_setup(self.telemetry_file)
+

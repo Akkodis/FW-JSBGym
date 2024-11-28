@@ -72,17 +72,16 @@ alpha_rad = BoundedProperty('aero/alpha-rad', 'aircraft angle of attack [rad]', 
 beta_rad = BoundedProperty('aero/beta-rad', 'aircraft sideslip angle [rad]', float('-inf'), float('+inf'))
 ci2vel = Property('aero/ci2vel', 'chord/2*airspeed')
 
-# atmospherical properties
 # windspeeds
 total_windspeed_north_fps = Property('atmosphere/total-wind-north-fps', 'total wind speed north [ft/s]')
 total_windspeed_north_mps = HelperProperty('atmosphere/total-wind-north-mps', 'total wind speed north [m/s]')
-total_windspeed_north_kph = HelperProperty('atmosphere/total-wind-north-kph', 'total wind speed north [km/h]')
+total_windspeed_north_kph = BoundedHelperProperty('atmosphere/total-wind-north-kph', 'total wind speed north [km/h]', -400, 400)
 total_windspeed_east_fps = Property('atmosphere/total-wind-east-fps', 'total wind speed east [ft/s]')
 total_windspeed_east_mps = HelperProperty('atmosphere/total-wind-east-mps', 'total wind speed east [m/s]')
-total_windspeed_east_kph = HelperProperty('atmosphere/total-wind-east-kph', 'total wind speed east [km/h]')
+total_windspeed_east_kph = BoundedHelperProperty('atmosphere/total-wind-east-kph', 'total wind speed east [km/h]', -400, 400)
 total_windspeed_down_fps = Property('atmosphere/total-wind-down-fps', 'total wind speed down [ft/s]')
 total_windspeed_down_mps = HelperProperty('atmosphere/total-wind-down-mps', 'total wind speed down [m/s]')
-total_windspeed_down_kph = HelperProperty('atmosphere/total-wind-down-kph', 'total wind speed down [km/h]')
+total_windspeed_down_kph = BoundedHelperProperty('atmosphere/total-wind-down-kph', 'total wind speed down [km/h]', -400, 400)
 windspeed_north_fps = Property('atmosphere/wind-north-fps', 'wind speed north [ft/s]')
 windspeed_north_mps = HelperProperty('atmosphere/wind-north-mps', 'wind speed north [m/s]')
 windspeed_north_kph = HelperProperty('atmosphere/wind-north-kph', 'wind speed north [km/h]')

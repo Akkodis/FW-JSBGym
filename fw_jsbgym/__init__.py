@@ -55,6 +55,21 @@ gymnasium.register(
 )
 
 gymnasium.register(
+    id='ACVanillaActIErr-v0',
+    entry_point='fw_jsbgym.envs.tasks.attitude_control.vanilla:ACVanillaActIErrTask',
+)
+
+gymnasium.register(
+    id='ACVanillaActIErrAlpha-v0',
+    entry_point='fw_jsbgym.envs.tasks.attitude_control.vanilla:ACVanillaActIErrAlphaTask',
+)
+
+gymnasium.register(
+    id='ACVanillaActIErrBeta-v0',
+    entry_point='fw_jsbgym.envs.tasks.attitude_control.vanilla:ACVanillaActIErrBetaTask',
+)
+
+gymnasium.register(
     id='ACBohn-v0',
     entry_point='fw_jsbgym.envs.tasks.attitude_control.ac_bohn:ACBohnTask',
     # autoreset=True
@@ -76,6 +91,11 @@ gymnasium.register(
     id='ACBohnNoVaIErrYaw-v0',
     entry_point='fw_jsbgym.envs.tasks.attitude_control.ac_bohn_nova:ACBohnNoVaIErrYawTask',
     # autoreset=True
+)
+
+gymnasium.register(
+    id='ACBohnNoVaIErrWindOracle-v0',
+    entry_point='fw_jsbgym.envs.tasks.attitude_control.ac_bohn_nova:ACBohnNoVaIErrWindOracleTask'
 )
 
 gymnasium.register(

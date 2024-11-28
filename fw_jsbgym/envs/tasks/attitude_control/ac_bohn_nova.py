@@ -320,3 +320,17 @@ class ACBohnNoVaIErrYawTask(ACBohnNoVaIErrTask):
 
         self.initialize()
         self.telemetry_setup(self.telemetry_file)
+
+
+class ACBohnNoVaIErrWindOracleTask(ACBohnNoVaIErrTask):
+    def __init__(self, cfg_env: DictConfig, telemetry_file: str='', render_mode: str='none') -> None:
+        super().__init__(cfg_env, telemetry_file, render_mode)
+
+        self.state_prps += (prp.total_windspeed_north_kph, prp.total_windspeed_east_kph, prp.total_windspeed_down_kph) # total wind components
+        # set action and observation space from the task
+        self.action_space = self.get_action_space()
+        self.observation_space = self.get_observation_space()
+
+        self.initialize()
+        self.telemetry_setup(self.telemetry_file)
+
