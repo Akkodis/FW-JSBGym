@@ -278,6 +278,11 @@ class JSBSimEnv(gym.Env, ABC):
         else:
             print("ERROR: No Atmosphere Options Found")
 
+        self.reset_props()
+
+        self.observation = self.observe_state(first_obs=True)
+
+
 
     def set_atmosphere(self, atmo_options: DictConfig) -> None:
         """
@@ -454,7 +459,7 @@ class JSBSimEnv(gym.Env, ABC):
                                 self.sim[prp.aero_Cmq]-abs(self.sim[prp.aero_Cmq]) * 0.95, self.sim[prp.aero_Cmq]+abs(self.sim[prp.aero_Cmq]) * 0.95)
 
 
-    def step(self, action: np.ndarray) -> None:
+    def step(self, action: np.ndarray) -> Tuple[np.ndarray, float, bool, bool, dict]:
         """
             Run one timestep of the environment's dynamics. When end of episode is reached, you are responsible for calling `reset()`
             to reset this environment's state.
@@ -472,11 +477,60 @@ class JSBSimEnv(gym.Env, ABC):
                 if curr_step == 500 or curr_step == 1500:
                     self.gust_start()
 
+        # apply the action to the simulation
+        self.apply_action(action)
+
+        # run the simulation for sim_steps_after_agent_action steps
+        for _ in range(self.sim_steps_after_agent_action):
+            self.sim.run_step()
+            # write the telemetry to a log csv file every fdm step (as opposed to every agent step -> to put out of this for loop)
+            # self.telemetry_logging()
+            # decrement the steps left
+            self.sim[self.steps_left] -= 1
+            self.sim[self.current_step] += 1
+
+        # update the errors
+        self.update_errors()
+
+        # get the state
+        self.observation = self.observe_state()
+
+        # get the reward
+        self.reward: float = self.get_reward(action)
+
+        # check if the episode is terminated modifies the reward with extra penalty if necessary
+        terminated = self.is_terminated()
+        truncated, episode_end, out_of_bounds = self.is_truncated()
+        self.prev_ep_oob = out_of_bounds # save the last episode oob status (True: it did oob, False: it didn't)
+
+        # write telemetry to a csv file every agent step
+        if self.render_mode in self.metadata["render_modes"][3:]:
+            self.telemetry_logging()
+
+        # info dict for debugging and misc infos
+        info: Dict = {"steps_left": self.sim[self.steps_left],
+                      "non_norm_obs": self.observation,
+                      "non_norm_reward": self.reward,
+                      "episode_end": episode_end,
+                      "out_of_bounds": out_of_bounds,
+                    }
+
+        return self.observation, self.reward, terminated, truncated, info
+
+    def update_errors(self) -> None:
+        """
+            Update the errors of the environment.
+        """
+        pass
+
 
     def apply_action(self, action: np.ndarray) -> None:
         """
             Apply the action to the simulation
         """
+        # check if the action is valid
+        if action.shape != self.action_space.shape:
+            raise ValueError(f"Action shape {action.shape} is not compatible with action space {self.action_space.shape}")
         for prop, command in zip(self.action_prps, action):
             self.sim[prop] = command
 
@@ -622,3 +676,12 @@ class JSBSimEnv(gym.Env, ABC):
         """
         self.sim[self.steps_left] = self.steps_left.max # reset the number of steps left in the episode to the max
         self.sim[self.current_step] = self.current_step.min # reset the number of steps left in the episode to 
+        self.reset_target_state() # reset task target state (child class)
+        self.update_errors() # reset task errors (child class)
+
+
+    def reset_target_state(self) -> None:
+        """
+            Reset the target state of the environment.
+        """
+        pass

@@ -231,12 +231,20 @@ roll_err = BoundedProperty("error/roll-err", "roll error", -2*math.pi, 2*math.pi
 pitch_err = BoundedProperty("error/pitch-err", "pitch error", -2*math.pi, 2*math.pi)
 roll_integ_err = BoundedProperty("error/roll-integ-err", "roll integral error", float('-inf'), float('+inf'))
 pitch_integ_err = BoundedProperty("error/pitch-integ-err", "pitch integral error", float('-inf'), float('+inf'))
+lat_err = BoundedProperty("error/lat-err", "latitude error", -180, 180)
+lng_err = BoundedProperty("error/lng-err", "longitude error", -180, 180)
+alt_err = BoundedProperty("error/alt-err", "altitude error", float('-inf'), float('+inf'))
 
+
+# target values
 # target_airspeed_kts = BoundedProperty("target/airspeed-kts", "desired airspeed [knots]", float('-inf'), float('+inf'))
 target_airspeed_mps = BoundedProperty("target/airspeed-mps", "desired airspeed [m/s]", float('-inf'), float('+inf'))
 target_airspeed_kph = BoundedProperty("target/airspeed-kph", "desired airspeed [km/h]", float('-inf'), float('+inf'))
 target_roll_rad = BoundedProperty("target/roll-rad", "desired roll angle [rad]", -math.pi, math.pi)
 target_pitch_rad = BoundedProperty("target/pitch-rad", "desired pitch angle [rad]", -math.pi, math.pi)
+target_lat_deg = BoundedProperty("target/lat-deg", "desired latitude [deg]", -90, 90)
+target_lng_deg = BoundedProperty("target/lng-deg", "desired longitude [deg]", -90, 90)
+target_alt_m = BoundedProperty("target/altitude-m", "desired altitude [m]", 0, float('+inf'))
 
 # action avg over last n steps
 aileron_avg = BoundedProperty("fcs/aileron_avg", "aileron action average", aileron_cmd.min, aileron_cmd.max)

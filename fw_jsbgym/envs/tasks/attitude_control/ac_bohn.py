@@ -111,8 +111,8 @@ class ACBohnTask(JSBSimEnv):
         """
         super().reset_props() # reset the parent class JSBSimEnv properties
 
-        self.reset_target_state() # reset task target state
-        self.update_errors() # reset task errors
+        # self.reset_target_state() # reset task target state
+        # self.update_errors() # reset task errors
         self.update_action_history() # reset action history
         self.update_action_avg() # reset action avg
 
@@ -121,58 +121,20 @@ class ACBohnTask(JSBSimEnv):
         """
             Steps the task forward.
         """
-        # step the parent class JSBSimEnv where gusts are generated
-        super().step(action)
-
-        # check if the action is valid
-        if action.shape != self.action_space.shape:
-            raise ValueError("Action shape is not valid.")
-
-        # apply the action to the simulation
-        self.apply_action(action)
-        self.update_action_history(action) # update the action history
-
-        # run the simulation for sim_steps_after_agent_action steps
-        for _ in range(self.sim_steps_after_agent_action):
-            self.sim.run_step()
-            # write the telemetry to a log csv file every fdm step (as opposed to every agent step -> to put out of this for loop)
-            # self.telemetry_logging()
-            # decrement the steps left
-            self.sim[self.steps_left] -= 1
-            self.sim[self.current_step] += 1
-
         # append the fcs commands to the fcs history for this episode
         self.fcs_pos_hist.append([self.sim[prp.aileron_combined_pos_rad], self.sim[prp.elevator_pos_rad]])
 
         # update the action_avg
         self.update_action_avg()
 
-        # update the errors
-        self.update_errors()
+        # apply the action to the simulation
+        self.update_action_history(action) # update the action history
 
-        # get the state
-        self.observation = self.observe_state()
+        # step the parent class JSBSimEnv where gusts are generated
+        _, __, terminated, truncated, info = super().step(action)
 
-        # get the reward
-        self.reward: float = self.get_reward(action)
-
-        # check if the episode is terminated modifies the reward with extra penalty if necessary
-        terminated = self.is_terminated()
-        truncated, episode_end, out_of_bounds = self.is_truncated()
-        self.prev_ep_oob = out_of_bounds # save the last episode oob status (True: it did oob, False: it didn't)
-
-        # write telemetry to a csv file every agent step
-        if self.render_mode in self.metadata["render_modes"][3:]:
-            self.telemetry_logging()
-
-        # info dict for debugging and misc infos
-        info: Dict = {"steps_left": self.sim[self.steps_left],
-                      "non_norm_obs": self.observation,
-                      "non_norm_reward": self.reward,
-                      "episode_end": episode_end,
-                      "out_of_bounds": out_of_bounds,
-                      "fcs_pos_hist": self.fcs_pos_hist
-                    }
+        # update info with fcs position history
+        info["fcs_pos_hist"] = self.fcs_pos_hist
 
         return self.observation, self.reward, terminated, truncated, info
 
