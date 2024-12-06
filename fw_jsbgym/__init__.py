@@ -114,3 +114,13 @@ gymnasium.register(
     id='SimpleAC_OMAC-v0',
     entry_point='fw_jsbgym.envs.tasks.simple_ac:SimpleAC_OMAC'
 )
+
+gymnasium.register(
+    id='WaypointTracking-v0',
+    entry_point='fw_jsbgym.envs.tasks.waypoint_tracking.wp_tracking:WaypointTracking'
+)
+
+gymnasium.register(
+    id='WaypointTrackingNoVa',
+    entry_point='fw_jsbgym.envs.tasks.waypoint_tracking.wp_tracking_wind:WaypointTrackingNoVa'
+)

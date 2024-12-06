@@ -14,32 +14,36 @@ from fw_jsbgym.trim.trim_point import TrimPoint
 from fw_jsbgym.models.aerodynamics import AeroModel
 
 
-class AltitudeTracking(JSBSimEnv):
+class WaypointTracking(JSBSimEnv):
     """
-        Altitude Tracking task.
+        Waypoint Tracking task. The agent has to track a given waypoint in the sky (described by its
+        x, y, z).
     """
     def __init__(self, cfg_env: DictConfig, telemetry_file: str='', render_mode: str='none') -> None:
         super().__init__(cfg_env=cfg_env, telemetry_file=telemetry_file, render_mode=render_mode)
 
+        self.task_cfg: DictConfig = cfg_env.task
+
         self.state_prps = (
-            prp.lat_gc_deg, prp.lng_gc_deg, prp.altitude_sl_m, # position
+            prp.enu_x_m, prp.enu_y_m, prp.enu_z_m, # position
+            prp.enu_x_err_m, prp.enu_y_err_m, prp.enu_z_err_m, # position error
             prp.roll_rad, prp.pitch_rad, # attitude
             prp.airspeed_kph, # airspeed
             prp.p_radps, prp.q_radps, prp.r_radps, # angular rates
             prp.alpha_rad, prp.beta_rad, # angle of attack, sideslip
-            prp.aileron_cmd, prp.elevator_cmd # last action
+            prp.aileron_cmd, prp.elevator_cmd, prp.throttle_cmd # last action
         )
 
         self.action_prps = (
-            prp.aileron_cmd, prp.elevator_cmd
+            prp.aileron_cmd, prp.elevator_cmd, prp.throttle_cmd
         )
 
         self.target_prps = (
-            prp.target_lat_deg, prp.target_lon_deg, prp.target_alt_m
+            prp.target_enu_x_m, prp.target_enu_y_m, prp.target_enu_z_m # target position
         )
 
         self.error_prps = (
-            prp.lat_err, prp.lon_err, prp.alt_err
+            prp.enu_x_err_m, prp.enu_y_err_m, prp.enu_z_err_m # position error
         )
 
         # telemetry properties are an addition of the common telemetry properties, target properties and error properties
@@ -55,11 +59,12 @@ class AltitudeTracking(JSBSimEnv):
         self.action_space = self.get_action_space()
         self.observation_space = self.get_observation_space()
 
-        # PI controller for airspeed
-        self.pid_airspeed = PID(kp=0.5, ki=0.1, kd=0.0,
-                           dt=self.fdm_dt, trim=TrimPoint(), 
-                           limit=AeroModel().throttle_limit, is_throttle=True
-        ) 
+
+        self.dist_to_target = np.inf
+        self.dist_to_target_prev = np.inf
+        self.prev_target_x = 0.0
+        self.prev_target_y = 0.0
+        self.prev_target_z = 0.0
 
         self.initialize()
         self.telemetry_setup(self.telemetry_file)
@@ -68,23 +73,17 @@ class AltitudeTracking(JSBSimEnv):
     def apply_action(self, action: np.ndarray):
         super().apply_action(action)
 
-        if action.shape != self.action_space.shape:
-            raise ValueError(f"Action shape {action.shape} is not compatible with action space {self.action_space.shape}")
-
-        self.pid_airspeed.set_reference(60)
-        throttle_cmd, airspeed_err, _ = self.pid_airspeed.update(state=self.sim[prp.airspeed_kph], saturate=True)
-        self.sim[prp.throttle_cmd] = throttle_cmd
-
 
     def step(self, action: np.ndarray) -> Tuple[np.ndarray, float, bool, bool, dict]:
         return super().step(action)
-    
 
-    def reset(self) -> np.ndarray:
+
+    def reset(self, seed: int=None, options: dict=None) -> Tuple[np.ndarray, dict]:
         return super().reset()
 
 
     def observe_state(self, first_obs: bool = False) -> np.ndarray:
+        # observe the state (actualizes self.state)
         super().observe_state()
 
         # if it's the first observation i.e. following a reset(): fill observation with obs_history_size * state
@@ -101,3 +100,145 @@ class AltitudeTracking(JSBSimEnv):
         else: # else return observation as a vector for MLP policy
             obs: np.ndarray = np.array(self.observation_deque).squeeze().flatten().astype(np.float32)
         return obs
+
+
+    def set_target_state(self, target_enu_x_m, target_enu_y_m, target_enu_z_m) -> None:
+        if target_enu_x_m != self.prev_target_x:
+            print("Target X changed to: ", target_enu_x_m)
+        if target_enu_y_m != self.prev_target_y:
+            print("Target Y changed to: ", target_enu_y_m)
+        if target_enu_z_m != self.prev_target_z:
+            print("Target Z changed to: ", target_enu_z_m)
+
+        self.sim[prp.target_enu_x_m] = target_enu_x_m
+        self.sim[prp.target_enu_y_m] = target_enu_y_m
+        self.sim[prp.target_enu_z_m] = target_enu_z_m
+
+        self.prev_target_x = target_enu_x_m
+        self.prev_target_y = target_enu_y_m
+        self.prev_target_z = target_enu_z_m
+
+        self.target = self.TargetState(*[self.sim[prop] for prop in self.target_prps])
+
+
+    def update_errors(self):
+        """
+            Updates the errors based on the current state.
+        """
+        # update error jsbsim properties
+        self.sim[prp.enu_x_err_m] = self.sim[prp.target_enu_x_m] - self.sim[prp.enu_x_m]
+        self.sim[prp.enu_y_err_m] = self.sim[prp.target_enu_y_m] - self.sim[prp.enu_y_m]
+        self.sim[prp.enu_z_err_m] = self.sim[prp.target_enu_z_m] - self.sim[prp.enu_z_m]
+        # print('----------------------------------')
+        # print("Curr   Z: ", self.sim[prp.enu_z_m])
+        # print("Target Z: ", self.sim[prp.target_enu_z_m])
+        # print("Error  Z: ", self.sim[prp.enu_z_err_m])
+        # print('Current X: ', self.sim[prp.enu_x_m])
+        # print('Target  X: ', self.sim[prp.target_enu_x_m])
+        # print('Error   X: ', self.sim[prp.enu_x_err_m])
+        # print('Current Y: ', self.sim[prp.enu_y_m])
+        # print('Target  Y: ', self.sim[prp.target_enu_y_m])
+        # print('Error   Y: ', self.sim[prp.enu_y_err_m])
+
+        # update the error namedtuple
+        self.errors = self.Errors(*[self.sim[prop] for prop in self.error_prps])
+
+
+    def reset_target_state(self) -> None:
+        """
+            Resets the target state to the current state and the PID controller.
+        """
+        self.set_target_state(self.sim[prp.lat_gc_deg], self.sim[prp.lng_gc_deg], self.sim[prp.altitude_sl_m])
+
+
+    def get_reward(self, action: np.ndarray) -> float:
+        """
+            Reward function for the waypoint tracking task.
+        """
+        self.dist_to_target = np.sqrt(self.sim[prp.enu_x_err_m]**2 + self.sim[prp.enu_y_err_m]**2 + self.sim[prp.enu_z_err_m]**2)
+        d_rate = 0.0
+        r_dist = 0.0
+        r_reached = 0.0
+        if np.any(np.isinf(self.dist_to_target_prev + self.dist_to_target)):
+            d_rate = 0.0
+        else:
+            d_rate = self.dist_to_target_prev - self.dist_to_target
+            # r_dist = 0.1*self.dist_to_target - max(3*d_rate, 0.0)
+            if d_rate > 0:
+                r_dist = 0
+            else:
+                r_dist = -1
+        self.dist_to_target_prev = self.dist_to_target
+
+
+        if self.dist_to_target < 10:
+            r_reached = 300.0
+
+        r_total = (r_dist + r_reached)
+
+        # r_x = self.sim[prp.enu_x_err_m] / 300
+        # r_y = self.sim[prp.enu_y_err_m] / 300
+        # r_z = self.sim[prp.enu_z_err_m] / 100
+        # r_total = -(r_x + r_y + r_z)
+
+
+        # populate reward properties
+        # self.sim[prp.reward_enu_x] = r_x
+        # self.sim[prp.reward_enu_y] = r_y
+        # self.sim[prp.reward_enu_z] = r_z
+        self.sim[prp.reward_wp_total] = r_total
+
+        return r_total
+
+
+    def is_terminated(self):
+        return self.dist_to_target < 10
+    
+
+
+class WaypointTrackingNoVa(WaypointTracking):
+    """
+        Waypoint Tracking task. The agent has to track a given waypoint in the sky (described by its
+        x, y, z).
+    """
+    def __init__(self, cfg_env: DictConfig, telemetry_file: str='', render_mode: str='none') -> None:
+        super().__init__(cfg_env=cfg_env, telemetry_file=telemetry_file, render_mode=render_mode)
+
+        self.task_cfg: DictConfig = cfg_env.task
+
+        self.action_prps = (
+            prp.aileron_cmd, prp.elevator_cmd
+        )
+
+        # set action and observation space from the task
+        self.action_space = self.get_action_space()
+        self.observation_space = self.get_observation_space()
+
+        # PI controller for airspeed
+        self.pid_airspeed = PID(kp=0.5, ki=0.1, kd=0.0,
+                           dt=self.fdm_dt, trim=TrimPoint(), 
+                           limit=AeroModel().throttle_limit, is_throttle=True
+        )
+
+        self.initialize()
+        self.telemetry_setup(self.telemetry_file)
+
+
+    def apply_action(self, action: np.ndarray):
+        super().apply_action(action)
+
+        if action.shape != self.action_space.shape:
+            raise ValueError(f"Action shape {action.shape} is not compatible with action space {self.action_space.shape}")
+
+        self.pid_airspeed.set_reference(60)
+        throttle_cmd, airspeed_err, _ = self.pid_airspeed.update(state=self.sim[prp.airspeed_kph], saturate=True)
+        self.sim[prp.throttle_cmd] = throttle_cmd
+
+
+    def reset_target_state(self) -> None:
+        """
+            Resets the target state to the current state and the PID controller.
+        """
+        super().reset_target_state()
+        self.pid_airspeed.reset()
+
