@@ -118,9 +118,9 @@ class ACBohnNoVaTask(ACBohnTask):
             Set the target state of the aircraft, i.e. the target state variables defined in the `target_state_vars` tuple.
         """
         if target_roll_rad != self.prev_target_roll:
-            print("Target roll: ", np.rad2deg(target_roll_rad))
+            print(f"Target roll: {np.rad2deg(target_roll_rad):.3f}")
         if target_pitch_rad != self.prev_target_pitch:
-            print("Target pitch: ", np.rad2deg(target_pitch_rad))
+            print(f"Target pitch: {np.rad2deg(target_pitch_rad):.3f}")
 
         # set target state sim properties
         self.sim[prp.target_roll_rad] = target_roll_rad
@@ -128,6 +128,9 @@ class ACBohnNoVaTask(ACBohnTask):
 
         self.prev_target_roll = target_roll_rad
         self.prev_target_pitch = target_pitch_rad
+
+        # reset airspeed pid integral error
+        self.pid_airspeed.reset()
 
         # fill target state namedtuple with target state attributes
         self.target = self.TargetState(str(target_roll_rad), str(target_pitch_rad))
@@ -137,9 +140,6 @@ class ACBohnNoVaTask(ACBohnTask):
         """
             Reset the target state of the aircraft, i.e. the target state variables defined in the `target_state_vars` tuple, with initial conditions.
         """
-        # reset airspeed pid integral error
-        self.pid_airspeed.reset()
-
         # reset task class attributes with initial conditions
         self.set_target_state(target_roll_rad=self.sim[prp.initial_roll_rad], 
                               target_pitch_rad=self.sim[prp.initial_pitch_rad])
@@ -260,21 +260,11 @@ class ACBohnNoVaIErrTask(ACBohnNoVaTask):
             Set the target state of the aircraft, i.e. the target state variables defined in the `target_state_vars` tuple.
             If the target state changes, reset the integral errors.
         """
-        # if there's a change in target state, reset integral errors
-        if target_roll_rad != self.prev_target_roll:
-            self.sim[prp.roll_integ_err] = 0.0
-            print("Target roll: ", np.rad2deg(target_roll_rad))
-        if target_pitch_rad != self.prev_target_pitch:
-            self.sim[prp.pitch_integ_err] = 0.0
-            print("Target pitch: ", np.rad2deg(target_pitch_rad))
+        super().set_target_state(target_roll_rad, target_pitch_rad)
 
-        self.sim[prp.target_roll_rad] = target_roll_rad
-        self.sim[prp.target_pitch_rad] = target_pitch_rad
-        self.prev_target_roll = target_roll_rad
-        self.prev_target_pitch = target_pitch_rad
-
-        # fill target state namedtuple with target state attributes
-        self.target = self.TargetState(str(target_roll_rad), str(target_pitch_rad))
+        # reset integral errors
+        self.sim[prp.roll_integ_err] = 0.0
+        self.sim[prp.pitch_integ_err] = 0.0
 
 
     def update_errors(self) -> None:

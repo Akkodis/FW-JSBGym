@@ -216,7 +216,7 @@ class JSBSimEnv(gym.Env, ABC):
             print(f"    {error_prp.get_legal_name()}")
 
 
-    def reset(self, seed: int=None, options: dict=None) -> None:
+    def reset(self, seed: int=None, options: dict=None) -> Tuple[np.ndarray, dict]:
         """
         Resets the state of the environment and returns an initial observation.
 
@@ -282,6 +282,13 @@ class JSBSimEnv(gym.Env, ABC):
 
         self.observation = self.observe_state(first_obs=True)
 
+        last_fcs_pos_hist = self.fcs_pos_hist.copy() # copy the fcs position history of the last episode about to be reset
+        self.fcs_pos_hist.clear() # clear the fcs position history list (start a new episode)
+
+        info: Dict = {"non_norm_obs": self.observation,
+                      "fcs_pos_hist": last_fcs_pos_hist}
+
+        return self.observation, info
 
 
     def set_atmosphere(self, atmo_options: DictConfig) -> None:
@@ -477,6 +484,9 @@ class JSBSimEnv(gym.Env, ABC):
                 if curr_step == 500 or curr_step == 1500:
                     self.gust_start()
 
+        # append the fcs commands to the fcs history for this episode
+        self.fcs_pos_hist.append([self.sim[prp.aileron_combined_pos_rad], self.sim[prp.elevator_pos_rad]])
+
         # apply the action to the simulation
         self.apply_action(action)
 
@@ -513,15 +523,10 @@ class JSBSimEnv(gym.Env, ABC):
                       "non_norm_reward": self.reward,
                       "episode_end": episode_end,
                       "out_of_bounds": out_of_bounds,
+                      "fcs_pos_hist": self.fcs_pos_hist
                     }
 
         return self.observation, self.reward, terminated, truncated, info
-
-    def update_errors(self) -> None:
-        """
-            Update the errors of the environment.
-        """
-        pass
 
 
     def apply_action(self, action: np.ndarray) -> None:
@@ -609,7 +614,17 @@ class JSBSimEnv(gym.Env, ABC):
         # defining observation space based on pre-chosen state variables
         state_lows: np.ndarray = np.array([state_var.min for state_var in self.state_prps], dtype=np.float32)
         state_highs: np.ndarray = np.array([state_var.max for state_var in self.state_prps], dtype=np.float32)
-        observation_space = gym.spaces.Box(low=np.array(state_lows), high=np.array(state_highs), dtype=np.float32)
+
+        # check if we want a matrix formatted observation space shape=(obs_history_size, state_vars) for CNN policy
+        if self.task_cfg.mdp.obs_is_matrix:
+            state_lows: np.ndarray = np.expand_dims(np.array([state_lows for _ in range(self.task_cfg.mdp.obs_hist_size)]), axis=0)
+            state_highs: np.ndarray = np.expand_dims(np.array([state_highs for _ in range(self.task_cfg.mdp.obs_hist_size)]), axis=0)
+            observation_space = gym.spaces.Box(low=np.array(state_lows), high=np.array(state_highs), dtype=np.float32)
+        else: # else we want a vector formatted observation space len=(obs_history_size * state_vars) for MLP policy
+            # multiply state_lows and state_highs by obs_history_size to get the observation space
+            observation_space = gym.spaces.Box(low=np.tile(state_lows, self.task_cfg.mdp.obs_hist_size),
+                                            high=np.tile(state_highs, self.task_cfg.mdp.obs_hist_size), 
+                                            dtype=np.float32)
         return observation_space
 
 
@@ -622,14 +637,6 @@ class JSBSimEnv(gym.Env, ABC):
         action_highs: np.ndarray = np.array([action_var.max for action_var in self.action_prps], dtype=np.float32)
         action_space = gym.spaces.Box(low=action_lows, high=action_highs, dtype=np.float32)
         return action_space
-
-
-    @abstractmethod
-    def get_reward(self):
-        """
-            Reward function
-        """
-        raise NotImplementedError
 
 
     def telemetry_logging(self, additional_tele:dict[str, float]={}) -> dict[str, float]:
@@ -679,9 +686,32 @@ class JSBSimEnv(gym.Env, ABC):
         self.reset_target_state() # reset task target state (child class)
         self.update_errors() # reset task errors (child class)
 
+    @abstractmethod
+    def get_reward(self):
+        """
+            Reward function
+        """
+        raise NotImplementedError
 
+    @abstractmethod
+    def update_errors(self) -> None:
+        """
+            Update the errors of the environment.
+        """
+        raise NotImplementedError
+
+
+    @abstractmethod
+    def set_target_state(self) -> None:
+        """
+            Set the target state of the environment.
+        """
+        raise NotImplementedError
+
+
+    @abstractmethod
     def reset_target_state(self) -> None:
         """
             Reset the target state of the environment.
         """
-        pass
+        raise NotImplementedError

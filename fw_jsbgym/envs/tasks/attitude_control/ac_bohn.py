@@ -78,28 +78,18 @@ class ACBohnTask(JSBSimEnv):
         self.initialize()
         self.telemetry_setup(self.telemetry_file)
 
-
-    def reset(self, seed: int=None, options: dict=None) -> np.ndarray:
+    # TODO: I was working on the reset function
+    def reset(self, seed: int=None, options: dict=None) -> Tuple[np.ndarray, dict]:
         """
             Reset the task to its initial conditions.
 
             Args:
                 - `sim`: the simulation object containing the JSBSim FDM
         """
-        super().reset(seed=seed, options=options)
+        self.observation, info = super().reset(seed=seed, options=options)
 
-        # reset task specific properties
-        self.reset_props()
-
-        last_fcs_pos_hist = self.fcs_pos_hist.copy() # copy the fcs position history of the last episode about to be reset
-        self.fcs_pos_hist.clear() # clear the fcs position history list (start a new episode)
-
-        # reset observation and return the first observation of the episode
+        # clear the observation deque (history of past observations)
         self.observation_deque.clear()
-        self.observation: np.ndarray = self.observe_state(first_obs=True)
-
-        info: Dict = {"non_norm_obs": self.observation,
-                      "fcs_pos_hist": last_fcs_pos_hist}
 
         self.render() # render the simulation
         return self.observation, info
@@ -121,9 +111,6 @@ class ACBohnTask(JSBSimEnv):
         """
             Steps the task forward.
         """
-        # append the fcs commands to the fcs history for this episode
-        self.fcs_pos_hist.append([self.sim[prp.aileron_combined_pos_rad], self.sim[prp.elevator_pos_rad]])
-
         # update the action_avg
         self.update_action_avg()
 
@@ -131,10 +118,7 @@ class ACBohnTask(JSBSimEnv):
         self.update_action_history(action) # update the action history
 
         # step the parent class JSBSimEnv where gusts are generated
-        _, __, terminated, truncated, info = super().step(action)
-
-        # update info with fcs position history
-        info["fcs_pos_hist"] = self.fcs_pos_hist
+        self.observation, self.reward, terminated, truncated, info = super().step(action)
 
         return self.observation, self.reward, terminated, truncated, info
 
@@ -152,27 +136,6 @@ class ACBohnTask(JSBSimEnv):
         # else just append the newest action
         else:
             self.action_hist.append(action)
-
-
-    def get_observation_space(self) -> gym.spaces.Box:
-        """
-            Get the observation space of the task.
-        """
-        # defining observation space based on pre-chosen state variables
-        state_lows: np.ndarray = np.array([state_var.min for state_var in self.state_prps], dtype=np.float32)
-        state_highs: np.ndarray = np.array([state_var.max for state_var in self.state_prps], dtype=np.float32)
-
-        # check if we want a matrix formatted observation space shape=(obs_history_size, state_vars) for CNN policy
-        if self.task_cfg.mdp.obs_is_matrix:
-            state_lows: np.ndarray = np.expand_dims(np.array([state_lows for _ in range(self.task_cfg.mdp.obs_hist_size)]), axis=0)
-            state_highs: np.ndarray = np.expand_dims(np.array([state_highs for _ in range(self.task_cfg.mdp.obs_hist_size)]), axis=0)
-            observation_space = gym.spaces.Box(low=np.array(state_lows), high=np.array(state_highs), dtype=np.float32)
-        else: # else we want a vector formatted observation space len=(obs_history_size * state_vars) for MLP policy
-            # multiply state_lows and state_highs by obs_history_size to get the observation space
-            observation_space = gym.spaces.Box(low=np.tile(state_lows, self.task_cfg.mdp.obs_hist_size),
-                                            high=np.tile(state_highs, self.task_cfg.mdp.obs_hist_size), 
-                                            dtype=np.float32)
-        return observation_space
 
 
     def observe_state(self, first_obs: bool = False) -> np.ndarray:
