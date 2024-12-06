@@ -4,19 +4,12 @@ import jsbsim
 import os
 import time
 from fw_jsbgym.trim.trim_point import TrimPoint
-from typing import Union
+from typing import Union, Tuple
 from fw_jsbgym.utils import jsbsim_properties as prp
 from enum import Enum
-from pkg_resources import resource_filename 
-
-
-class ConvFactor(Enum):
-    kts2mps = 0.51444
-    kts2kph = 1.852
-    fps2mps = 0.3048
-    fps2kph = 1.09728
-    kph2mps = 0.277778
-
+from pkg_resources import resource_filename
+from fw_jsbgym.utils.jsbsim_properties import BoundedProperty
+from pymap3d.ecef import ecef2enu
 
 class ConvFactor(Enum):
     kts2mps = 0.51444
@@ -24,6 +17,8 @@ class ConvFactor(Enum):
     fps2mps = 0.3048
     fps2kph = 1.09728
     kph2mps = 0.277778
+    ft2m = 0.3048
+
 
 class Simulation(object):
     """
@@ -68,6 +63,18 @@ class Simulation(object):
         self.enable_trim: bool = enable_trim
         self.trim_point: TrimPoint = trim_point
 
+        self.prp_conv_fps2mps: Tuple[BoundedProperty, ...] = (
+            prp.windspeed_north_mps, prp.windspeed_east_mps, prp.windspeed_down_mps,
+            prp.total_windspeed_north_mps, prp.total_windspeed_east_mps, prp.total_windspeed_down_mps,
+            prp.turb_north_mps, prp.turb_east_mps, prp.turb_down_mps
+        )
+
+        self.prp_conv_fps2kph: Tuple[BoundedProperty, ...] = (
+            prp.windspeed_north_kph, prp.windspeed_east_kph, prp.windspeed_down_kph,
+            prp.total_windspeed_north_kph, prp.total_windspeed_east_kph, prp.total_windspeed_down_kph,
+            prp.turb_north_kph, prp.turb_east_kph, prp.turb_down_kph
+        )
+
         # set the FDM time step
         self.fdm.set_dt(self.fdm_dt)
 
@@ -86,7 +93,7 @@ class Simulation(object):
 
 
     def __getitem__(self, prop: Union[prp.Property, prp.HelperProperty, prp.BoundedProperty, prp.BoundedHelperProperty] | str) -> float:
-        self.convert_props_to_SI()
+        self.convert_props_to_SI(prop)
         if isinstance(prop, str):
             return self.fdm[prop]
         else:
@@ -98,7 +105,7 @@ class Simulation(object):
             self.fdm[prop] = value
         else:
             self.fdm[prop.name] = value
-        self.convert_props_to_SI()
+        self.convert_props_to_SI(prop)
 
 
     def load_run_ic(self) -> bool:
@@ -149,28 +156,46 @@ class Simulation(object):
             # Convert the time factor into a time step period for visualization
             self.viz_dt = self.fdm_dt / time_factor
 
-    def convert_props_to_SI(self) -> None:
+
+    def convert_props_to_SI(self, prop) -> None:
         """
             Converts some properties from imperial to international metric system
         """
-        self.fdm[prp.airspeed_mps.name] = self.fdm[prp.airspeed_kts.name] * ConvFactor.kts2mps.value
-        self.fdm[prp.airspeed_kph.name] = self.fdm[prp.airspeed_kts.name] * ConvFactor.kts2kph.value
-        self.fdm[prp.windspeed_north_mps.name] = self.fdm[prp.windspeed_north_fps.name] * ConvFactor.fps2mps.value
-        self.fdm[prp.windspeed_north_kph.name] = self.fdm[prp.windspeed_north_fps.name] * ConvFactor.fps2kph.value
-        self.fdm[prp.windspeed_east_mps.name] = self.fdm[prp.windspeed_east_fps.name] * ConvFactor.fps2mps.value
-        self.fdm[prp.windspeed_east_kph.name] = self.fdm[prp.windspeed_east_fps.name] * ConvFactor.fps2kph.value
-        self.fdm[prp.windspeed_down_mps.name] = self.fdm[prp.windspeed_down_fps.name] * ConvFactor.fps2mps.value
-        self.fdm[prp.windspeed_down_kph.name] = self.fdm[prp.windspeed_down_fps.name] * ConvFactor.fps2kph.value
-        self.fdm[prp.total_windspeed_north_mps.name] = self.fdm[prp.total_windspeed_north_fps.name] * ConvFactor.fps2mps.value
-        self.fdm[prp.total_windspeed_north_kph.name] = self.fdm[prp.total_windspeed_north_fps.name] * ConvFactor.fps2kph.value
-        self.fdm[prp.total_windspeed_east_mps.name] = self.fdm[prp.total_windspeed_east_fps.name] * ConvFactor.fps2mps.value
-        self.fdm[prp.total_windspeed_east_kph.name] = self.fdm[prp.total_windspeed_east_fps.name] * ConvFactor.fps2kph.value
-        self.fdm[prp.total_windspeed_down_mps.name] = self.fdm[prp.total_windspeed_down_fps.name] * ConvFactor.fps2mps.value
-        self.fdm[prp.total_windspeed_down_kph.name] = self.fdm[prp.total_windspeed_down_fps.name] * ConvFactor.fps2kph.value
-        self.fdm[prp.turb_north_mps.name] = self.fdm[prp.turb_north_fps.name] * ConvFactor.fps2mps.value
-        self.fdm[prp.turb_north_kph.name] = self.fdm[prp.turb_north_fps.name] * ConvFactor.fps2kph.value
-        self.fdm[prp.turb_east_mps.name] = self.fdm[prp.turb_east_fps.name] * ConvFactor.fps2mps.value
-        self.fdm[prp.turb_east_kph.name] = self.fdm[prp.turb_east_fps.name] * ConvFactor.fps2kph.value
-        self.fdm[prp.turb_down_mps.name] = self.fdm[prp.turb_down_fps.name] * ConvFactor.fps2mps.value
-        self.fdm[prp.turb_down_kph.name] = self.fdm[prp.turb_down_fps.name] * ConvFactor.fps2kph.value
+        if not isinstance(prop, str):
+            if prop in self.prp_conv_fps2mps:
+                self.fdm[prop.name] = self.fdm[prop.name[:-3]+'fps'] * ConvFactor.fps2mps.value
+            elif prop in self.prp_conv_fps2kph:
+                self.fdm[prop.name] = self.fdm[prop.name[:-3]+'fps'] * ConvFactor.fps2kph.value
+            elif prop == prp.airspeed_mps or prop == prp.airspeed_kph:
+                self.fdm[prop.name] = self.fdm[prp.airspeed_kts.name] * ConvFactor.kts2mps.value
+                self.fdm[prop.name] = self.fdm[prp.airspeed_kts.name] * ConvFactor.kts2kph.value
+            elif 'enu' in prop.name:
+                ecef_x_m = self.fdm[prp.ecef_x_ft.name] * ConvFactor.ft2m.value
+                ecef_y_m = self.fdm[prp.ecef_y_ft.name] * ConvFactor.ft2m.value
+                ecef_z_m = self.fdm[prp.ecef_z_ft.name] * ConvFactor.ft2m.value
+                enu_coords = ecef2enu(ecef_x_m, ecef_y_m, ecef_z_m, 0, 0, 0)
+                self.fdm[prp.enu_x_m.name] = enu_coords[0]
+                self.fdm[prp.enu_y_m.name] = enu_coords[1]
+                self.fdm[prp.enu_z_m.name] = enu_coords[2]
+
+        # self.fdm[prp.airspeed_mps.name] = self.fdm[prp.airspeed_kts.name] * ConvFactor.kts2mps.value
+        # self.fdm[prp.airspeed_kph.name] = self.fdm[prp.airspeed_kts.name] * ConvFactor.kts2kph.value
+        # self.fdm[prp.windspeed_north_mps.name] = self.fdm[prp.windspeed_north_fps.name] * ConvFactor.fps2mps.value
+        # self.fdm[prp.windspeed_north_kph.name] = self.fdm[prp.windspeed_north_fps.name] * ConvFactor.fps2kph.value
+        # self.fdm[prp.windspeed_east_mps.name] = self.fdm[prp.windspeed_east_fps.name] * ConvFactor.fps2mps.value
+        # self.fdm[prp.windspeed_east_kph.name] = self.fdm[prp.windspeed_east_fps.name] * ConvFactor.fps2kph.value
+        # self.fdm[prp.windspeed_down_mps.name] = self.fdm[prp.windspeed_down_fps.name] * ConvFactor.fps2mps.value
+        # self.fdm[prp.windspeed_down_kph.name] = self.fdm[prp.windspeed_down_fps.name] * ConvFactor.fps2kph.value
+        # self.fdm[prp.total_windspeed_north_mps.name] = self.fdm[prp.total_windspeed_north_fps.name] * ConvFactor.fps2mps.value
+        # self.fdm[prp.total_windspeed_north_kph.name] = self.fdm[prp.total_windspeed_north_fps.name] * ConvFactor.fps2kph.value
+        # self.fdm[prp.total_windspeed_east_mps.name] = self.fdm[prp.total_windspeed_east_fps.name] * ConvFactor.fps2mps.value
+        # self.fdm[prp.total_windspeed_east_kph.name] = self.fdm[prp.total_windspeed_east_fps.name] * ConvFactor.fps2kph.value
+        # self.fdm[prp.total_windspeed_down_mps.name] = self.fdm[prp.total_windspeed_down_fps.name] * ConvFactor.fps2mps.value
+        # self.fdm[prp.total_windspeed_down_kph.name] = self.fdm[prp.total_windspeed_down_fps.name] * ConvFactor.fps2kph.value
+        # self.fdm[prp.turb_north_mps.name] = self.fdm[prp.turb_north_fps.name] * ConvFactor.fps2mps.value
+        # self.fdm[prp.turb_north_kph.name] = self.fdm[prp.turb_north_fps.name] * ConvFactor.fps2kph.value
+        # self.fdm[prp.turb_east_mps.name] = self.fdm[prp.turb_east_fps.name] * ConvFactor.fps2mps.value
+        # self.fdm[prp.turb_east_kph.name] = self.fdm[prp.turb_east_fps.name] * ConvFactor.fps2kph.value
+        # self.fdm[prp.turb_down_mps.name] = self.fdm[prp.turb_down_fps.name] * ConvFactor.fps2mps.value
+        # self.fdm[prp.turb_down_kph.name] = self.fdm[prp.turb_down_fps.name] * ConvFactor.fps2kph.value
 
