@@ -173,7 +173,7 @@ class Simulation(object):
                 ecef_x_m = self.fdm[prp.ecef_x_ft.name] * ConvFactor.ft2m.value
                 ecef_y_m = self.fdm[prp.ecef_y_ft.name] * ConvFactor.ft2m.value
                 ecef_z_m = self.fdm[prp.ecef_z_ft.name] * ConvFactor.ft2m.value
-                enu_coords = ecef2enu(ecef_x_m, ecef_y_m, ecef_z_m, 0, 0, 0)
+                enu_coords = ecef2enu(ecef_x_m, ecef_y_m, ecef_z_m, 47.635784, 2.460938, -35.597614)
                 self.fdm[prp.enu_x_m.name] = enu_coords[0]
                 self.fdm[prp.enu_y_m.name] = enu_coords[1]
                 self.fdm[prp.enu_z_m.name] = enu_coords[2]

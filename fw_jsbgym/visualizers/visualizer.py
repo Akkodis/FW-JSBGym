@@ -32,9 +32,11 @@ class FlightGearVisualizer(object):
     SERVER = ''
     PORT = 5550
     PROTOCOL = 'udp'
-    LOADED_MESSAGE = "PNG lib warning : Malformed iTXt chunk"
+    LOADED_MESSAGE = "setWeight() - not supported for null"
     TIME = 'noon'
-    AIRCRAFT_FG_ID = 'c172p'
+    START_LAT = 47.635784
+    START_LON = 2.460938
+    START_ALT = 600
 
     def __init__(self, sim: Simulation) -> None:
         # launching flightgear with the corresponding aircraft_id
@@ -50,7 +52,8 @@ class FlightGearVisualizer(object):
         # We ignore the aircraft_id to load the c172p viz, since x8 doesn't exist in fgear
         cmd: str = f'exec $HOME/Apps/FlightGear-2020.3.17/FlightGear-2020.3.17-x86_64.AppImage --fdm=null \
         --native-fdm={self.TYPE},{self.DIRECTION},{self.RATE},{self.SERVER},{self.PORT},{self.PROTOCOL} \
-        --aircraft={aircraft_fgear_id} --timeofday={self.TIME} --disable-ai-traffic --disable-real-weather-fetch'
+        --aircraft={aircraft_fgear_id} --timeofday={self.TIME} --lat={self.START_LAT} --lon={self.START_LON} --altitude={self.START_ALT} \
+        --disable-ai-traffic --disable-real-weather-fetch --enable-terrasync'
 
         flightgear_process = subprocess.Popen(cmd,
                                               shell=True,
