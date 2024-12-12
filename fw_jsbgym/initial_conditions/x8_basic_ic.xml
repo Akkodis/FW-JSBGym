@@ -3,10 +3,10 @@
   <!--
     Basic set of initial conditions at 1000 ft with engines running.
   -->
-  <ubody unit="M/SEC">    16.97  </ubody> <!-- 45 km/h, orig: 16.97m/s = 61km/h -->
+  <ubody unit="M/SEC">    16.67  </ubody> <!-- 16.67m/s = 60km/h -->
   <vbody unit="M/SEC">    0.0  </vbody>
   <wbody unit="M/SEC">    0.0  </wbody>
-  <latitude unit="DEG">  47.635784 </latitude>
+  <latitude unit="DEG">  47.635784 </latitude> <!-- Somewhere in France -->
   <longitude unit="DEG">   2.460938  </longitude>
   <phi unit="DEG">          0.0  </phi>  <!-- roll -->
   <theta unit="DEG">    0.0  </theta>  <!-- pitch -->
