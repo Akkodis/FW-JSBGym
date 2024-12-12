@@ -52,9 +52,6 @@ class WaypointTracking(JSBSimEnv):
         # declaring observation. Deque with a maximum length of obs_history_size
         self.observation_deque: Deque[np.ndarray] = deque(maxlen=self.task_cfg.mdp.obs_hist_size) # deque of 1D nparrays containing self.State
 
-        # declaring action history. Deque with a maximum length of act_history_size
-        self.action_hist: Deque[np.ndarray] = deque(maxlen=self.task_cfg.mdp.act_hist_size) # action type: np.ndarray
-
         # set action and observation space from the task
         self.action_space = self.get_action_space()
         self.observation_space = self.get_observation_space()
@@ -68,18 +65,6 @@ class WaypointTracking(JSBSimEnv):
 
         self.initialize()
         self.telemetry_setup(self.telemetry_file)
-
-
-    def apply_action(self, action: np.ndarray):
-        super().apply_action(action)
-
-
-    def step(self, action: np.ndarray) -> Tuple[np.ndarray, float, bool, bool, dict]:
-        return super().step(action)
-
-
-    def reset(self, seed: int=None, options: dict=None) -> Tuple[np.ndarray, dict]:
-        return super().reset()
 
 
     def observe_state(self, first_obs: bool = False) -> np.ndarray:
@@ -164,22 +149,34 @@ class WaypointTracking(JSBSimEnv):
         else:
             d_rate = self.dist_to_target_prev - self.dist_to_target
             # r_dist = 0.1*self.dist_to_target - max(3*d_rate, 0.0)
-            if d_rate > 0:
-                r_dist = 0
-            else:
-                r_dist = -1
+            r_dist = max(3*d_rate, 0.0) + min(3*d_rate, 0.0)
+            # if d_rate > 0:
+            #     r_dist = d_rate
+            # else:
+            #     r_dist = -1
         self.dist_to_target_prev = self.dist_to_target
 
 
-        if self.dist_to_target < 10:
-            r_reached = 300.0
+        if self.dist_to_target < 3:
+            r_reached = 30.0
 
         r_total = (r_dist + r_reached)
 
         # r_x = self.sim[prp.enu_x_err_m] / 300
-        # r_y = self.sim[prp.enu_y_err_m] / 300
-        # r_z = self.sim[prp.enu_z_err_m] / 100
-        # r_total = -(r_x + r_y + r_z)
+        # r_y = self.sim[prp.enu_y_err_m]
+        # d_rate = self.dist_to_target_prev - r_y
+        # if d_rate > 0:
+        #     r_y = 1
+        # else:
+        #     r_y = -1
+        # self.dist_to_target_prev = r_y
+        # # r_z = self.sim[prp.enu_z_err_m] / 100
+        # # r_total = -(r_x + r_y + r_z)
+        # r_total = r_y
+
+        # if self.sim[prp.enu_y_err_m] < 10:
+        #     print("Reached y target")
+        #     r_total = 300.0
 
 
         # populate reward properties
@@ -192,8 +189,8 @@ class WaypointTracking(JSBSimEnv):
 
 
     def is_terminated(self):
-        return self.dist_to_target < 10
-    
+        return self.dist_to_target < 3
+
 
 
 class WaypointTrackingNoVa(WaypointTracking):
@@ -219,6 +216,7 @@ class WaypointTrackingNoVa(WaypointTracking):
                            dt=self.fdm_dt, trim=TrimPoint(), 
                            limit=AeroModel().throttle_limit, is_throttle=True
         )
+        self.pid_airspeed.set_reference(60)
 
         self.initialize()
         self.telemetry_setup(self.telemetry_file)
@@ -230,7 +228,6 @@ class WaypointTrackingNoVa(WaypointTracking):
         if action.shape != self.action_space.shape:
             raise ValueError(f"Action shape {action.shape} is not compatible with action space {self.action_space.shape}")
 
-        self.pid_airspeed.set_reference(60)
         throttle_cmd, airspeed_err, _ = self.pid_airspeed.update(state=self.sim[prp.airspeed_kph], saturate=True)
         self.sim[prp.throttle_cmd] = throttle_cmd
 
@@ -242,3 +239,80 @@ class WaypointTrackingNoVa(WaypointTracking):
         super().reset_target_state()
         self.pid_airspeed.reset()
 
+
+class AltitudeTracking(JSBSimEnv):
+    def __init__(self, cfg_env, telemetry_file: str='', render_mode: str='none'):
+        super().__init__(cfg_env, telemetry_file, render_mode)
+
+        self.task_cfg: DictConfig = cfg_env.task
+
+        self.state_prps: Tuple[BoundedProperty] = (
+            prp.enu_z_m, prp.enu_z_err_m, 
+            prp.roll_rad, prp.pitch_rad,
+            prp.p_radps, prp.q_radps,
+            prp.alpha_rad, prp.beta_rad,
+            prp.airspeed_kph,
+            prp.elevator_cmd, prp.throttle_cmd
+        )
+
+        self.action_prps: Tuple[BoundedProperty] = (
+            prp.elevator_cmd, prp.throttle_cmd
+        )
+
+        self.target_prps: Tuple[BoundedProperty] = (
+            prp.target_enu_z_m,
+        )
+
+        self.error_prps: Tuple[BoundedProperty] = (
+            prp.enu_z_err_m,
+        )
+
+        self.reward_prps: Tuple[BoundedProperty] = (
+            prp.reward_total,
+        )
+
+        self.telemetry_prps = self.common_telemetry_prps + self.target_prps + self.error_prps
+        self.action_space = self.get_action_space()
+        self.observation_space = self.get_observation_space()
+
+        self.prev_target_z = 0.0
+
+        self.initialize()
+        self.telemetry_setup(self.telemetry_file)
+
+
+    def reset_target_state(self):
+        self.set_target_state(self.sim[prp.enu_z_m])
+
+
+    def set_target_state(self, target_state:np.ndarray):
+        if target_state[0] != self.prev_target_z:
+            print("Target Z changed to: ", target_state[0])
+        self.sim[prp.target_state[0]] = target_state[0]
+        self.prev_target_z = target_state[0]
+        self.target = self.TargetState(*[self.sim[prop] for prop in self.target_prps])
+
+
+    def update_errors(self):
+        self.sim[prp.enu_z_err_m] = self.sim[prp.target_enu_z_m] - self.sim[prp.enu_z_m]
+        self.errors = self.Errors(*[self.sim[prop] for prop in self.error_prps])
+
+
+    def apply_action(self, action):
+        super().apply_action(action)
+        self.sim[prp.aileron_cmd] = TrimPoint().aileron
+
+
+    def get_reward(self, action):
+        r_dist = np.abs(self.sim[prp.enu_z_err_m])
+        r_total = -r_dist
+        self.sim[prp.reward_wp_total] = r_total
+        return r_total
+
+
+    def is_terminated(self):
+        reached = False
+        if self.dist_to_target < 0.5:
+            print("Reached Target Z: ", self.sim[prp.target_enu_z_m])
+            reached = True
+        return reached
