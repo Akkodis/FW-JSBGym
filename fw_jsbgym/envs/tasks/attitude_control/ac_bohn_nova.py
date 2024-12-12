@@ -60,8 +60,12 @@ class ACBohnNoVaTask(ACBohnTask):
             prp.roll_err, prp.pitch_err, # errors
         )
 
+        self.reward_prps: Tuple[BoundedProperty, ...] = (
+            prp.reward_roll, prp.reward_pitch, prp.reward_actvar, prp.reward_actvar_raw
+        )
+
         # telemetry properties are an addition of the common telemetry properties, target properties and error properties
-        self.telemetry_prps = self.common_telemetry_prps + self.target_prps + self.error_prps
+        self.telemetry_prps = self.common_telemetry_prps + self.target_prps + self.error_prps + self.reward_prps
 
         # PI controller for airspeed
         self.pid_airspeed = PID(kp=0.5, ki=0.1, kd=0.0,
@@ -83,9 +87,9 @@ class ACBohnNoVaTask(ACBohnTask):
         """
             Apply the action to the simulation + maintain airspeed at 60 kph with PI controller.
         """
-        for prop, command in zip(self.action_prps, action):
-            self.sim[prop] = command
-        # self.sim[prp.throttle_cmd] = TrimPoint().throttle # set throttle to trim point throttle
+        # apply action to the simulation
+        super().apply_action(action)
+
         # maintain airspeed at 60 kph with PI controller
         self.pid_airspeed.set_reference(60)
         throttle_cmd, airspeed_err, _ = self.pid_airspeed.update(state=self.sim[prp.airspeed_kph], saturate=True)
@@ -117,10 +121,13 @@ class ACBohnNoVaTask(ACBohnTask):
         """
             Set the target state of the aircraft, i.e. the target state variables defined in the `target_state_vars` tuple.
         """
+        # print target state if it changes and reset airspeed pid integral error
         if target_roll_rad != self.prev_target_roll:
             print(f"Target roll: {np.rad2deg(target_roll_rad):.3f}")
+            self.pid_airspeed.reset()
         if target_pitch_rad != self.prev_target_pitch:
             print(f"Target pitch: {np.rad2deg(target_pitch_rad):.3f}")
+            self.pid_airspeed.reset()
 
         # set target state sim properties
         self.sim[prp.target_roll_rad] = target_roll_rad
@@ -128,9 +135,6 @@ class ACBohnNoVaTask(ACBohnTask):
 
         self.prev_target_roll = target_roll_rad
         self.prev_target_pitch = target_pitch_rad
-
-        # reset airspeed pid integral error
-        self.pid_airspeed.reset()
 
         # fill target state namedtuple with target state attributes
         self.target = self.TargetState(str(target_roll_rad), str(target_pitch_rad))
@@ -143,6 +147,8 @@ class ACBohnNoVaTask(ACBohnTask):
         # reset task class attributes with initial conditions
         self.set_target_state(target_roll_rad=self.sim[prp.initial_roll_rad], 
                               target_pitch_rad=self.sim[prp.initial_pitch_rad])
+        # reset airspeed pid integral error
+        self.pid_airspeed.reset()
 
 
     def get_reward_bohnorig(self, action: np.ndarray) -> float:

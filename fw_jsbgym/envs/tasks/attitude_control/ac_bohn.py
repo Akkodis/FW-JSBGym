@@ -62,8 +62,12 @@ class ACBohnTask(JSBSimEnv):
             prp.roll_err, prp.pitch_err, prp.airspeed_err # errors
         )
 
+        self.reward_prps: Tuple[BoundedProperty, ...] = (
+            prp.reward_roll, prp.reward_pitch, prp.reward_airspeed, # reward components
+        )
+
         # telemetry properties are an addition of the common telemetry properties, target properties and error properties
-        self.telemetry_prps = self.common_telemetry_prps + self.target_prps + self.error_prps
+        self.telemetry_prps = self.common_telemetry_prps + self.target_prps + self.error_prps + self.reward_prps
 
         # declaring observation. Deque with a maximum length of obs_history_size
         self.observation_deque: Deque[np.ndarray] = deque(maxlen=self.task_cfg.mdp.obs_hist_size) # deque of 1D nparrays containing self.State
@@ -78,7 +82,7 @@ class ACBohnTask(JSBSimEnv):
         self.initialize()
         self.telemetry_setup(self.telemetry_file)
 
-    # TODO: I was working on the reset function
+
     def reset(self, seed: int=None, options: dict=None) -> Tuple[np.ndarray, dict]:
         """
             Reset the task to its initial conditions.
@@ -91,7 +95,6 @@ class ACBohnTask(JSBSimEnv):
         # clear the observation deque (history of past observations)
         self.observation_deque.clear()
 
-        self.render() # render the simulation
         return self.observation, info
 
 
@@ -101,8 +104,6 @@ class ACBohnTask(JSBSimEnv):
         """
         super().reset_props() # reset the parent class JSBSimEnv properties
 
-        # self.reset_target_state() # reset task target state
-        # self.update_errors() # reset task errors
         self.update_action_history() # reset action history
         self.update_action_avg() # reset action avg
 

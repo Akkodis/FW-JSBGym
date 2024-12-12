@@ -124,7 +124,7 @@ class JSBSimEnv(gym.Env, ABC):
             prp.aileron_cmd, prp.elevator_cmd, prp.throttle_cmd, # control surface commands
             prp.aileron_combined_pos_rad, prp.elevator_pos_rad, prp.throttle_pos, # control surface positions
             prp.aileron_combined_pos_norm, prp.elevator_pos_norm, # control surface positions normalized
-            prp.reward_total, prp.reward_roll, prp.reward_pitch, prp.reward_actvar, # rewards
+            prp.reward_total, # total reward per timestep
             prp.airspeed_mps, prp.airspeed_kph, # airspeed
             prp.total_windspeed_north_mps, prp.total_windspeed_east_mps, prp.total_windspeed_down_mps, # wind speed mps
             prp.total_windspeed_north_kph, prp.total_windspeed_east_kph, prp.total_windspeed_down_kph, # wind speed kph
@@ -284,6 +284,7 @@ class JSBSimEnv(gym.Env, ABC):
 
         last_fcs_pos_hist = self.fcs_pos_hist.copy() # copy the fcs position history of the last episode about to be reset
         self.fcs_pos_hist.clear() # clear the fcs position history list (start a new episode)
+        self.render()
 
         info: Dict = {"non_norm_obs": self.observation,
                       "fcs_pos_hist": last_fcs_pos_hist}
@@ -540,7 +541,7 @@ class JSBSimEnv(gym.Env, ABC):
             self.sim[prop] = command
 
 
-    def observe_state(self) -> np.ndarray:
+    def observe_state(self, first_obs: bool=False) -> np.ndarray:
         """
             Observe the state of the aircraft from the simulation properties and return the state as a numpy array.
         """
