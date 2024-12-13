@@ -117,27 +117,32 @@ class ACBohnNoVaTask(ACBohnTask):
         self.sim[prp.elevator_avg] = np.mean(np.array(self.action_hist)[:, 1])
 
 
-    def set_target_state(self, target_roll_rad: float, target_pitch_rad: float) -> None:
+    def set_target_state(self, target_state: np.ndarray) -> None:
         """
             Set the target state of the aircraft, i.e. the target state variables defined in the `target_state_vars` tuple.
+            Args: target_state: np.ndarray of target state variables [roll, pitch]. Units: [rad, rad]
         """
+        # check that the target state has the correct shape
+        if target_state.shape[0] != len(self.target_prps):
+            raise ValueError(f"Target state should be a 1D ndarray of length {len(self.target_prps)} but got shape {target_state.shape}")
+
         # print target state if it changes and reset airspeed pid integral error
-        if target_roll_rad != self.prev_target_roll:
-            print(f"Target roll: {np.rad2deg(target_roll_rad):.3f}")
+        if target_state[0] != self.prev_target_roll:
+            print(f"Target roll: {np.rad2deg(target_state[0]):.3f}")
             self.pid_airspeed.reset()
-        if target_pitch_rad != self.prev_target_pitch:
-            print(f"Target pitch: {np.rad2deg(target_pitch_rad):.3f}")
+        if target_state[1] != self.prev_target_pitch:
+            print(f"Target pitch: {np.rad2deg(target_state[1]):.3f}")
             self.pid_airspeed.reset()
 
         # set target state sim properties
-        self.sim[prp.target_roll_rad] = target_roll_rad
-        self.sim[prp.target_pitch_rad] = target_pitch_rad
+        self.sim[prp.target_roll_rad] = target_state[0]
+        self.sim[prp.target_pitch_rad] = target_state[1]
 
-        self.prev_target_roll = target_roll_rad
-        self.prev_target_pitch = target_pitch_rad
+        self.prev_target_roll = target_state[0]
+        self.prev_target_pitch = target_state[1]
 
         # fill target state namedtuple with target state attributes
-        self.target = self.TargetState(str(target_roll_rad), str(target_pitch_rad))
+        self.target = self.TargetState(str(target_state[0]), str(target_state[1]))
 
 
     def reset_target_state(self) -> None:
@@ -145,8 +150,8 @@ class ACBohnNoVaTask(ACBohnTask):
             Reset the target state of the aircraft, i.e. the target state variables defined in the `target_state_vars` tuple, with initial conditions.
         """
         # reset task class attributes with initial conditions
-        self.set_target_state(target_roll_rad=self.sim[prp.initial_roll_rad], 
-                              target_pitch_rad=self.sim[prp.initial_pitch_rad])
+        self.set_target_state(np.array([self.sim[prp.initial_roll_rad], 
+                                          self.sim[prp.initial_pitch_rad]]))
         # reset airspeed pid integral error
         self.pid_airspeed.reset()
 
@@ -261,12 +266,13 @@ class ACBohnNoVaIErrTask(ACBohnNoVaTask):
         self.telemetry_setup(self.telemetry_file)
 
 
-    def set_target_state(self, target_roll_rad: float, target_pitch_rad: float) -> None:
+    def set_target_state(self, target_state: np.ndarray) -> None:
         """
             Set the target state of the aircraft, i.e. the target state variables defined in the `target_state_vars` tuple.
             If the target state changes, reset the integral errors.
+            Args: target_state: np.ndarray of target state variables [roll, pitch]. Units: [rad, rad]
         """
-        super().set_target_state(target_roll_rad, target_pitch_rad)
+        super().set_target_state(target_state)
 
         # reset integral errors
         self.sim[prp.roll_integ_err] = 0.0

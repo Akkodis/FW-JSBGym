@@ -703,7 +703,7 @@ class JSBSimEnv(gym.Env, ABC):
 
 
     @abstractmethod
-    def set_target_state(self) -> None:
+    def set_target_state(self, target_state: np.ndarray) -> None:
         """
             Set the target state of the environment.
         """

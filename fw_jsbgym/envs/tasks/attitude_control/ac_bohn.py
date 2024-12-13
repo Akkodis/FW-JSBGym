@@ -186,17 +186,22 @@ class ACBohnTask(JSBSimEnv):
         self.sim[prp.throttle_avg] = np.mean(np.array(self.action_hist)[:, 2])
 
 
-    def set_target_state(self, target_roll_rad: float, target_pitch_rad: float, target_airspeed_kph: float) -> None:
+    def set_target_state(self, target_state: np.ndarray) -> None:
         """
             Set the target state of the aircraft, i.e. the target state variables defined in the `target_state_vars` tuple.
+            Arg: np.ndarray[target roll, target pitch and target airspeed]. Units: [rad, rad, kph].
         """
+        # check that the target state has the correct shape
+        if target_state.shape[0] != len(self.target_prps):
+            raise ValueError(f"Target state should be a 1D ndarray of length {len(self.target_prps)} but got shape {target_state.shape}")
+
         # set target state sim properties
-        self.sim[prp.target_roll_rad] = target_roll_rad
-        self.sim[prp.target_pitch_rad] = target_pitch_rad
-        self.sim[prp.target_airspeed_kph] = target_airspeed_kph
+        self.sim[prp.target_roll_rad] = target_state[0]
+        self.sim[prp.target_pitch_rad] = target_state[1]
+        self.sim[prp.target_airspeed_kph] = target_state[2]
 
         # fill target state namedtuple with target state attributes
-        self.target = self.TargetState(str(target_roll_rad), str(target_pitch_rad), str(target_airspeed_kph))
+        self.target = self.TargetState(str(target_state[0]), str(target_state[1]), str(target_state[2]))
 
 
     def reset_target_state(self) -> None:
@@ -204,9 +209,9 @@ class ACBohnTask(JSBSimEnv):
             Reset the target state of the aircraft, i.e. the target state variables defined in the `target_state_vars` tuple, with initial conditions.
         """
         # reset task class attributes with initial conditions
-        self.set_target_state(target_roll_rad=self.sim[prp.initial_roll_rad], 
-                              target_pitch_rad=self.sim[prp.initial_pitch_rad],
-                              target_airspeed_kph=self.sim[prp.initial_airspeed_kts] * 1.852) # converting kts to kph
+        self.set_target_state(np.array([self.sim[prp.initial_roll_rad],
+                                          self.sim[prp.initial_pitch_rad],
+                                          self.sim[prp.initial_airspeed_kts] * 1.852])) # converting kts to kph
 
 
     def get_reward(self, action: np.ndarray) -> float:

@@ -282,13 +282,21 @@ class AltitudeTracking(JSBSimEnv):
 
 
     def reset_target_state(self):
-        self.set_target_state(self.sim[prp.enu_z_m])
+        self.set_target_state(np.array([self.sim[prp.enu_z_m]]))
 
 
     def set_target_state(self, target_state:np.ndarray):
+        """
+            Sets the target state of the task.
+            Args: target_state: np.ndarray of shape (1,) with the target altitude.
+        """
+        # check that the target state has the correct shape
+        if target_state.shape[0] != len(self.target_prps):
+            raise ValueError(f"Target state should be a 1D ndarray of length {len(self.target_prps)} but got shape {target_state.shape}")
+
         if target_state[0] != self.prev_target_z:
             print("Target Z changed to: ", target_state[0])
-        self.sim[prp.target_state[0]] = target_state[0]
+        self.sim[prp.target_enu_z_m] = target_state[0]
         self.prev_target_z = target_state[0]
         self.target = self.TargetState(*[self.sim[prop] for prop in self.target_prps])
 
@@ -306,13 +314,6 @@ class AltitudeTracking(JSBSimEnv):
     def get_reward(self, action):
         r_dist = np.abs(self.sim[prp.enu_z_err_m])
         r_total = -r_dist
-        self.sim[prp.reward_wp_total] = r_total
+        self.sim[prp.reward_total] = r_total
         return r_total
 
-
-    def is_terminated(self):
-        reached = False
-        if self.dist_to_target < 0.5:
-            print("Reached Target Z: ", self.sim[prp.target_enu_z_m])
-            reached = True
-        return reached

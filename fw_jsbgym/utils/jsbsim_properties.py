@@ -301,7 +301,6 @@ reward_longitude = BoundedProperty("reward/longitude", "longitude reward", 0, fl
 reward_ecef_y = BoundedProperty("reward/ecef-y", "ECEF y reward", 0, float('+inf'))
 reward_altitude = BoundedProperty("reward/altitude", "altitude reward", 0, float('+inf'))
 reward_ecef_z = BoundedProperty("reward/ecef-z", "ECEF z reward", 0, float('+inf'))
-reward_wp_total = BoundedProperty("reward/wp_total", "total waypoint reward", float('-inf'), 0)
 
 
 # PID-RL properties no stability ensured
