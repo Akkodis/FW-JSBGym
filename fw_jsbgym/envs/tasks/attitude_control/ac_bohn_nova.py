@@ -256,7 +256,7 @@ class ACBohnNoVaIErrTask(ACBohnNoVaTask):
         )
 
         # telemetry properties are an addition of the common telemetry properties, target properties and error properties
-        self.telemetry_prps = self.common_telemetry_prps + self.target_prps + self.error_prps
+        self.telemetry_prps = self.common_telemetry_prps + self.target_prps + self.error_prps + self.reward_prps
 
         # set action and observation space from the task
         self.action_space = self.get_action_space()
@@ -314,7 +314,7 @@ class ACBohnNoVaIErrYawTask(ACBohnNoVaIErrTask):
         self.state_prps += (prp.heading_rad, ) # integral errors
 
         # telemetry properties are an addition of the common telemetry properties, target properties and error properties
-        self.telemetry_prps = self.common_telemetry_prps + self.target_prps + self.error_prps
+        self.telemetry_prps = self.common_telemetry_prps + self.target_prps + self.error_prps + self.reward_prps
 
         # set action and observation space from the task
         self.action_space = self.get_action_space()
