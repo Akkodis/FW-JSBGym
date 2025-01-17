@@ -246,12 +246,34 @@ class AltitudeTracking(JSBSimEnv):
 
         self.task_cfg: DictConfig = cfg_env.task
 
+        # SS 1
+        # self.state_prps: Tuple[BoundedProperty] = (
+        #     prp.enu_z_err_m, 
+        #     prp.roll_rad, prp.pitch_rad,
+        #     prp.p_radps, prp.q_radps,
+        #     prp.alpha_rad, prp.beta_rad,
+        #     prp.airspeed_kph,
+        #     prp.elevator_cmd, prp.throttle_cmd
+        # )
+
+        # SS 2
+        # self.state_prps: Tuple[BoundedProperty] = (
+        #     prp.enu_z_err_m,
+        #     prp.u_fps, prp.w_fps,
+        #     prp.pitch_rad,
+        #     prp.q_radps,
+        #     prp.alpha_rad, prp.beta_rad,
+        #     prp.airspeed_kph,
+        #     prp.elevator_cmd, prp.throttle_cmd
+        # )
+
+        # SS 3
         self.state_prps: Tuple[BoundedProperty] = (
-            prp.enu_z_m, prp.enu_z_err_m, 
+            prp.enu_z_err_m,
             prp.roll_rad, prp.pitch_rad,
-            prp.p_radps, prp.q_radps,
-            prp.alpha_rad, prp.beta_rad,
             prp.airspeed_kph,
+            prp.p_radps, prp.q_radps, prp.r_radps,
+            prp.alpha_rad, prp.beta_rad,
             prp.elevator_cmd, prp.throttle_cmd
         )
 
@@ -313,6 +335,7 @@ class AltitudeTracking(JSBSimEnv):
 
     def get_reward(self, action):
         r_dist = np.abs(self.sim[prp.enu_z_err_m])
+        r_dist = 10 * np.tanh(0.005 * r_dist)
         r_total = -r_dist
         self.sim[prp.reward_total] = r_total
         return r_total
