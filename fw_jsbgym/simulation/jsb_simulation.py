@@ -161,6 +161,8 @@ class Simulation(object):
         """
             Converts some properties from imperial to international metric system
         """
+        self.fdm[prp.zero.name] = 0.0
+        self.fdm[prp.zero_.name] = 0.0
         if not isinstance(prop, str):
             if prop in self.prp_conv_fps2mps:
                 self.fdm[prop.name] = self.fdm[prop.name[:-3]+'fps'] * ConvFactor.fps2mps.value
@@ -177,6 +179,9 @@ class Simulation(object):
                 self.fdm[prp.enu_x_m.name] = enu_coords[0]
                 self.fdm[prp.enu_y_m.name] = enu_coords[1]
                 self.fdm[prp.enu_z_m.name] = enu_coords[2]
+                self.fdm[prp.enu_x_km.name] = enu_coords[0] / 1000
+                self.fdm[prp.enu_y_km.name] = enu_coords[1] / 1000
+                self.fdm[prp.enu_z_km.name] = enu_coords[2] / 1000
 
         # self.fdm[prp.airspeed_mps.name] = self.fdm[prp.airspeed_kts.name] * ConvFactor.kts2mps.value
         # self.fdm[prp.airspeed_kph.name] = self.fdm[prp.airspeed_kts.name] * ConvFactor.kts2kph.value

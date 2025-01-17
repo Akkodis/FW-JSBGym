@@ -65,6 +65,13 @@ ecef_z_m = BoundedHelperProperty('position/ecef-z-m', 'ECEF z coordinate [m]', f
 enu_x_m = BoundedHelperProperty('position/enu-x-m', 'ENU x coordinate [m]', float('-inf'), float('+inf'))
 enu_y_m = BoundedHelperProperty('position/enu-y-m', 'ENU y coordinate [m]', float('-inf'), float('+inf'))
 enu_z_m = BoundedHelperProperty('position/enu-z-m', 'ENU z coordinate [m]', float('-inf'), float('+inf'))
+enu_x_km = BoundedHelperProperty('position/enu-x-km', 'ENU x coordinate [km]', float('-inf'), float('+inf'))
+enu_y_km = BoundedHelperProperty('position/enu-y-km', 'ENU y coordinate [km]', float('-inf'), float('+inf'))
+enu_z_km = BoundedHelperProperty('position/enu-z-km', 'ENU z coordinate [km]', float('-inf'), float('+inf'))
+
+# zero
+zero = BoundedHelperProperty('zero', 'zero value', 0, 0)
+zero_ = BoundedHelperProperty('zero_', 'zero value', 0, 0)
 
 # velocities
 u_fps = BoundedProperty('velocities/u-fps', 'body frame x-axis velocity [ft/s]', -2200, 2200)
@@ -259,6 +266,9 @@ ecef_z_err_m = BoundedHelperProperty("error/ecef-z-err-m", "ECEF z error [m]", f
 enu_x_err_m = BoundedHelperProperty("error/enu-x-err-m", "ENU x error [m]", float('-inf'), float('+inf'))
 enu_y_err_m = BoundedHelperProperty("error/enu-y-err-m", "ENU y error [m]", float('-inf'), float('+inf'))
 enu_z_err_m = BoundedHelperProperty("error/enu-z-err-m", "ENU z error [m]", float('-inf'), float('+inf'))
+enu_x_err_km = BoundedHelperProperty("error/enu-x-err-km", "ENU x error [km]", float('-inf'), float('+inf'))
+enu_y_err_km = BoundedHelperProperty("error/enu-y-err-km", "ENU y error [km]", float('-inf'), float('+inf'))
+enu_z_err_km = BoundedHelperProperty("error/enu-z-err-km", "ENU z error [km]", float('-inf'), float('+inf'))
 
 # target values
 # target_airspeed_kts = BoundedProperty("target/airspeed-kts", "desired airspeed [knots]", float('-inf'), float('+inf'))
@@ -276,6 +286,9 @@ target_alt_m = BoundedProperty("target/altitude-m", "desired altitude [m]", 0, f
 target_enu_x_m = BoundedProperty("target/enu-x-m", "desired ENU x [m]", float('-inf'), float('+inf'))
 target_enu_y_m = BoundedProperty("target/enu-y-m", "desired ENU y [m]", float('-inf'), float('+inf'))
 target_enu_z_m = BoundedProperty("target/enu-z-m", "desired ENU z [m]", float('-inf'), float('+inf'))
+target_enu_x_km = BoundedProperty("target/enu-x-km", "desired ENU x [km]", float('-inf'), float('+inf'))
+target_enu_y_km = BoundedProperty("target/enu-y-km", "desired ENU y [km]", float('-inf'), float('+inf'))
+target_enu_z_km = BoundedProperty("target/enu-z-km", "desired ENU z [km]", float('-inf'), float('+inf'))
 
 # action avg over last n steps
 aileron_avg = BoundedProperty("fcs/aileron_avg", "aileron action average", aileron_cmd.min, aileron_cmd.max)
