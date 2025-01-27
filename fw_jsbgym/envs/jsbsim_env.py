@@ -226,6 +226,7 @@ class JSBSimEnv(gym.Env, ABC):
         Returns:
             - `state`: the initial state of the environment after reset
         """
+        print("\n***Resetting the environment***")
         if self.sim:
             # reintialize the simulation
             self.sim.fdm.reset_to_initial_conditions(0)
