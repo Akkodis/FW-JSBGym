@@ -25,7 +25,6 @@ class WaypointTracking(JSBSimEnv):
         self.task_cfg: DictConfig = cfg_env.task
 
         self.state_prps = (
-            prp.enu_x_m, prp.enu_y_m, prp.enu_z_m, # position
             prp.enu_x_err_m, prp.enu_y_err_m, prp.enu_z_err_m, # position error
             prp.roll_rad, prp.pitch_rad, # attitude
             prp.airspeed_kph, # airspeed
@@ -56,9 +55,7 @@ class WaypointTracking(JSBSimEnv):
         self.action_space = self.get_action_space()
         self.observation_space = self.get_observation_space()
 
-
-        self.dist_to_target = np.inf
-        self.dist_to_target_prev = np.inf
+        self.dist_to_target = 0.0
         self.prev_target_x = 0.0
         self.prev_target_y = 0.0
         self.prev_target_z = 0.0
@@ -84,10 +81,16 @@ class WaypointTracking(JSBSimEnv):
             obs: np.ndarray = np.expand_dims(np.array(self.observation_deque), axis=0).astype(np.float32)
         else: # else return observation as a vector for MLP policy
             obs: np.ndarray = np.array(self.observation_deque).squeeze().flatten().astype(np.float32)
+
+        self.dist_to_target = np.sqrt(self.sim[prp.enu_x_err_m]**2 + 
+                                      self.sim[prp.enu_y_err_m]**2 + 
+                                      self.sim[prp.enu_z_err_m]**2)
+
         return obs
 
 
-    def set_target_state(self, target_enu_x_m, target_enu_y_m, target_enu_z_m) -> None:
+    def set_target_state(self, target: np.ndarray) -> None:
+        target_enu_x_m, target_enu_y_m, target_enu_z_m = target
         if target_enu_x_m != self.prev_target_x:
             print("Target X changed to: ", target_enu_x_m)
         if target_enu_y_m != self.prev_target_y:
@@ -104,6 +107,14 @@ class WaypointTracking(JSBSimEnv):
         self.prev_target_z = target_enu_z_m
 
         self.target = self.TargetState(*[self.sim[prop] for prop in self.target_prps])
+
+
+    def reset_target_state(self) -> None:
+        """
+            Resets the target state to the current state
+        """
+        init_target = np.array([self.sim[prp.enu_x_m], self.sim[prp.enu_y_m], self.sim[prp.enu_z_m]])
+        self.set_target_state(init_target)
 
 
     def update_errors(self):
@@ -129,62 +140,32 @@ class WaypointTracking(JSBSimEnv):
         self.errors = self.Errors(*[self.sim[prop] for prop in self.error_prps])
 
 
-    def reset_target_state(self) -> None:
-        """
-            Resets the target state to the current state and the PID controller.
-        """
-        self.set_target_state(self.sim[prp.lat_gc_deg], self.sim[prp.lng_gc_deg], self.sim[prp.altitude_sl_m])
-
-
     def get_reward(self, action: np.ndarray) -> float:
         """
             Reward function for the waypoint tracking task.
         """
-        self.dist_to_target = np.sqrt(self.sim[prp.enu_x_err_m]**2 + self.sim[prp.enu_y_err_m]**2 + self.sim[prp.enu_z_err_m]**2)
-        d_rate = 0.0
-        r_dist = 0.0
-        r_reached = 0.0
-        if np.any(np.isinf(self.dist_to_target_prev + self.dist_to_target)):
-            d_rate = 0.0
-        else:
-            d_rate = self.dist_to_target_prev - self.dist_to_target
-            # r_dist = 0.1*self.dist_to_target - max(3*d_rate, 0.0)
-            r_dist = max(3*d_rate, 0.0) + min(3*d_rate, 0.0)
-            # if d_rate > 0:
-            #     r_dist = d_rate
-            # else:
-            #     r_dist = -1
-        self.dist_to_target_prev = self.dist_to_target
+        return self.reward_dist(action)
 
 
-        if self.dist_to_target < 3:
-            r_reached = 30.0
-
-        r_total = (r_dist + r_reached)
-
-        # r_x = self.sim[prp.enu_x_err_m] / 300
-        # r_y = self.sim[prp.enu_y_err_m]
-        # d_rate = self.dist_to_target_prev - r_y
-        # if d_rate > 0:
-        #     r_y = 1
-        # else:
-        #     r_y = -1
-        # self.dist_to_target_prev = r_y
-        # # r_z = self.sim[prp.enu_z_err_m] / 100
-        # # r_total = -(r_x + r_y + r_z)
-        # r_total = r_y
-
-        # if self.sim[prp.enu_y_err_m] < 10:
-        #     print("Reached y target")
-        #     r_total = 300.0
-
+    def reward_percoord(self, action: np.ndarray) -> float:
+        r_x = np.abs(self.sim[prp.enu_x_err_m])
+        r_y = np.abs(self.sim[prp.enu_y_err_m])
+        r_z = np.abs(self.sim[prp.enu_z_err_m])
+        r_total = - (r_x + r_y + r_z)
 
         # populate reward properties
-        # self.sim[prp.reward_enu_x] = r_x
-        # self.sim[prp.reward_enu_y] = r_y
-        # self.sim[prp.reward_enu_z] = r_z
-        self.sim[prp.reward_wp_total] = r_total
+        self.sim[prp.reward_enu_x] = r_x
+        self.sim[prp.reward_enu_y] = r_y
+        self.sim[prp.reward_enu_z] = r_z
+        self.sim[prp.reward_total] = r_total
 
+        return r_total
+
+
+    def reward_dist(self, action: np.ndarray) -> float:
+        r_dist = np.abs(self.dist_to_target)
+        r_total = -r_dist
+        self.sim[prp.reward_total] = r_total
         return r_total
 
 
