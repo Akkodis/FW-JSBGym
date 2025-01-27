@@ -15,5 +15,4 @@ dependencies:
   - tensorboard
   - wandb
   - pandas
-  - pymap3d
 prefix: /home/david/misc_software/miniconda3/envs/tdmpc2

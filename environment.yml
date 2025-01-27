@@ -125,7 +125,6 @@ dependencies:
   - pillow=10.2.0=py310h01dd4db_0
   - pip=21.0.1=pyhd8ed1ab_0
   - pthread-stubs=0.4=h36c2ea0_1001
-  - pymap3d=3.1.0=pyhd8ed1ab_0
   - pysocks=1.7.1=pyha2e5f31_6
   - python=3.10.0=h543edf9_3_cpython
   - python-dateutil=2.9.0.post0=pyhff2d567_0
