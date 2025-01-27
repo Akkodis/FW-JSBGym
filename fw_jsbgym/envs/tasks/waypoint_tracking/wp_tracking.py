@@ -163,7 +163,7 @@ class WaypointTracking(JSBSimEnv):
 
 
     def reward_dist(self, action: np.ndarray) -> float:
-        r_dist = np.abs(self.dist_to_target)
+        r_dist = 10 * np.tanh(0.003 * self.dist_to_target)
         r_total = -r_dist
         self.sim[prp.reward_total] = r_total
         return r_total
