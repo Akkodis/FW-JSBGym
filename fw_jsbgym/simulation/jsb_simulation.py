@@ -3,13 +3,14 @@ import resource
 import jsbsim
 import os
 import time
+import numpy as np
 from fw_jsbgym.trim.trim_point import TrimPoint
 from typing import Union, Tuple
 from fw_jsbgym.utils import jsbsim_properties as prp
 from enum import Enum
 from pkg_resources import resource_filename
 from fw_jsbgym.utils.jsbsim_properties import BoundedProperty
-from pymap3d.ecef import ecef2enu
+
 
 class ConvFactor(Enum):
     kts2mps = 0.51444
@@ -36,6 +37,7 @@ class Simulation(object):
             - `FG_OUT_FILE`: the name of the file containing the FlightGear output protocol settings
     """
     FG_OUT_FILE = 'flightgear.xml'
+
 
     def __init__(self,
                  fdm_frequency: float,
@@ -172,10 +174,10 @@ class Simulation(object):
                 self.fdm[prop.name] = self.fdm[prp.airspeed_kts.name] * ConvFactor.kts2mps.value
                 self.fdm[prop.name] = self.fdm[prp.airspeed_kts.name] * ConvFactor.kts2kph.value
             elif 'enu' in prop.name:
-                ecef_x_m = self.fdm[prp.ecef_x_ft.name] * ConvFactor.ft2m.value
-                ecef_y_m = self.fdm[prp.ecef_y_ft.name] * ConvFactor.ft2m.value
-                ecef_z_m = self.fdm[prp.ecef_z_ft.name] * ConvFactor.ft2m.value
-                enu_coords = ecef2enu(ecef_x_m, ecef_y_m, ecef_z_m, 47.635784, 2.460938, -35.597614)
+                lat_gc = self.fdm[prp.lat_gc_deg.name]
+                lon_gc = self.fdm[prp.lng_gc_deg.name]
+                alt = self.fdm[prp.altitude_sl_m.name]
+                enu_coords = self.geocentric2enu(lat_gc, lon_gc, alt, 47.635784, 2.460938, 0.0)
                 self.fdm[prp.enu_x_m.name] = enu_coords[0]
                 self.fdm[prp.enu_y_m.name] = enu_coords[1]
                 self.fdm[prp.enu_z_m.name] = enu_coords[2]
@@ -183,24 +185,58 @@ class Simulation(object):
                 self.fdm[prp.enu_y_km.name] = enu_coords[1] / 1000
                 self.fdm[prp.enu_z_km.name] = enu_coords[2] / 1000
 
-        # self.fdm[prp.airspeed_mps.name] = self.fdm[prp.airspeed_kts.name] * ConvFactor.kts2mps.value
-        # self.fdm[prp.airspeed_kph.name] = self.fdm[prp.airspeed_kts.name] * ConvFactor.kts2kph.value
-        # self.fdm[prp.windspeed_north_mps.name] = self.fdm[prp.windspeed_north_fps.name] * ConvFactor.fps2mps.value
-        # self.fdm[prp.windspeed_north_kph.name] = self.fdm[prp.windspeed_north_fps.name] * ConvFactor.fps2kph.value
-        # self.fdm[prp.windspeed_east_mps.name] = self.fdm[prp.windspeed_east_fps.name] * ConvFactor.fps2mps.value
-        # self.fdm[prp.windspeed_east_kph.name] = self.fdm[prp.windspeed_east_fps.name] * ConvFactor.fps2kph.value
-        # self.fdm[prp.windspeed_down_mps.name] = self.fdm[prp.windspeed_down_fps.name] * ConvFactor.fps2mps.value
-        # self.fdm[prp.windspeed_down_kph.name] = self.fdm[prp.windspeed_down_fps.name] * ConvFactor.fps2kph.value
-        # self.fdm[prp.total_windspeed_north_mps.name] = self.fdm[prp.total_windspeed_north_fps.name] * ConvFactor.fps2mps.value
-        # self.fdm[prp.total_windspeed_north_kph.name] = self.fdm[prp.total_windspeed_north_fps.name] * ConvFactor.fps2kph.value
-        # self.fdm[prp.total_windspeed_east_mps.name] = self.fdm[prp.total_windspeed_east_fps.name] * ConvFactor.fps2mps.value
-        # self.fdm[prp.total_windspeed_east_kph.name] = self.fdm[prp.total_windspeed_east_fps.name] * ConvFactor.fps2kph.value
-        # self.fdm[prp.total_windspeed_down_mps.name] = self.fdm[prp.total_windspeed_down_fps.name] * ConvFactor.fps2mps.value
-        # self.fdm[prp.total_windspeed_down_kph.name] = self.fdm[prp.total_windspeed_down_fps.name] * ConvFactor.fps2kph.value
-        # self.fdm[prp.turb_north_mps.name] = self.fdm[prp.turb_north_fps.name] * ConvFactor.fps2mps.value
-        # self.fdm[prp.turb_north_kph.name] = self.fdm[prp.turb_north_fps.name] * ConvFactor.fps2kph.value
-        # self.fdm[prp.turb_east_mps.name] = self.fdm[prp.turb_east_fps.name] * ConvFactor.fps2mps.value
-        # self.fdm[prp.turb_east_kph.name] = self.fdm[prp.turb_east_fps.name] * ConvFactor.fps2kph.value
-        # self.fdm[prp.turb_down_mps.name] = self.fdm[prp.turb_down_fps.name] * ConvFactor.fps2mps.value
-        # self.fdm[prp.turb_down_kph.name] = self.fdm[prp.turb_down_fps.name] * ConvFactor.fps2kph.value
 
+    def geocentric2ecef(self, lat, lon, alt):
+        """
+        Convert geocentric coordinates to ECEF coordinates
+        args: lat, lon, alt (in degrees, degrees, meters)
+        """
+        # Convert degrees to radians
+        lat = np.radians(lat)
+        lon = np.radians(lon)
+
+        # WGS-84 ellipsoid constant: semi-major axis (approx earth radius in m)
+        r = 6378137.0
+
+        # Compute ECEF coordinates
+        x = (r + alt) * np.cos(lat) * np.cos(lon)
+        y = (r + alt) * np.cos(lat) * np.sin(lon)
+        z = (r + alt) * np.sin(lat)
+
+        return np.array([x, y, z])
+
+
+    def ecef2enu(self, x, y, z, lat0, lon0, alt0):
+        """
+        Convert ECEF coordinates to ENU coordinates
+        args: x, y, z, lat0, lon0, alt0 (in meters, degrees, degrees, meters)
+        """
+        # Reference point (in ECEF)
+        ref_ecef = self.geocentric2ecef(lat0, lon0, alt0)
+
+        # Translation vector
+        dx, dy, dz = x - ref_ecef[0], y - ref_ecef[1], z - ref_ecef[2]
+
+        # Rotation matrix
+        ref_lat = np.radians(lat0)
+        ref_lon = np.radians(lon0)
+
+        R = np.array([
+            [-np.sin(ref_lon), np.cos(ref_lon), 0],
+            [-np.sin(ref_lat) * np.cos(ref_lon), -np.sin(ref_lat) * np.sin(ref_lon), np.cos(ref_lat)],
+            [np.cos(ref_lat) * np.cos(ref_lon), np.cos(ref_lat) * np.sin(ref_lon), np.sin(ref_lat)]
+        ])
+
+        enu = R @ np.array([dx, dy, dz])
+
+        return enu
+    
+
+    def geocentric2enu(self, lat, lon, alt, lat0, lon0, alt0):
+        """
+        Convert geocentric coordinates to ENU coordinates
+        args: lat[deg], lon[deg], alt[m], lat0[deg], lon0[deg], alt0[m]
+        """
+        ecef = self.geocentric2ecef(lat, lon, alt)
+        enu = self.ecef2enu(ecef[0], ecef[1], ecef[2], lat0, lon0, alt0)
+        return enu
