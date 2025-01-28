@@ -170,7 +170,11 @@ class WaypointTracking(JSBSimEnv):
 
 
     def is_terminated(self):
-        return self.dist_to_target < 3
+        terminated = False
+        if self.dist_to_target < 3:
+            print("Target reached!")
+            terminated = True
+        return terminated
 
 
 
