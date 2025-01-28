@@ -93,6 +93,12 @@ class Simulation(object):
         # load and run initial conditions
         self.load_run_ic()
 
+        # observer reference GC coordinates
+        self.obs_gc = np.array([self.fdm['ic/lat-gc-deg'], self.fdm['ic/long-gc-deg'], 0.0])
+
+        # convert observer reference GC coordinates to ECEF
+        self.obs_ecef = self.geocentric2ecef(self.obs_gc[0], self.obs_gc[1], self.obs_gc[2])
+
 
     def __getitem__(self, prop: Union[prp.Property, prp.HelperProperty, prp.BoundedProperty, prp.BoundedHelperProperty] | str) -> float:
         self.convert_props_to_SI(prop)
@@ -177,7 +183,7 @@ class Simulation(object):
                 lat_gc = self.fdm[prp.lat_gc_deg.name]
                 lon_gc = self.fdm[prp.lng_gc_deg.name]
                 alt = self.fdm[prp.altitude_sl_m.name]
-                enu_coords = self.geocentric2enu(lat_gc, lon_gc, alt, 47.635784, 2.460938, 0.0)
+                enu_coords = self.geocentric2enu(lat_gc, lon_gc, alt)
                 self.fdm[prp.enu_x_m.name] = enu_coords[0]
                 self.fdm[prp.enu_y_m.name] = enu_coords[1]
                 self.fdm[prp.enu_z_m.name] = enu_coords[2]
@@ -206,20 +212,17 @@ class Simulation(object):
         return np.array([x, y, z])
 
 
-    def ecef2enu(self, x, y, z, lat0, lon0, alt0):
+    def ecef2enu(self, x, y, z):
         """
         Convert ECEF coordinates to ENU coordinates
         args: x, y, z, lat0, lon0, alt0 (in meters, degrees, degrees, meters)
         """
-        # Reference point (in ECEF)
-        ref_ecef = self.geocentric2ecef(lat0, lon0, alt0)
-
         # Translation vector
-        dx, dy, dz = x - ref_ecef[0], y - ref_ecef[1], z - ref_ecef[2]
+        dx, dy, dz = x - self.obs_ecef[0], y - self.obs_ecef[1], z - self.obs_ecef[2]
 
         # Rotation matrix
-        ref_lat = np.radians(lat0)
-        ref_lon = np.radians(lon0)
+        ref_lat = np.radians(self.obs_gc[0])
+        ref_lon = np.radians(self.obs_gc[1])
 
         R = np.array([
             [-np.sin(ref_lon), np.cos(ref_lon), 0],
@@ -230,13 +233,13 @@ class Simulation(object):
         enu = R @ np.array([dx, dy, dz])
 
         return enu
-    
 
-    def geocentric2enu(self, lat, lon, alt, lat0, lon0, alt0):
+
+    def geocentric2enu(self, lat, lon, alt):
         """
         Convert geocentric coordinates to ENU coordinates
         args: lat[deg], lon[deg], alt[m], lat0[deg], lon0[deg], alt0[m]
         """
         ecef = self.geocentric2ecef(lat, lon, alt)
-        enu = self.ecef2enu(ecef[0], ecef[1], ecef[2], lat0, lon0, alt0)
+        enu = self.ecef2enu(ecef[0], ecef[1], ecef[2])
         return enu

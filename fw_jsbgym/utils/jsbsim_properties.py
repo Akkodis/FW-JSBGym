@@ -55,11 +55,8 @@ dist_travel_m = Property('position/distance-from-start-mag-mt', 'distance travel
 
 # ECEF position coordinates
 ecef_x_ft = BoundedProperty('position/ecef-x-ft', 'ECEF x coordinate [ft]', float('-inf'), float('+inf'))
-ecef_x_m = BoundedHelperProperty('position/ecef-x-m', 'ECEF x coordinate [m]', float('-inf'), float('+inf'))
 ecef_y_ft = BoundedProperty('position/ecef-y-ft', 'ECEF y coordinate [ft]', float('-inf'), float('+inf'))
-ecef_y_m = BoundedHelperProperty('position/ecef-y-m', 'ECEF y coordinate [m]', float('-inf'), float('+inf'))
 ecef_z_ft = BoundedProperty('position/ecef-z-ft', 'ECEF z coordinate [ft]', float('-inf'), float('+inf'))
-ecef_z_m = BoundedHelperProperty('position/ecef-z-m', 'ECEF z coordinate [m]', float('-inf'), float('+inf'))
 
 # ENU position coordinates
 enu_x_m = BoundedHelperProperty('position/enu-x-m', 'ENU x coordinate [m]', float('-inf'), float('+inf'))
