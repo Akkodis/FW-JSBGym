@@ -209,9 +209,9 @@ class ACBohnTask(JSBSimEnv):
             Reset the target state of the aircraft, i.e. the target state variables defined in the `target_state_vars` tuple, with initial conditions.
         """
         # reset task class attributes with initial conditions
-        self.set_target_state(np.array([self.sim[prp.initial_roll_rad],
-                                          self.sim[prp.initial_pitch_rad],
-                                          self.sim[prp.initial_airspeed_kts] * 1.852])) # converting kts to kph
+        self.set_target_state(np.array([self.sim[prp.ic_roll_rad],
+                                          self.sim[prp.ic_pitch_rad],
+                                          self.sim[prp.ic_airspeed_kts] * 1.852])) # converting kts to kph
 
 
     def get_reward(self, action: np.ndarray) -> float:

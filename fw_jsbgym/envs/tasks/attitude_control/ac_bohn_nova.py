@@ -150,8 +150,8 @@ class ACBohnNoVaTask(ACBohnTask):
             Reset the target state of the aircraft, i.e. the target state variables defined in the `target_state_vars` tuple, with initial conditions.
         """
         # reset task class attributes with initial conditions
-        self.set_target_state(np.array([self.sim[prp.initial_roll_rad], 
-                                          self.sim[prp.initial_pitch_rad]]))
+        self.set_target_state(np.array([self.sim[prp.ic_roll_rad], 
+                                          self.sim[prp.ic_pitch_rad]]))
         # reset airspeed pid integral error
         self.pid_airspeed.reset()
 
