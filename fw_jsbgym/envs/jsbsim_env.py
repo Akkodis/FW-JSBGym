@@ -14,6 +14,7 @@ from fw_jsbgym.simulation.jsb_simulation import Simulation
 from fw_jsbgym.visualizers.visualizer import PlotVisualizer, FlightGearVisualizer
 from fw_jsbgym.utils import jsbsim_properties as prp
 from fw_jsbgym.utils.jsbsim_properties import BoundedProperty, Property
+from fw_jsbgym.utils import conversions
 
 
 class JSBSimEnv(gym.Env, ABC):
@@ -118,6 +119,7 @@ class JSBSimEnv(gym.Env, ABC):
         # basis telemetry properties common to all tasks
         self.common_telemetry_prps: Tuple[BoundedProperty, ...] = (
             prp.lat_gc_deg, prp.lng_gc_deg, prp.altitude_sl_m, # position
+            prp.ecef_x_m, prp.ecef_y_m, prp.ecef_z_m, # position in ECEF
             prp.enu_x_m, prp.enu_y_m, prp.enu_z_m, # position in ENU
             prp.roll_rad, prp.pitch_rad, prp.heading_rad, # attitude
             prp.alpha_rad, prp.beta_rad, # angle of attack and sideslip
@@ -238,7 +240,8 @@ class JSBSimEnv(gym.Env, ABC):
                                   viz_time_factor=self.viz_time_factor,
                                   enable_fgear_output=self.enable_fgear_output)
 
-        # print(f"options arg: {options}")
+        # convert some properties to SI units
+        conversions.props2si(self.sim)
 
         # if reset arg "options" is provided, overwrite some of the sim_options fields
         if options is not None:
@@ -287,6 +290,10 @@ class JSBSimEnv(gym.Env, ABC):
         last_fcs_pos_hist = self.fcs_pos_hist.copy() # copy the fcs position history of the last episode about to be reset
         self.fcs_pos_hist.clear() # clear the fcs position history list (start a new episode)
         self.render()
+
+        # log telemetry to a csv for the 1st step too
+        if self.render_mode in self.metadata["render_modes"][3:]:
+            self.telemetry_logging()
 
         info: Dict = {"non_norm_obs": self.observation,
                       "fcs_pos_hist": last_fcs_pos_hist}
@@ -502,6 +509,9 @@ class JSBSimEnv(gym.Env, ABC):
             self.sim[self.steps_left] -= 1
             self.sim[self.current_step] += 1
 
+        # conversions here
+        conversions.props2si(self.sim)
+
         # update the errors
         self.update_errors()
 
@@ -648,6 +658,13 @@ class JSBSimEnv(gym.Env, ABC):
         """
         telemetry: dict[str, float] = {}
 
+        # convert ECEF to ENU
+        enu = conversions.ecef2enu(self.sim[prp.ecef_x_m], self.sim[prp.ecef_y_m], self.sim[prp.ecef_z_m],
+                                   self.sim[prp.ic_lat_gd_deg], self.sim[prp.ic_long_gc_deg], 0.0)
+        self.sim[prp.enu_x_m] = enu[0]
+        self.sim[prp.enu_y_m] = enu[1]
+        self.sim[prp.enu_z_m] = enu[2]
+
         # update telemetry field names with additional telemetry field names
         if len(self.telemetry_fieldnames) < len(self.telemetry_prps) + len(additional_tele.keys()):
             self.telemetry_fieldnames += tuple(additional_tele.keys())
@@ -686,6 +703,7 @@ class JSBSimEnv(gym.Env, ABC):
         """
         self.sim[self.steps_left] = self.steps_left.max # reset the number of steps left in the episode to the max
         self.sim[self.current_step] = self.current_step.min # reset the number of steps left in the episode to 
+        self.sim[prp.reward_total] = float('nan') # reset the total reward to nan
         self.reset_target_state() # reset task target state (child class)
         self.update_errors() # reset task errors (child class)
 

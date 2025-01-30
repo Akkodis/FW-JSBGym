@@ -7,18 +7,10 @@ import numpy as np
 from fw_jsbgym.trim.trim_point import TrimPoint
 from typing import Union, Tuple
 from fw_jsbgym.utils import jsbsim_properties as prp
-from enum import Enum
 from pkg_resources import resource_filename
 from fw_jsbgym.utils.jsbsim_properties import BoundedProperty
 
 
-class ConvFactor(Enum):
-    kts2mps = 0.51444
-    kts2kph = 1.852
-    fps2mps = 0.3048
-    fps2kph = 1.09728
-    kph2mps = 0.277778
-    ft2m = 0.3048
 
 
 class Simulation(object):
@@ -65,18 +57,6 @@ class Simulation(object):
         self.enable_trim: bool = enable_trim
         self.trim_point: TrimPoint = trim_point
 
-        self.prp_conv_fps2mps: Tuple[BoundedProperty, ...] = (
-            prp.windspeed_north_mps, prp.windspeed_east_mps, prp.windspeed_down_mps,
-            prp.total_windspeed_north_mps, prp.total_windspeed_east_mps, prp.total_windspeed_down_mps,
-            prp.turb_north_mps, prp.turb_east_mps, prp.turb_down_mps
-        )
-
-        self.prp_conv_fps2kph: Tuple[BoundedProperty, ...] = (
-            prp.windspeed_north_kph, prp.windspeed_east_kph, prp.windspeed_down_kph,
-            prp.total_windspeed_north_kph, prp.total_windspeed_east_kph, prp.total_windspeed_down_kph,
-            prp.turb_north_kph, prp.turb_east_kph, prp.turb_down_kph
-        )
-
         # set the FDM time step
         self.fdm.set_dt(self.fdm_dt)
 
@@ -93,15 +73,8 @@ class Simulation(object):
         # load and run initial conditions
         self.load_run_ic()
 
-        # observer reference GC coordinates
-        self.obs_gc = np.array([self.fdm['ic/lat-gc-deg'], self.fdm['ic/long-gc-deg'], 0.0])
-
-        # convert observer reference GC coordinates to ECEF
-        self.obs_ecef = self.geocentric2ecef(self.obs_gc[0], self.obs_gc[1], self.obs_gc[2])
-
 
     def __getitem__(self, prop: Union[prp.Property, prp.HelperProperty, prp.BoundedProperty, prp.BoundedHelperProperty] | str) -> float:
-        self.convert_props_to_SI(prop)
         if isinstance(prop, str):
             return self.fdm[prop]
         else:
@@ -113,7 +86,6 @@ class Simulation(object):
             self.fdm[prop] = value
         else:
             self.fdm[prop.name] = value
-        self.convert_props_to_SI(prop)
 
 
     def load_run_ic(self) -> bool:
@@ -164,82 +136,3 @@ class Simulation(object):
             # Convert the time factor into a time step period for visualization
             self.viz_dt = self.fdm_dt / time_factor
 
-
-    def convert_props_to_SI(self, prop) -> None:
-        """
-            Converts some properties from imperial to international metric system
-        """
-        self.fdm[prp.zero.name] = 0.0
-        self.fdm[prp.zero_.name] = 0.0
-        if not isinstance(prop, str):
-            if prop in self.prp_conv_fps2mps:
-                self.fdm[prop.name] = self.fdm[prop.name[:-3]+'fps'] * ConvFactor.fps2mps.value
-            elif prop in self.prp_conv_fps2kph:
-                self.fdm[prop.name] = self.fdm[prop.name[:-3]+'fps'] * ConvFactor.fps2kph.value
-            elif prop == prp.airspeed_mps or prop == prp.airspeed_kph:
-                self.fdm[prop.name] = self.fdm[prp.airspeed_kts.name] * ConvFactor.kts2mps.value
-                self.fdm[prop.name] = self.fdm[prp.airspeed_kts.name] * ConvFactor.kts2kph.value
-            elif 'enu' in prop.name:
-                lat_gc = self.fdm[prp.lat_gc_deg.name]
-                lon_gc = self.fdm[prp.lng_gc_deg.name]
-                alt = self.fdm[prp.altitude_sl_m.name]
-                enu_coords = self.geocentric2enu(lat_gc, lon_gc, alt)
-                self.fdm[prp.enu_x_m.name] = enu_coords[0]
-                self.fdm[prp.enu_y_m.name] = enu_coords[1]
-                self.fdm[prp.enu_z_m.name] = enu_coords[2]
-                self.fdm[prp.enu_x_km.name] = enu_coords[0] / 1000
-                self.fdm[prp.enu_y_km.name] = enu_coords[1] / 1000
-                self.fdm[prp.enu_z_km.name] = enu_coords[2] / 1000
-
-
-    def geocentric2ecef(self, lat, lon, alt):
-        """
-        Convert geocentric coordinates to ECEF coordinates
-        args: lat, lon, alt (in degrees, degrees, meters)
-        """
-        # Convert degrees to radians
-        lat = np.radians(lat)
-        lon = np.radians(lon)
-
-        # WGS-84 ellipsoid constant: semi-major axis (approx earth radius in m)
-        r = 6378137.0
-
-        # Compute ECEF coordinates
-        x = (r + alt) * np.cos(lat) * np.cos(lon)
-        y = (r + alt) * np.cos(lat) * np.sin(lon)
-        z = (r + alt) * np.sin(lat)
-
-        return np.array([x, y, z])
-
-
-    def ecef2enu(self, x, y, z):
-        """
-        Convert ECEF coordinates to ENU coordinates
-        args: x, y, z, lat0, lon0, alt0 (in meters, degrees, degrees, meters)
-        """
-        # Translation vector
-        dx, dy, dz = x - self.obs_ecef[0], y - self.obs_ecef[1], z - self.obs_ecef[2]
-
-        # Rotation matrix
-        ref_lat = np.radians(self.obs_gc[0])
-        ref_lon = np.radians(self.obs_gc[1])
-
-        R = np.array([
-            [-np.sin(ref_lon), np.cos(ref_lon), 0],
-            [-np.sin(ref_lat) * np.cos(ref_lon), -np.sin(ref_lat) * np.sin(ref_lon), np.cos(ref_lat)],
-            [np.cos(ref_lat) * np.cos(ref_lon), np.cos(ref_lat) * np.sin(ref_lon), np.sin(ref_lat)]
-        ])
-
-        enu = R @ np.array([dx, dy, dz])
-
-        return enu
-
-
-    def geocentric2enu(self, lat, lon, alt):
-        """
-        Convert geocentric coordinates to ENU coordinates
-        args: lat[deg], lon[deg], alt[m], lat0[deg], lon0[deg], alt0[m]
-        """
-        ecef = self.geocentric2ecef(lat, lon, alt)
-        enu = self.ecef2enu(ecef[0], ecef[1], ecef[2])
-        return enu
