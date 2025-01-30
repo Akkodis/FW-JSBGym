@@ -25,7 +25,7 @@ class WaypointTracking(JSBSimEnv):
         self.task_cfg: DictConfig = cfg_env.task
 
         self.state_prps = (
-            prp.enu_x_err_m, prp.enu_y_err_m, prp.enu_z_err_m, # position error
+            prp.ecef_x_err_m, prp.ecef_y_err_m, prp.ecef_z_err_m, # position error
             prp.roll_rad, prp.pitch_rad, # attitude
             prp.airspeed_kph, # airspeed
             prp.p_radps, prp.q_radps, prp.r_radps, # angular rates
@@ -38,11 +38,11 @@ class WaypointTracking(JSBSimEnv):
         )
 
         self.target_prps = (
-            prp.target_enu_x_m, prp.target_enu_y_m, prp.target_enu_z_m # target position
+            prp.target_ecef_x_m, prp.target_ecef_y_m, prp.target_ecef_z_m # target position
         )
 
         self.error_prps = (
-            prp.enu_x_err_m, prp.enu_y_err_m, prp.enu_z_err_m # position error
+            prp.ecef_x_err_m, prp.ecef_y_err_m, prp.ecef_z_err_m # position error
         )
 
         # telemetry properties are an addition of the common telemetry properties, target properties and error properties
@@ -82,29 +82,29 @@ class WaypointTracking(JSBSimEnv):
         else: # else return observation as a vector for MLP policy
             obs: np.ndarray = np.array(self.observation_deque).squeeze().flatten().astype(np.float32)
 
-        self.dist_to_target = np.sqrt(self.sim[prp.enu_x_err_m]**2 + 
-                                      self.sim[prp.enu_y_err_m]**2 + 
-                                      self.sim[prp.enu_z_err_m]**2)
+        self.dist_to_target = np.sqrt(self.sim[prp.ecef_x_err_m]**2 + 
+                                      self.sim[prp.ecef_y_err_m]**2 + 
+                                      self.sim[prp.ecef_z_err_m]**2)
 
         return obs
 
 
     def set_target_state(self, target: np.ndarray) -> None:
-        target_enu_x_m, target_enu_y_m, target_enu_z_m = target
-        if target_enu_x_m != self.prev_target_x:
-            print("Target X changed to: ", target_enu_x_m)
-        if target_enu_y_m != self.prev_target_y:
-            print("Target Y changed to: ", target_enu_y_m)
-        if target_enu_z_m != self.prev_target_z:
-            print("Target Z changed to: ", target_enu_z_m)
+        target_ecef_x_m, target_ecef_y_m, target_ecef_z_m = target
+        if target_ecef_x_m != self.prev_target_x:
+            print("Target X changed to: ", target_ecef_x_m)
+        if target_ecef_y_m != self.prev_target_y:
+            print("Target Y changed to: ", target_ecef_y_m)
+        if target_ecef_z_m != self.prev_target_z:
+            print("Target Z changed to: ", target_ecef_z_m)
 
-        self.sim[prp.target_enu_x_m] = target_enu_x_m
-        self.sim[prp.target_enu_y_m] = target_enu_y_m
-        self.sim[prp.target_enu_z_m] = target_enu_z_m
+        self.sim[prp.target_ecef_x_m] = target_ecef_x_m
+        self.sim[prp.target_ecef_y_m] = target_ecef_y_m
+        self.sim[prp.target_ecef_z_m] = target_ecef_z_m
 
-        self.prev_target_x = target_enu_x_m
-        self.prev_target_y = target_enu_y_m
-        self.prev_target_z = target_enu_z_m
+        self.prev_target_x = target_ecef_x_m
+        self.prev_target_y = target_ecef_y_m
+        self.prev_target_z = target_ecef_z_m
 
         self.target = self.TargetState(*[self.sim[prop] for prop in self.target_prps])
 
@@ -113,7 +113,7 @@ class WaypointTracking(JSBSimEnv):
         """
             Resets the target state to the current state
         """
-        init_target = np.array([self.sim[prp.enu_x_m], self.sim[prp.enu_y_m], self.sim[prp.enu_z_m]])
+        init_target = np.array([self.sim[prp.ecef_x_m], self.sim[prp.ecef_y_m], self.sim[prp.ecef_z_m]])
         self.set_target_state(init_target)
 
 
@@ -122,19 +122,19 @@ class WaypointTracking(JSBSimEnv):
             Updates the errors based on the current state.
         """
         # update error jsbsim properties
-        self.sim[prp.enu_x_err_m] = self.sim[prp.target_enu_x_m] - self.sim[prp.enu_x_m]
-        self.sim[prp.enu_y_err_m] = self.sim[prp.target_enu_y_m] - self.sim[prp.enu_y_m]
-        self.sim[prp.enu_z_err_m] = self.sim[prp.target_enu_z_m] - self.sim[prp.enu_z_m]
+        self.sim[prp.ecef_x_err_m] = self.sim[prp.target_ecef_x_m] - self.sim[prp.ecef_x_m]
+        self.sim[prp.ecef_y_err_m] = self.sim[prp.target_ecef_y_m] - self.sim[prp.ecef_y_m]
+        self.sim[prp.ecef_z_err_m] = self.sim[prp.target_ecef_z_m] - self.sim[prp.ecef_z_m]
         # print('----------------------------------')
-        # print("Curr   Z: ", self.sim[prp.enu_z_m])
-        # print("Target Z: ", self.sim[prp.target_enu_z_m])
-        # print("Error  Z: ", self.sim[prp.enu_z_err_m])
-        # print('Current X: ', self.sim[prp.enu_x_m])
-        # print('Target  X: ', self.sim[prp.target_enu_x_m])
-        # print('Error   X: ', self.sim[prp.enu_x_err_m])
-        # print('Current Y: ', self.sim[prp.enu_y_m])
-        # print('Target  Y: ', self.sim[prp.target_enu_y_m])
-        # print('Error   Y: ', self.sim[prp.enu_y_err_m])
+        # print("Curr   Z: ", self.sim[prp.ecef_z_m])
+        # print("Target Z: ", self.sim[prp.target_ecef_z_m])
+        # print("Error  Z: ", self.sim[prp.ecef_z_err_m])
+        # print('Current X: ', self.sim[prp.ecef_x_m])
+        # print('Target  X: ', self.sim[prp.target_ecef_x_m])
+        # print('Error   X: ', self.sim[prp.ecef_x_err_m])
+        # print('Current Y: ', self.sim[prp.ecef_y_m])
+        # print('Target  Y: ', self.sim[prp.target_ecef_y_m])
+        # print('Error   Y: ', self.sim[prp.ecef_y_err_m])
 
         # update the error namedtuple
         self.errors = self.Errors(*[self.sim[prop] for prop in self.error_prps])
@@ -148,15 +148,15 @@ class WaypointTracking(JSBSimEnv):
 
 
     def reward_percoord(self, action: np.ndarray) -> float:
-        r_x = np.abs(self.sim[prp.enu_x_err_m])
-        r_y = np.abs(self.sim[prp.enu_y_err_m])
-        r_z = np.abs(self.sim[prp.enu_z_err_m])
+        r_x = np.abs(self.sim[prp.ecef_x_err_m])
+        r_y = np.abs(self.sim[prp.ecef_y_err_m])
+        r_z = np.abs(self.sim[prp.ecef_z_err_m])
         r_total = - (r_x + r_y + r_z)
 
         # populate reward properties
-        self.sim[prp.reward_enu_x] = r_x
-        self.sim[prp.reward_enu_y] = r_y
-        self.sim[prp.reward_enu_z] = r_z
+        self.sim[prp.reward_ecef_x] = r_x
+        self.sim[prp.reward_ecef_y] = r_y
+        self.sim[prp.reward_ecef_z] = r_z
         self.sim[prp.reward_total] = r_total
 
         return r_total
@@ -233,7 +233,7 @@ class AltitudeTracking(JSBSimEnv):
 
         # SS 1
         # self.state_prps: Tuple[BoundedProperty] = (
-        #     prp.enu_z_err_m, 
+        #     prp.ecef_z_err_m, 
         #     prp.roll_rad, prp.pitch_rad,
         #     prp.p_radps, prp.q_radps,
         #     prp.alpha_rad, prp.beta_rad,
@@ -243,7 +243,7 @@ class AltitudeTracking(JSBSimEnv):
 
         # SS 2
         # self.state_prps: Tuple[BoundedProperty] = (
-        #     prp.enu_z_err_m,
+        #     prp.ecef_z_err_m,
         #     prp.u_fps, prp.w_fps,
         #     prp.pitch_rad,
         #     prp.q_radps,
@@ -254,7 +254,7 @@ class AltitudeTracking(JSBSimEnv):
 
         # SS 3
         self.state_prps: Tuple[BoundedProperty] = (
-            prp.enu_z_err_m,
+            prp.ecef_z_err_m,
             prp.roll_rad, prp.pitch_rad,
             prp.airspeed_kph,
             prp.p_radps, prp.q_radps, prp.r_radps,
@@ -267,11 +267,11 @@ class AltitudeTracking(JSBSimEnv):
         )
 
         self.target_prps: Tuple[BoundedProperty] = (
-            prp.target_enu_z_m,
+            prp.target_ecef_z_m,
         )
 
         self.error_prps: Tuple[BoundedProperty] = (
-            prp.enu_z_err_m,
+            prp.ecef_z_err_m,
         )
 
         self.reward_prps: Tuple[BoundedProperty] = (
@@ -289,7 +289,7 @@ class AltitudeTracking(JSBSimEnv):
 
 
     def reset_target_state(self):
-        self.set_target_state(np.array([self.sim[prp.enu_z_m]]))
+        self.set_target_state(np.array([self.sim[prp.ecef_z_m]]))
 
 
     def set_target_state(self, target_state:np.ndarray):
@@ -303,13 +303,13 @@ class AltitudeTracking(JSBSimEnv):
 
         if target_state[0] != self.prev_target_z:
             print("Target Z changed to: ", target_state[0])
-        self.sim[prp.target_enu_z_m] = target_state[0]
+        self.sim[prp.target_ecef_z_m] = target_state[0]
         self.prev_target_z = target_state[0]
         self.target = self.TargetState(*[self.sim[prop] for prop in self.target_prps])
 
 
     def update_errors(self):
-        self.sim[prp.enu_z_err_m] = self.sim[prp.target_enu_z_m] - self.sim[prp.enu_z_m]
+        self.sim[prp.ecef_z_err_m] = self.sim[prp.target_ecef_z_m] - self.sim[prp.ecef_z_m]
         self.errors = self.Errors(*[self.sim[prop] for prop in self.error_prps])
 
 
@@ -319,7 +319,7 @@ class AltitudeTracking(JSBSimEnv):
 
 
     def get_reward(self, action):
-        r_dist = np.abs(self.sim[prp.enu_z_err_m])
+        r_dist = np.abs(self.sim[prp.ecef_z_err_m])
         r_dist = 10 * np.tanh(0.005 * r_dist)
         r_total = -r_dist
         self.sim[prp.reward_total] = r_total

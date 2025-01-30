@@ -58,13 +58,18 @@ ecef_x_ft = BoundedProperty('position/ecef-x-ft', 'ECEF x coordinate [ft]', floa
 ecef_y_ft = BoundedProperty('position/ecef-y-ft', 'ECEF y coordinate [ft]', float('-inf'), float('+inf'))
 ecef_z_ft = BoundedProperty('position/ecef-z-ft', 'ECEF z coordinate [ft]', float('-inf'), float('+inf'))
 
-# ENU position coordinates
+# Conversions
+ecef_x_m = BoundedHelperProperty('position/ecef-x-m', 'ECEF x coordinate [m]', float('-inf'), float('+inf'))
+ecef_y_m = BoundedHelperProperty('position/ecef-y-m', 'ECEF y coordinate [m]', float('-inf'), float('+inf'))
+ecef_z_m = BoundedHelperProperty('position/ecef-z-m', 'ECEF z coordinate [m]', float('-inf'), float('+inf'))
+ecef_x_km = BoundedHelperProperty('position/ecef-x-km', 'ECEF x coordinate [km]', float('-inf'), float('+inf'))
+ecef_y_km = BoundedHelperProperty('position/ecef-y-km', 'ECEF y coordinate [km]', float('-inf'), float('+inf'))
+ecef_z_km = BoundedHelperProperty('position/ecef-z-km', 'ECEF z coordinate [km]', float('-inf'), float('+inf'))
+
+# ENU
 enu_x_m = BoundedHelperProperty('position/enu-x-m', 'ENU x coordinate [m]', float('-inf'), float('+inf'))
 enu_y_m = BoundedHelperProperty('position/enu-y-m', 'ENU y coordinate [m]', float('-inf'), float('+inf'))
 enu_z_m = BoundedHelperProperty('position/enu-z-m', 'ENU z coordinate [m]', float('-inf'), float('+inf'))
-enu_x_km = BoundedHelperProperty('position/enu-x-km', 'ENU x coordinate [km]', float('-inf'), float('+inf'))
-enu_y_km = BoundedHelperProperty('position/enu-y-km', 'ENU y coordinate [km]', float('-inf'), float('+inf'))
-enu_z_km = BoundedHelperProperty('position/enu-z-km', 'ENU z coordinate [km]', float('-inf'), float('+inf'))
 
 # zero
 zero = BoundedHelperProperty('zero', 'zero value', 0, 0)
@@ -179,21 +184,24 @@ sim_time_s = Property('simulation/sim-time-sec', 'Simulation time [s]')
 trim_switch = BoundedProperty('simulation/do_simple_trim', 'engage trimming [bool]', 0, 1)
 
 # initial conditions
-initial_altitude_ft = Property('ic/h-sl-ft', 'initial altitude MSL [ft]')
-initial_terrain_altitude_ft = Property('ic/terrain-elevation-ft', 'initial terrain alt [ft]')
-initial_longitude_geoc_deg = Property('ic/long-gc-deg', 'initial geocentric longitude [deg]')
-initial_latitude_geod_deg = Property('ic/lat-geod-deg', 'initial geodesic latitude [deg]')
-initial_roll_rad = Property('ic/phi-rad', 'initial roll angle [rad]')
-initial_pitch_rad = Property('ic/theta-rad', 'initial pitch angle [rad]')
-initial_u_fps = Property('ic/u-fps', 'body frame x-axis velocity; positive forward [ft/s]')
-initial_v_fps = Property('ic/v-fps', 'body frame y-axis velocity; positive right [ft/s]')
-initial_w_fps = Property('ic/w-fps', 'body frame z-axis velocity; positive down [ft/s]')
-initial_p_radps = Property('ic/p-rad_sec', 'roll rate [rad/s]')
-initial_q_radps = Property('ic/q-rad_sec', 'pitch rate [rad/s]')
-initial_r_radps = Property('ic/r-rad_sec', 'yaw rate [rad/s]')
-initial_roc_fpm = Property('ic/roc-fpm', 'initial rate of climb [ft/min]')
-initial_heading_deg = Property('ic/psi-true-deg', 'initial (true) heading [deg]')
-initial_airspeed_kts = Property('ic/vt-kts', 'initial airspeeed [kts]')
+ic_altitude_ft = Property('ic/h-sl-ft', 'initial altitude MSL [ft]')
+ic_terrain_altitude_ft = Property('ic/terrain-elevation-ft', 'initial terrain alt [ft]')
+ic_lat_gc_deg = Property('ic/lat-gc-deg', 'initial geocentric latitude [deg]')
+ic_long_gc_deg = Property('ic/long-gc-deg', 'initial geocentric longitude [deg]')
+ic_lat_gd_deg = Property('ic/lat-geod-deg', 'initial geodetic latitude [deg]')
+ic_alt_gd_ft = Property('ic/geod-alt-ft', 'initial geodetic altitude [ft]')
+ic_alt_gd_m = HelperProperty('ic/geod-alt-m', 'initial geodetic altitude [m]')
+ic_roll_rad = Property('ic/phi-rad', 'initial roll angle [rad]')
+ic_pitch_rad = Property('ic/theta-rad', 'initial pitch angle [rad]')
+ic_u_fps = Property('ic/u-fps', 'body frame x-axis velocity; positive forward [ft/s]')
+ic_v_fps = Property('ic/v-fps', 'body frame y-axis velocity; positive right [ft/s]')
+ic_w_fps = Property('ic/w-fps', 'body frame z-axis velocity; positive down [ft/s]')
+ic_p_radps = Property('ic/p-rad_sec', 'roll rate [rad/s]')
+ic_q_radps = Property('ic/q-rad_sec', 'pitch rate [rad/s]')
+ic_r_radps = Property('ic/r-rad_sec', 'yaw rate [rad/s]')
+ic_roc_fpm = Property('ic/roc-fpm', 'initial rate of climb [ft/min]')
+ic_heading_deg = Property('ic/psi-true-deg', 'initial (true) heading [deg]')
+ic_airspeed_kts = Property('ic/vt-kts', 'initial airspeeed [kts]')
 
 # metrics
 qbar_area = Property('aero/qbar-area', 'dynamic pressure * wing-planform area')
@@ -258,14 +266,13 @@ alt_err = BoundedProperty("error/alt-err", "altitude error", float('-inf'), floa
 ecef_x_err_m = BoundedHelperProperty("error/ecef-x-err-m", "ECEF x error [m]", float('-inf'), float('+inf'))
 ecef_y_err_m = BoundedHelperProperty("error/ecef-y-err-m", "ECEF y error [m]", float('-inf'), float('+inf'))
 ecef_z_err_m = BoundedHelperProperty("error/ecef-z-err-m", "ECEF z error [m]", float('-inf'), float('+inf'))
+ecef_x_err_km = BoundedHelperProperty("error/ecef-x-err-km", "ECEF x error [km]", float('-inf'), float('+inf'))
+ecef_y_err_km = BoundedHelperProperty("error/ecef-y-err-km", "ECEF y error [km]", float('-inf'), float('+inf'))
+ecef_z_err_km = BoundedHelperProperty("error/ecef-z-err-km", "ECEF z error [km]", float('-inf'), float('+inf'))
 
-# waypoint tracking - x, y, z in ENU
 enu_x_err_m = BoundedHelperProperty("error/enu-x-err-m", "ENU x error [m]", float('-inf'), float('+inf'))
 enu_y_err_m = BoundedHelperProperty("error/enu-y-err-m", "ENU y error [m]", float('-inf'), float('+inf'))
 enu_z_err_m = BoundedHelperProperty("error/enu-z-err-m", "ENU z error [m]", float('-inf'), float('+inf'))
-enu_x_err_km = BoundedHelperProperty("error/enu-x-err-km", "ENU x error [km]", float('-inf'), float('+inf'))
-enu_y_err_km = BoundedHelperProperty("error/enu-y-err-km", "ENU y error [km]", float('-inf'), float('+inf'))
-enu_z_err_km = BoundedHelperProperty("error/enu-z-err-km", "ENU z error [km]", float('-inf'), float('+inf'))
 
 # target values
 # target_airspeed_kts = BoundedProperty("target/airspeed-kts", "desired airspeed [knots]", float('-inf'), float('+inf'))
@@ -279,13 +286,13 @@ target_lat_deg = BoundedProperty("target/lat-deg", "desired latitude [deg]", -90
 target_lon_deg = BoundedProperty("target/lon-deg", "desired longitude [deg]", -90, 90)
 target_alt_m = BoundedProperty("target/altitude-m", "desired altitude [m]", 0, float('+inf'))
 
-# waypoint tracking - x, y, z in ENU (East, North, Up)
-target_enu_x_m = BoundedProperty("target/enu-x-m", "desired ENU x [m]", float('-inf'), float('+inf'))
-target_enu_y_m = BoundedProperty("target/enu-y-m", "desired ENU y [m]", float('-inf'), float('+inf'))
-target_enu_z_m = BoundedProperty("target/enu-z-m", "desired ENU z [m]", float('-inf'), float('+inf'))
-target_enu_x_km = BoundedProperty("target/enu-x-km", "desired ENU x [km]", float('-inf'), float('+inf'))
-target_enu_y_km = BoundedProperty("target/enu-y-km", "desired ENU y [km]", float('-inf'), float('+inf'))
-target_enu_z_km = BoundedProperty("target/enu-z-km", "desired ENU z [km]", float('-inf'), float('+inf'))
+# waypoint tracking - x, y, z in ECEF
+target_ecef_x_m = BoundedProperty("target/ecef-x-m", "desired ECEF x [m]", float('-inf'), float('+inf'))
+target_ecef_y_m = BoundedProperty("target/ecef-y-m", "desired ECEF y [m]", float('-inf'), float('+inf'))
+target_ecef_z_m = BoundedProperty("target/ecef-z-m", "desired ECEF z [m]", float('-inf'), float('+inf'))
+target_ecef_x_km = BoundedProperty("target/ecef-x-km", "desired ECEF x [km]", float('-inf'), float('+inf'))
+target_ecef_y_km = BoundedProperty("target/ecef-y-km", "desired ECEF y [km]", float('-inf'), float('+inf'))
+target_ecef_z_km = BoundedProperty("target/ecef-z-km", "desired ECEF z [km]", float('-inf'), float('+inf'))
 
 # action avg over last n steps
 aileron_avg = BoundedProperty("fcs/aileron_avg", "aileron action average", aileron_cmd.min, aileron_cmd.max)
@@ -306,14 +313,14 @@ reward_int_pitch = BoundedProperty("reward/int_pitch", "pitch integral reward", 
 
 # waypoint tracking
 reward_latitude = BoundedProperty("reward/latitude", "latitude reward", 0, float('+inf'))
-reward_enu_x = BoundedProperty("reward/enu-x", "ENU x reward", 0, float('+inf'))
+reward_ecef_x = BoundedProperty("reward/ecef-x", "ECEF x reward", 0, float('+inf'))
 reward_longitude = BoundedProperty("reward/longitude", "longitude reward", 0, float('+inf'))
-reward_enu_y = BoundedProperty("reward/enu-y", "ENU y reward", 0, float('+inf'))
+reward_ecef_y = BoundedProperty("reward/ecef-y", "ECEF y reward", 0, float('+inf'))
 reward_altitude = BoundedProperty("reward/altitude", "altitude reward", 0, float('+inf'))
-reward_enu_z = BoundedProperty("reward/enu-z", "ENU z reward", 0, float('+inf'))
+reward_ecef_z = BoundedProperty("reward/ecef-z", "ECEF z reward", 0, float('+inf'))
 
 
-# PID-RL properties no stability ensured
+# PID-RL properties
 kp_roll = BoundedProperty("pidrl/roll/kp", "roll kp", float('-inf'), float('+inf'))
 ki_roll = BoundedProperty("pidrl/roll/ki", "roll ki", float('-inf'), float('+inf'))
 kd_roll = BoundedProperty("pidrl/roll/kd", "roll kd", float('-inf'), float('+inf'))
