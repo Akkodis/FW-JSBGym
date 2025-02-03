@@ -8,6 +8,7 @@ from collections import deque
 from fw_jsbgym.envs.jsbsim_env import JSBSimEnv
 from fw_jsbgym.utils import jsbsim_properties as prp
 from fw_jsbgym.utils.jsbsim_properties import BoundedProperty
+from fw_jsbgym.utils import conversions
 
 from fw_flightcontrol.agents.pid import PID
 from fw_jsbgym.trim.trim_point import TrimPoint
@@ -91,12 +92,12 @@ class WaypointTracking(JSBSimEnv):
 
     def set_target_state(self, target: np.ndarray) -> None:
         target_ecef_x_m, target_ecef_y_m, target_ecef_z_m = target
-        if target_ecef_x_m != self.prev_target_x:
-            print("Target X changed to: ", target_ecef_x_m)
-        if target_ecef_y_m != self.prev_target_y:
-            print("Target Y changed to: ", target_ecef_y_m)
-        if target_ecef_z_m != self.prev_target_z:
-            print("Target Z changed to: ", target_ecef_z_m)
+        if np.any(target != [self.prev_target_x, self.prev_target_y, self.prev_target_z]):
+            target_enu = conversions.ecef2enu(target_ecef_x_m, target_ecef_y_m, target_ecef_z_m,
+                                                self.sim[prp.ic_lat_gd_deg], self.sim[prp.ic_long_gc_deg], 0.0)
+            print("-- SETTING TARGET --")
+            print(f"Target (ENU) x: {target_enu[0]:.3f} y: {target_enu[1]:.3f} z: {target_enu[2]:.3f}")
+            print("--------------------")
 
         self.sim[prp.target_ecef_x_m] = target_ecef_x_m
         self.sim[prp.target_ecef_y_m] = target_ecef_y_m
@@ -113,8 +114,10 @@ class WaypointTracking(JSBSimEnv):
         """
             Resets the target state to the current state
         """
+        print("--- RESETTING TARGET ---")
         init_target = np.array([self.sim[prp.ecef_x_m], self.sim[prp.ecef_y_m], self.sim[prp.ecef_z_m]])
         self.set_target_state(init_target)
+        print("------------------------")
 
 
     def update_errors(self):
