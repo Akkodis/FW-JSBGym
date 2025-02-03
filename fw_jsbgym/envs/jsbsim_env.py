@@ -293,6 +293,9 @@ class JSBSimEnv(gym.Env, ABC):
 
         # log telemetry to a csv for the 1st step too
         if self.render_mode in self.metadata["render_modes"][3:]:
+            if "telemetry_file" in options:
+                self.telemetry_file = options["telemetry_file"]
+            self.telemetry_setup(self.telemetry_file)
             self.telemetry_logging()
 
         info: Dict = {"non_norm_obs": self.observation,
