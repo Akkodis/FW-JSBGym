@@ -109,7 +109,6 @@ class WaypointTracking(JSBSimEnv):
                                                 self.sim[prp.ic_lat_gd_deg], self.sim[prp.ic_long_gc_deg], 0.0)
             print("-- SETTING TARGET --")
             print(f"Target (ENU) x: {target_enu[0]:.3f} y: {target_enu[1]:.3f} z: {target_enu[2]:.3f}")
-            print("--------------------")
 
         self.sim[prp.target_ecef_x_m] = target_ecef_x_m
         self.sim[prp.target_ecef_y_m] = target_ecef_y_m
@@ -159,7 +158,10 @@ class WaypointTracking(JSBSimEnv):
         """
             Reward function for the waypoint tracking task.
         """
-        return self.reward_dist(action)
+        r_dist = self.reward_dist(action)
+        r_total = -r_dist
+        self.sim[prp.reward_total] = r_total
+        return r_total
 
 
     def reward_percoord(self, action: np.ndarray) -> float:
@@ -179,9 +181,8 @@ class WaypointTracking(JSBSimEnv):
 
     def reward_dist(self, action: np.ndarray) -> float:
         r_dist = 10 * np.tanh(0.003 * self.dist_to_target)
-        r_total = -r_dist
-        self.sim[prp.reward_total] = r_total
-        return r_total
+        self.sim[prp.reward_dist] = r_dist
+        return r_dist
 
 
     def is_terminated(self):
@@ -190,6 +191,123 @@ class WaypointTracking(JSBSimEnv):
             print("Target reached!")
             terminated = True
         return terminated
+
+
+class WaypointVaTracking(WaypointTracking):
+    """
+        Waypoint Tracking task. The agent has to track a given waypoint in the sky (described by its
+        x, y, z) in ECEF.
+        It also has to do so while maintaining a constant given airspeed. (Here maintained at 60 kph)
+    """
+    def __init__(self, cfg_env: DictConfig, telemetry_file: str='', render_mode: str='none') -> None:
+        super().__init__(cfg_env=cfg_env, telemetry_file=telemetry_file, render_mode=render_mode)
+
+        self.task_cfg: DictConfig = cfg_env.task
+
+        self.state_prps = (
+            prp.ecef_x_err_m, prp.ecef_y_err_m, prp.ecef_z_err_m, # position error
+            prp.airspeed_kph, prp.airspeed_err_kph, # airspeed
+            # prp.roll_rad, prp.pitch_rad, # attitude
+            prp.att_qx, prp.att_qy, prp.att_qz, prp.att_qw, # attitude quaternion
+            prp.p_radps, prp.q_radps, prp.r_radps, # angular rates
+            prp.alpha_rad, prp.beta_rad, # angle of attack, sideslip
+            prp.aileron_cmd, prp.elevator_cmd, prp.throttle_cmd # last action
+        )
+
+        self.action_prps = (
+            prp.aileron_cmd, prp.elevator_cmd, prp.throttle_cmd
+        )
+
+        self.target_prps = (
+            prp.target_ecef_x_m, prp.target_ecef_y_m, prp.target_ecef_z_m, # target position
+            prp.target_airspeed_kph # target airspeed
+        )
+
+        self.error_prps = (
+            prp.ecef_x_err_m, prp.ecef_y_err_m, prp.ecef_z_err_m, # position error
+            prp.airspeed_err_kph # airspeed error
+        )
+
+        self.reward_prps = (
+            prp.reward_total, prp.reward_dist, prp.reward_airspeed, prp.dist_to_target_m
+        )
+
+        # telemetry properties are an addition of the common telemetry properties, target properties and error properties
+        self.telemetry_prps = self.common_telemetry_prps + self.target_prps + self.target_enu_prps \
+                            + self.error_prps + self.reward_prps
+
+        # declaring observation. Deque with a maximum length of obs_history_size
+        self.observation_deque: Deque[np.ndarray] = deque(maxlen=self.task_cfg.mdp.obs_hist_size) # deque of 1D nparrays containing self.State
+
+        # set action and observation space from the task
+        self.action_space = self.get_action_space()
+        self.observation_space = self.get_observation_space()
+
+        self.prev_target_airspeed = 0.0
+
+        self.initialize()
+        self.telemetry_setup(self.telemetry_file)
+
+
+    def set_target_state(self, target: np.ndarray) -> None:
+        target_ecef_x_m, target_ecef_y_m, target_ecef_z_m, target_airspeed_kph = target
+        if np.any(target != [self.prev_target_x, self.prev_target_y, self.prev_target_z, self.prev_target_airspeed]):
+            target_enu = conversions.ecef2enu(target_ecef_x_m, target_ecef_y_m, target_ecef_z_m,
+                                                self.sim[prp.ic_lat_gd_deg], self.sim[prp.ic_long_gc_deg], 0.0)
+            print("-- SETTING TARGET --")
+            print(f"Target (ENU) x: {target_enu[0]:.3f} y: {target_enu[1]:.3f} z: {target_enu[2]:.3f}")
+            print(f"Target Airspeed: {target_airspeed_kph:.3f}")
+
+        self.sim[prp.target_ecef_x_m] = target_ecef_x_m
+        self.sim[prp.target_ecef_y_m] = target_ecef_y_m
+        self.sim[prp.target_ecef_z_m] = target_ecef_z_m
+        self.sim[prp.target_airspeed_kph] = target_airspeed_kph
+
+        self.prev_target_x = target_ecef_x_m
+        self.prev_target_y = target_ecef_y_m
+        self.prev_target_z = target_ecef_z_m
+        self.prev_target_airspeed = target_airspeed_kph
+
+        self.target = self.TargetState(*[self.sim[prop] for prop in self.target_prps])
+
+
+    def reset_target_state(self):
+        print("--- RESETTING TARGET ---")
+        init_target = np.array([self.sim[prp.ecef_x_m], self.sim[prp.ecef_y_m], self.sim[prp.ecef_z_m], self.sim[prp.airspeed_kph]])
+        self.set_target_state(init_target)
+        print("------------------------")
+
+
+    def update_errors(self):
+        # update error jsbsim properties
+        self.sim[prp.ecef_x_err_m] = self.sim[prp.target_ecef_x_m] - self.sim[prp.ecef_x_m]
+        self.sim[prp.ecef_y_err_m] = self.sim[prp.target_ecef_y_m] - self.sim[prp.ecef_y_m]
+        self.sim[prp.ecef_z_err_m] = self.sim[prp.target_ecef_z_m] - self.sim[prp.ecef_z_m]
+        self.sim[prp.airspeed_err_kph] = self.sim[prp.target_airspeed_kph] - self.sim[prp.airspeed_kph]
+        self.errors = self.Errors(*[self.sim[prop] for prop in self.error_prps])
+
+
+    def get_reward(self, action: np.ndarray) -> float:
+        r_dist = 8 * np.tanh(0.003 * self.dist_to_target)
+        self.sim[prp.reward_dist] = r_dist
+
+        r_airspeed = 2 * np.tanh(0.05 * np.abs(self.sim[prp.airspeed_err_kph]))
+        self.sim[prp.reward_airspeed] = r_airspeed
+
+        r_total = -(r_dist + r_airspeed)
+        self.sim[prp.reward_total] = r_total
+
+        return r_total
+
+
+    # def reward_dist_va(self, action):
+    #     r_dist = super().reward_dist(action)
+    #     airspeed_err_abs = np.abs(self.sim[prp.airspeed_err_kph])
+    #     r_airspeed = 5 * np.tanh(0.05 * airspeed_err_abs)
+
+    #     self.sim[prp.reward_airspeed] = r_airspeed
+
+    #     return r_dist, r_airspeed
 
 
 

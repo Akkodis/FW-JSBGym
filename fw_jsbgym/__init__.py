@@ -121,6 +121,11 @@ gymnasium.register(
 )
 
 gymnasium.register(
+    id='WaypointVaTracking-v0',
+    entry_point='fw_jsbgym.envs.tasks.waypoint_tracking.wp_tracking:WaypointVaTracking'
+)
+
+gymnasium.register(
     id='WaypointTrackingNoVa-v0',
     entry_point='fw_jsbgym.envs.tasks.waypoint_tracking.wp_tracking:WaypointTrackingNoVa'
 )
