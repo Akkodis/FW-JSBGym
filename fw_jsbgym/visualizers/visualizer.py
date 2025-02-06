@@ -1,29 +1,53 @@
 import subprocess
 import time
+import matplotlib.pyplot as plt
 from fw_jsbgym.simulation.jsb_simulation import Simulation
 from pkg_resources import resource_filename
 
+
 class PlotVisualizer(object):
-    def __init__(self, scale: bool, telemetry_file: str) -> None:
-        viz_plot_path: str = resource_filename('fw_jsbgym', 'visualizers/attitude_control_telemetry.py')
+    def __init__(self, animate: bool, env_id: str,  telemetry_file: str) -> None:
+        viz_plot_path: str = ""
+        self.env_id = env_id
+        self.telemetry_file = telemetry_file
+
+        if "AC" in env_id:
+            viz_plot_path = resource_filename('fw_jsbgym', 'visualizers/attitude_control_telemetry.py')
+        elif "Waypoint" in env_id:
+            viz_plot_path = resource_filename('fw_jsbgym', 'visualizers/waypoint_tracking_telemetry.py')
+        assert viz_plot_path != "", "Invalid env_id. Please provide a valid env_id."
+
         cmd: str = ""
         print("Telemetry file: ", telemetry_file)
-        if scale:
-            cmd = f"python {viz_plot_path} --tele-file {telemetry_file} --scale"
-        else:
-            cmd = f"python {viz_plot_path} --tele-file {telemetry_file}"
-        self.process: subprocess.Popen = subprocess.Popen(cmd, 
-                                                          shell=True,
-                                                          stdout=subprocess.PIPE,
-                                                          stderr=subprocess.STDOUT)
-        print("Started attitude_control_telemetry.py process with PID: ", self.process.pid)
-        while True:
-            out: str = self.process.stdout.readline().decode()
-            print(out.strip())
-            if "Animation plot started..." in out:
-                print("attitude_control_telemetry.py loaded successfully.")
-                break
+        # if animate is True, we run the animation plot in a separate process
+        if animate:
+            cmd = f"python {viz_plot_path} --tele-file {telemetry_file} --animate"
 
+            self.process: subprocess.Popen = subprocess.Popen(cmd, 
+                                                            shell=True,
+                                                            stdout=subprocess.PIPE,
+                                                            stderr=subprocess.STDOUT)
+            print(f"Started {viz_plot_path} process with PID: {self.process.pid}")
+            while True:
+                out: str = self.process.stdout.readline().decode()
+                print(out.strip())
+                if "Animation plot started..." in out:
+                    print("Animation plot loaded successfully.")
+                    break
+
+    def plot(self) -> None:
+        if "AC" in self.env_id:
+            # we run the attitude control telemetry plot in the current process
+            from fw_jsbgym.visualizers.attitude_control_telemetry import setup_axes, animate
+            ax = setup_axes()
+            animate(0, ax, self.telemetry_file)
+            plt.show()
+        elif "Waypoint" in self.env_id:
+            # we run the waypoint tracking telemetry plot in the current process
+            from fw_jsbgym.visualizers.waypoint_tracking_telemetry import setup_axes, animate
+            ax = setup_axes()
+            animate(0, ax, self.telemetry_file)
+            plt.show()
 
 class FlightGearVisualizer(object):
     TYPE = 'socket'

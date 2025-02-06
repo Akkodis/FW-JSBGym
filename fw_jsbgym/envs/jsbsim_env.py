@@ -44,7 +44,7 @@ class JSBSimEnv(gym.Env, ABC):
             - `errors`: namedtuple containing the errors of the environment, initialized and updated from task child classes
             - `reward`: the reward of the environment, updated from task child classes
     """
-    metadata: Dict[str, str] = {"render_modes": ["none", "ext_log", "ext_log_plot", "log", "plot", "plot_scale", "fgear", "fgear_plot", "fgear_plot_scale"]}
+    metadata: Dict[str, str] = {"render_modes": ["none", "ext_log", "ext_log_plot", "log", "plot_end", "plot_anim", "fgear", "fgear_plot"]}
 
     def __init__(self,
                  cfg_env: DictConfig,
@@ -93,7 +93,7 @@ class JSBSimEnv(gym.Env, ABC):
 
         # enable FlightGear output for JSBSim <-> FGear communcation if render mode is fgear, fgear_plot, flear_plot_scale
         self.enable_fgear_output: bool = False
-        if self.render_mode in self.metadata["render_modes"][4:]:
+        if self.render_mode in self.metadata["render_modes"][-2:]:
             self.enable_fgear_output = True
 
         # set the visualization time factor (plot and/or flightgear visualization),default is None
@@ -535,6 +535,10 @@ class JSBSimEnv(gym.Env, ABC):
         if self.render_mode in self.metadata["render_modes"][3:]:
             self.telemetry_logging()
 
+        # if episode is finished plot the episode telemetry
+        if np.logical_or(terminated, truncated) and self.render_mode in self.metadata["render_modes"][4:]:
+            self.plot_viz.plot()
+
         # info dict for debugging and misc infos
         info: Dict = {"steps_left": self.sim[self.steps_left],
                       "non_norm_obs": self.observation,
@@ -575,15 +579,15 @@ class JSBSimEnv(gym.Env, ABC):
         """
         # launch the visualizers according to the render mode
         if self.render_mode == 'none': pass
-        if self.render_mode == 'plot_scale':
+        if self.render_mode == 'plot_anim':
             if not self.plot_viz:
-                self.plot_viz = PlotVisualizer(True, self.telemetry_file)
-        if self.render_mode == 'plot':
+                self.plot_viz = PlotVisualizer(True, self.spec.id, self.telemetry_file)
+        if self.render_mode == 'plot_end':
             if not self.plot_viz:
-                self.plot_viz = PlotVisualizer(False, self.telemetry_file)
+                self.plot_viz = PlotVisualizer(False, self.spec.id, self.telemetry_file)
         if self.render_mode == 'ext_log_plot':
             if not self.plot_viz:
-                self.plot_viz = PlotVisualizer(False, self.telemetry_file)
+                self.plot_viz = PlotVisualizer(False, self.spec.id, self.telemetry_file)
         if self.render_mode == 'fgear':
             if not self.fgear_viz:
                 self.fgear_viz = FlightGearVisualizer(self.sim)
@@ -591,12 +595,7 @@ class JSBSimEnv(gym.Env, ABC):
             if not self.fgear_viz:
                 self.fgear_viz = FlightGearVisualizer(self.sim)
             if not self.plot_viz:
-                self.plot_viz = PlotVisualizer(False, self.telemetry_file)
-        if self.render_mode == 'fgear_plot_scale':
-            if not self.fgear_viz:
-                self.fgear_viz = FlightGearVisualizer(self.sim)
-            if not self.plot_viz:
-                self.plot_viz = PlotVisualizer(True, self.telemetry_file)
+                self.plot_viz = PlotVisualizer(True, self.spec.id, self.telemetry_file)
 
 
     def is_terminated(self) -> Tuple[bool]:
