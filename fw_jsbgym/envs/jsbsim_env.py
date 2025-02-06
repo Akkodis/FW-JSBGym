@@ -242,6 +242,7 @@ class JSBSimEnv(gym.Env, ABC):
 
         # convert some properties to SI units
         conversions.props2si(self.sim)
+        conversions.euler2quaternion(sim=self.sim)
 
         # if reset arg "options" is provided, overwrite some of the sim_options fields
         if options is not None:
@@ -514,6 +515,7 @@ class JSBSimEnv(gym.Env, ABC):
 
         # conversions here
         conversions.props2si(self.sim)
+        conversions.euler2quaternion(sim=self.sim)
 
         # update the errors
         self.update_errors()

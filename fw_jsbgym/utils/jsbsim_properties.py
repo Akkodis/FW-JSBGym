@@ -52,6 +52,11 @@ lat_travel_m = BoundedProperty('position/distance-from-start-lat-mt', 'latitude 
 lng_travel_m = BoundedProperty('position/distance-from-start-lon-mt', 'longitude distance travelled from start [m]',
                                float('-inf'), float('+inf'))
 dist_travel_m = Property('position/distance-from-start-mag-mt', 'distance travelled from starting position [m]')
+att_qx = BoundedProperty('attitude/qx', 'quaternion qx', -1, 1)
+att_qy = BoundedProperty('attitude/qy', 'quaternion qy', -1, 1)
+att_qz = BoundedProperty('attitude/qz', 'quaternion qz', -1, 1)
+att_qw = BoundedProperty('attitude/qw', 'quaternion qw', -1, 1)
+
 
 # ECEF position coordinates
 ecef_x_ft = BoundedProperty('position/ecef-x-ft', 'ECEF x coordinate [ft]', float('-inf'), float('+inf'))
@@ -279,6 +284,7 @@ enu_z_err_m = BoundedHelperProperty("error/enu-z-err-m", "ENU z error [m]", floa
 # target_airspeed_kts = BoundedProperty("target/airspeed-kts", "desired airspeed [knots]", float('-inf'), float('+inf'))
 target_airspeed_mps = BoundedProperty("target/airspeed-mps", "desired airspeed [m/s]", float('-inf'), float('+inf'))
 target_airspeed_kph = BoundedProperty("target/airspeed-kph", "desired airspeed [km/h]", float('-inf'), float('+inf'))
+airspeed_err_kph = BoundedProperty("error/airspeed-err-kph", "airspeed error [km/h]", float('-inf'), float('+inf'))
 target_roll_rad = BoundedProperty("target/roll-rad", "desired roll angle [rad]", -math.pi, math.pi)
 target_pitch_rad = BoundedProperty("target/pitch-rad", "desired pitch angle [rad]", -math.pi, math.pi)
 

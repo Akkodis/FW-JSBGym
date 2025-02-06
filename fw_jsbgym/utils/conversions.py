@@ -96,3 +96,45 @@ def ecef2enu(x, y, z, ref_lat, ref_lon, ref_alt):
     enu = R @ ecef_vec
     
     return enu
+
+
+def euler2quaternion(roll=None, pitch=None, yaw=None, sim=None):
+    """
+    Convert Euler angles (roll, pitch, yaw) to quaternion representation.
+    
+    Parameters:
+        roll  (float): Rotation around x-axis in radians (-π, π)
+        pitch (float): Rotation around y-axis in radians (-π, π)
+        yaw   (float): Rotation around z-axis in radians (0, 2π)
+        sim   (Simulation): JSBSim simulation object, if not None, the Euler angles will be taken from the simulation.
+        Similarly, the quaternion will be stored in the simulation object.
+
+    Returns:
+        tuple: (qx, qy, qz, qw) representing the quaternion
+    """
+    if sim is not None:
+        roll = sim[prp.roll_rad]
+        pitch = sim[prp.pitch_rad]
+        yaw = sim[prp.heading_rad]
+
+    assert roll is not None and pitch is not None and yaw is not None, "Euler angles must be provided"
+
+    cy = np.cos(yaw * 0.5)
+    sy = np.sin(yaw * 0.5)
+    cp = np.cos(pitch * 0.5)
+    sp = np.sin(pitch * 0.5)
+    cr = np.cos(roll * 0.5)
+    sr = np.sin(roll * 0.5)
+    
+    qw = cr * cp * cy + sr * sp * sy
+    qx = sr * cp * cy - cr * sp * sy
+    qy = cr * sp * cy + sr * cp * sy
+    qz = cr * cp * sy - sr * sp * cy
+
+    if sim is not None:
+        sim[prp.att_qx] = qx
+        sim[prp.att_qy] = qy
+        sim[prp.att_qz] = qz
+        sim[prp.att_qw] = qw
+
+    return np.array([qx, qy, qz, qw])
