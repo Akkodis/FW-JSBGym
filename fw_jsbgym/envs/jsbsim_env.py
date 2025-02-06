@@ -127,7 +127,6 @@ class JSBSimEnv(gym.Env, ABC):
             prp.aileron_cmd, prp.elevator_cmd, prp.throttle_cmd, # control surface commands
             prp.aileron_combined_pos_rad, prp.elevator_pos_rad, prp.throttle_pos, # control surface positions
             prp.aileron_combined_pos_norm, prp.elevator_pos_norm, # control surface positions normalized
-            prp.reward_total, # total reward per timestep
             prp.airspeed_mps, prp.airspeed_kph, # airspeed
             prp.total_windspeed_north_mps, prp.total_windspeed_east_mps, prp.total_windspeed_down_mps, # wind speed mps
             prp.total_windspeed_north_kph, prp.total_windspeed_east_kph, prp.total_windspeed_down_kph, # wind speed kph
@@ -135,6 +134,7 @@ class JSBSimEnv(gym.Env, ABC):
             prp.turb_north_kph, prp.turb_east_kph, prp.turb_down_kph, # turbulence kph
         )
         self.error_prps: Tuple[BoundedProperty, ...] = ()
+        self.reward_prps: Tuple[BoundedProperty, ...] = ()
 
         ## Named tuples containing relevant variables of the env
         # declaring state NamedTuple structure
@@ -661,12 +661,20 @@ class JSBSimEnv(gym.Env, ABC):
         """
         telemetry: dict[str, float] = {}
 
-        # convert ECEF to ENU
-        enu = conversions.ecef2enu(self.sim[prp.ecef_x_m], self.sim[prp.ecef_y_m], self.sim[prp.ecef_z_m],
-                                   self.sim[prp.ic_lat_gd_deg], self.sim[prp.ic_long_gc_deg], 0.0)
-        self.sim[prp.enu_x_m] = enu[0]
-        self.sim[prp.enu_y_m] = enu[1]
-        self.sim[prp.enu_z_m] = enu[2]
+        if 'Waypoint' in self.spec.id:
+            # convert ECEF to ENU
+            enu = conversions.ecef2enu(self.sim[prp.ecef_x_m], self.sim[prp.ecef_y_m], self.sim[prp.ecef_z_m],
+                                    self.sim[prp.ic_lat_gd_deg], self.sim[prp.ic_long_gc_deg], 0.0)
+            self.sim[prp.enu_x_m] = enu[0]
+            self.sim[prp.enu_y_m] = enu[1]
+            self.sim[prp.enu_z_m] = enu[2]
+
+            # do the same for target
+            enu_target = conversions.ecef2enu(self.sim[prp.target_ecef_x_m], self.sim[prp.target_ecef_y_m], self.sim[prp.target_ecef_z_m],
+                                        self.sim[prp.ic_lat_gd_deg], self.sim[prp.ic_long_gc_deg], 0.0)
+            self.sim[prp.target_enu_x_m] = enu_target[0]
+            self.sim[prp.target_enu_y_m] = enu_target[1]
+            self.sim[prp.target_enu_z_m] = enu_target[2]
 
         # update telemetry field names with additional telemetry field names
         if len(self.telemetry_fieldnames) < len(self.telemetry_prps) + len(additional_tele.keys()):
@@ -706,7 +714,9 @@ class JSBSimEnv(gym.Env, ABC):
         """
         self.sim[self.steps_left] = self.steps_left.max # reset the number of steps left in the episode to the max
         self.sim[self.current_step] = self.current_step.min # reset the number of steps left in the episode to 
-        self.sim[prp.reward_total] = float('nan') # reset the total reward to nan
+        # reset all reward components to nan
+        for prop in self.reward_prps:
+            self.sim[prop] = float('nan')
         self.reset_target_state() # reset task target state (child class)
         self.update_errors() # reset task errors (child class)
 

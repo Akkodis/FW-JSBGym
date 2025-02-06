@@ -42,12 +42,22 @@ class WaypointTracking(JSBSimEnv):
             prp.target_ecef_x_m, prp.target_ecef_y_m, prp.target_ecef_z_m # target position
         )
 
+        # ENU target position, for telemetry
+        self.target_enu_prps = (
+            prp.target_enu_x_m, prp.target_enu_y_m, prp.target_enu_z_m # target position in ENU
+        )
+
         self.error_prps = (
             prp.ecef_x_err_m, prp.ecef_y_err_m, prp.ecef_z_err_m # position error
         )
 
+        self.reward_prps = (
+            prp.reward_total, prp.reward_dist, prp.dist_to_target_m
+        )
+
         # telemetry properties are an addition of the common telemetry properties, target properties and error properties
-        self.telemetry_prps = self.common_telemetry_prps + self.target_prps + self.error_prps
+        self.telemetry_prps = self.common_telemetry_prps + self.target_prps + self.target_enu_prps \
+                            + self.error_prps + self.reward_prps
 
         # declaring observation. Deque with a maximum length of obs_history_size
         self.observation_deque: Deque[np.ndarray] = deque(maxlen=self.task_cfg.mdp.obs_hist_size) # deque of 1D nparrays containing self.State
@@ -86,6 +96,8 @@ class WaypointTracking(JSBSimEnv):
         self.dist_to_target = np.sqrt(self.sim[prp.ecef_x_err_m]**2 + 
                                       self.sim[prp.ecef_y_err_m]**2 + 
                                       self.sim[prp.ecef_z_err_m]**2)
+
+        self.sim[prp.dist_to_target_m] = self.dist_to_target
 
         return obs
 

@@ -269,6 +269,7 @@ ecef_z_err_m = BoundedHelperProperty("error/ecef-z-err-m", "ECEF z error [m]", f
 ecef_x_err_km = BoundedHelperProperty("error/ecef-x-err-km", "ECEF x error [km]", float('-inf'), float('+inf'))
 ecef_y_err_km = BoundedHelperProperty("error/ecef-y-err-km", "ECEF y error [km]", float('-inf'), float('+inf'))
 ecef_z_err_km = BoundedHelperProperty("error/ecef-z-err-km", "ECEF z error [km]", float('-inf'), float('+inf'))
+dist_to_target_m = BoundedHelperProperty("error/distance-to-target-m", "distance to target [m]", float('-inf'), float('+inf'))
 
 enu_x_err_m = BoundedHelperProperty("error/enu-x-err-m", "ENU x error [m]", float('-inf'), float('+inf'))
 enu_y_err_m = BoundedHelperProperty("error/enu-y-err-m", "ENU y error [m]", float('-inf'), float('+inf'))
@@ -294,6 +295,10 @@ target_ecef_x_km = BoundedProperty("target/ecef-x-km", "desired ECEF x [km]", fl
 target_ecef_y_km = BoundedProperty("target/ecef-y-km", "desired ECEF y [km]", float('-inf'), float('+inf'))
 target_ecef_z_km = BoundedProperty("target/ecef-z-km", "desired ECEF z [km]", float('-inf'), float('+inf'))
 
+target_enu_x_m = BoundedProperty("target/enu-x-m", "desired ENU x [m]", float('-inf'), float('+inf'))
+target_enu_y_m = BoundedProperty("target/enu-y-m", "desired ENU y [m]", float('-inf'), float('+inf'))
+target_enu_z_m = BoundedProperty("target/enu-z-m", "desired ENU z [m]", float('-inf'), float('+inf'))
+
 # action avg over last n steps
 aileron_avg = BoundedProperty("fcs/aileron_avg", "aileron action average", aileron_cmd.min, aileron_cmd.max)
 elevator_avg = BoundedProperty("fcs/elevator_avg", "elevator action average", elevator_cmd.min, elevator_cmd.max)
@@ -318,6 +323,7 @@ reward_longitude = BoundedProperty("reward/longitude", "longitude reward", 0, fl
 reward_ecef_y = BoundedProperty("reward/ecef-y", "ECEF y reward", 0, float('+inf'))
 reward_altitude = BoundedProperty("reward/altitude", "altitude reward", 0, float('+inf'))
 reward_ecef_z = BoundedProperty("reward/ecef-z", "ECEF z reward", 0, float('+inf'))
+reward_dist = BoundedProperty("reward/distance", "distance reward", 0, float('+inf'))
 
 
 # PID-RL properties
