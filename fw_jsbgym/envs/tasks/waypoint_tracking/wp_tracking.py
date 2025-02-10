@@ -2,10 +2,10 @@ import gymnasium as gym
 import numpy as np
 
 from omegaconf import DictConfig
-from typing import Tuple, Deque, Dict
+from typing import Tuple, Deque
 from collections import deque
 
-from fw_jsbgym.envs.jsbsim_env import JSBSimEnv
+from fw_jsbgym.envs.tasks.jsbsim_task import JSBSimTask
 from fw_jsbgym.utils import jsbsim_properties as prp
 from fw_jsbgym.utils.jsbsim_properties import BoundedProperty
 from fw_jsbgym.utils import conversions
@@ -15,7 +15,7 @@ from fw_jsbgym.trim.trim_point import TrimPoint
 from fw_jsbgym.models.aerodynamics import AeroModel
 
 
-class WaypointTracking(JSBSimEnv):
+class WaypointTracking(JSBSimTask):
     """
         Waypoint Tracking task. The agent has to track a given waypoint in the sky (described by its
         x, y, z).
@@ -75,31 +75,21 @@ class WaypointTracking(JSBSimEnv):
         self.telemetry_setup(self.telemetry_file)
 
 
-    def observe_state(self, first_obs: bool = False) -> np.ndarray:
-        # observe the state (actualizes self.state)
-        super().observe_state()
+    def step(self, action: np.ndarray) -> Tuple[np.ndarray, float, bool, bool, dict]:
+        # update the action history
+        self.update_action_history(action)
+        # step the simulation
+        self.observation, self.reward, terminated, truncated, info = super().step(action)
+        return self.observation, self.reward, terminated, truncated, info
 
-        # if it's the first observation i.e. following a reset(): fill observation with obs_history_size * state
-        if first_obs:
-            for _ in range(self.task_cfg.mdp.obs_hist_size):
-                self.observation_deque.append(self.state)
-        # else just append the newest state
-        else:
-            self.observation_deque.append(self.state)
 
-        # return observation as a numpy array and add one channel dim for CNN policy
-        if self.task_cfg.mdp.obs_is_matrix:
-            obs: np.ndarray = np.expand_dims(np.array(self.observation_deque), axis=0).astype(np.float32)
-        else: # else return observation as a vector for MLP policy
-            obs: np.ndarray = np.array(self.observation_deque).squeeze().flatten().astype(np.float32)
-
+    def observe_state(self, first_obs = False):
+        # compute the distance to the target
         self.dist_to_target = np.sqrt(self.sim[prp.ecef_x_err_m]**2 + 
                                       self.sim[prp.ecef_y_err_m]**2 + 
                                       self.sim[prp.ecef_z_err_m]**2)
-
         self.sim[prp.dist_to_target_m] = self.dist_to_target
-
-        return obs
+        return super().observe_state(first_obs)
 
 
     def set_target_state(self, target: np.ndarray) -> None:
@@ -185,11 +175,15 @@ class WaypointTracking(JSBSimEnv):
         return r_dist
 
 
-    def is_terminated(self):
-        terminated = False
+    def is_waypoint_reached(self):
         if self.dist_to_target < 3:
             print("Target reached!")
-            terminated = True
+            return True
+        return False
+
+
+    def is_terminated(self):
+        terminated = self.is_waypoint_reached()
         return terminated
 
 
@@ -207,8 +201,8 @@ class WaypointVaTracking(WaypointTracking):
         self.state_prps = (
             prp.ecef_x_err_m, prp.ecef_y_err_m, prp.ecef_z_err_m, # position error
             prp.airspeed_kph, prp.airspeed_err_kph, # airspeed
-            # prp.roll_rad, prp.pitch_rad, # attitude
-            prp.att_qx, prp.att_qy, prp.att_qz, prp.att_qw, # attitude quaternion
+            prp.roll_rad, prp.pitch_rad, # attitude
+            # prp.att_qx, prp.att_qy, prp.att_qz, prp.att_qw, # attitude quaternion
             prp.p_radps, prp.q_radps, prp.r_radps, # angular rates
             prp.alpha_rad, prp.beta_rad, # angle of attack, sideslip
             prp.aileron_cmd, prp.elevator_cmd, prp.throttle_cmd # last action
@@ -229,15 +223,12 @@ class WaypointVaTracking(WaypointTracking):
         )
 
         self.reward_prps = (
-            prp.reward_total, prp.reward_dist, prp.reward_airspeed, prp.dist_to_target_m
+            prp.reward_total, prp.reward_dist, prp.reward_actvar, prp.reward_airspeed, prp.dist_to_target_m
         )
 
         # telemetry properties are an addition of the common telemetry properties, target properties and error properties
         self.telemetry_prps = self.common_telemetry_prps + self.target_prps + self.target_enu_prps \
                             + self.error_prps + self.reward_prps
-
-        # declaring observation. Deque with a maximum length of obs_history_size
-        self.observation_deque: Deque[np.ndarray] = deque(maxlen=self.task_cfg.mdp.obs_hist_size) # deque of 1D nparrays containing self.State
 
         # set action and observation space from the task
         self.action_space = self.get_action_space()
@@ -288,13 +279,28 @@ class WaypointVaTracking(WaypointTracking):
 
 
     def get_reward(self, action: np.ndarray) -> float:
-        r_dist = 8 * np.tanh(0.003 * self.dist_to_target)
+        r_w: dict = self.task_cfg.reward.weights
+
+        r_dist = r_w["r_dist"]["max_r"] * np.tanh(r_w["r_dist"]["tanh_scale"] * self.dist_to_target)
+        # r_dist = 8 * np.tanh(0.015 * self.dist_to_target)
+        # r_dist = 8 * np.exp(-(1/300 * self.dist_to_target)**2) - 8
+        # r_dist = np.clip(8 * (self.dist_to_target/1000), 0, 1000)
         self.sim[prp.reward_dist] = r_dist
 
-        r_airspeed = 2 * np.tanh(0.05 * np.abs(self.sim[prp.airspeed_err_kph]))
+        r_airspeed = r_w["r_airspeed"]["max_r"] * np.tanh(r_w["r_airspeed"]["tanh_scale"] * np.abs(self.sim[prp.airspeed_err_kph]))
         self.sim[prp.reward_airspeed] = r_airspeed
 
-        r_total = -(r_dist + r_airspeed)
+        r_actvar = np.nan
+        if r_w["act_var"]["enabled"]:
+            mean_actvar = np.mean(np.abs(action - np.array(self.action_hist)[-2])) # normalized by distance between action limits
+            r_actvar = r_w["act_var"]["max_r"] * np.tanh(r_w["act_var"]["tanh_scale"] * mean_actvar)
+        self.sim[prp.reward_actvar] = r_actvar
+
+        r_reached = 0.0
+        # if self.is_waypoint_reached():
+        #     r_reached = 100
+
+        r_total = -(r_dist + r_airspeed + r_actvar + r_reached)
         self.sim[prp.reward_total] = r_total
 
         return r_total
@@ -358,7 +364,7 @@ class WaypointTrackingNoVa(WaypointTracking):
         self.pid_airspeed.reset()
 
 
-class AltitudeTracking(JSBSimEnv):
+class AltitudeTracking(JSBSimTask):
     def __init__(self, cfg_env, telemetry_file: str='', render_mode: str='none'):
         super().__init__(cfg_env, telemetry_file, render_mode)
 
