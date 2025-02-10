@@ -69,6 +69,7 @@ def animate(i, axis, tele_file) -> None:
     r_total = df.get(prp.reward_total.get_legal_name(), default=nan_arr)
     r_dist = df.get(prp.reward_dist.get_legal_name(), default=nan_arr)
     r_airspeed = df.get(prp.reward_airspeed.get_legal_name(), default=nan_arr)
+    r_actvar = df.get(prp.reward_actvar.get_legal_name(), default=nan_arr)
 
 
     for(dim_1) in axis:
@@ -136,6 +137,7 @@ def animate(i, axis, tele_file) -> None:
 
         axis[1, 2].plot(tsteps, r_dist, label='r_distance' if not np.isnan(np.sum(r_dist)) else '')
         axis[1, 2].plot(tsteps, r_airspeed, label='r_airspeed' if not np.isnan(np.sum(r_airspeed)) else '')
+        axis[1, 2].plot(tsteps, r_actvar, label='r_actvar' if not np.isnan(np.sum(r_actvar)) else '')
         axis[1, 2].plot(tsteps, r_total, label='r_total' if not np.isnan(np.sum(r_total)) else '')
         axis[1, 2].set_title('rewards')
         axis[1, 2].set_ylabel('reward [-]')
