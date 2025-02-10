@@ -1,16 +1,14 @@
 import gymnasium as gym
 import numpy as np
-import yaml
-from typing import Tuple, Deque, Dict
-from collections import deque
+from typing import Tuple
 from omegaconf import DictConfig
 
-from fw_jsbgym.envs.jsbsim_env import JSBSimEnv
+from fw_jsbgym.envs.tasks.jsbsim_task import JSBSimTask
 from fw_jsbgym.utils import jsbsim_properties as prp
 from fw_jsbgym.utils.jsbsim_properties import BoundedProperty
 
 
-class ACBohnTask(JSBSimEnv):
+class ACBohnTask(JSBSimTask):
     """
         gym.Env wrapper task. Made for attitude control as described in Deep Reinforcement Learning Attitude Control of Fixed-Wing UAVs Using Proximal Policy Optimization by Bohn et al.
 
@@ -69,12 +67,6 @@ class ACBohnTask(JSBSimEnv):
         # telemetry properties are an addition of the common telemetry properties, target properties and error properties
         self.telemetry_prps = self.common_telemetry_prps + self.target_prps + self.error_prps + self.reward_prps
 
-        # declaring observation. Deque with a maximum length of obs_history_size
-        self.observation_deque: Deque[np.ndarray] = deque(maxlen=self.task_cfg.mdp.obs_hist_size) # deque of 1D nparrays containing self.State
-
-        # declaring action history. Deque with a maximum length of act_history_size
-        self.action_hist: Deque[np.ndarray] = deque(maxlen=self.task_cfg.mdp.act_hist_size) # action type: np.ndarray
-
         # set action and observation space from the task
         self.action_space = self.get_action_space()
         self.observation_space = self.get_observation_space()
@@ -104,7 +96,6 @@ class ACBohnTask(JSBSimEnv):
         """
         super().reset_props() # reset the parent class JSBSimEnv properties
 
-        self.update_action_history() # reset action history
         self.update_action_avg() # reset action avg
 
 
@@ -115,53 +106,13 @@ class ACBohnTask(JSBSimEnv):
         # update the action_avg
         self.update_action_avg()
 
-        # apply the action to the simulation
-        self.update_action_history(action) # update the action history
+        # update the action history
+        self.update_action_history(action)
 
         # step the parent class JSBSimEnv where gusts are generated
         self.observation, self.reward, terminated, truncated, info = super().step(action)
 
         return self.observation, self.reward, terminated, truncated, info
-
-
-    def update_action_history(self, action: np.ndarray=None) -> None:
-        """
-            Update the action history with the newest action and drop the oldest action.
-            If it's the first action, the action history is initialized to `obs_history_size` * `action`.
-        """
-        # if it's the first action -> action is None: fill action history with zeros
-        init_action: np.ndarray = np.zeros(self.action_space.shape, dtype=np.float32)
-        if action is None:
-            for _ in range(self.task_cfg.mdp.obs_hist_size):
-                self.action_hist.append(init_action)
-        # else just append the newest action
-        else:
-            self.action_hist.append(action)
-
-
-    def observe_state(self, first_obs: bool = False) -> np.ndarray:
-        """
-            Observe the state of the aircraft, i.e. the state variables defined in the `state_vars` tuple, `obs_history_size` times.\\
-            If it's the first observation, the observation is initialized to `obs_history_size` * `state`.\\
-            Otherwise the observation is the newest `state` appended to the observation history and the oldest is dropped.
-        """
-        # observe the state of the aircraft, self.state gets updated here
-        super().observe_state()
-
-        # if it's the first observation i.e. following a reset(): fill observation with obs_history_size * state
-        if first_obs:
-            for _ in range(self.task_cfg.mdp.obs_hist_size):
-                self.observation_deque.append(self.state)
-        # else just append the newest state
-        else:
-            self.observation_deque.append(self.state)
-
-        # return observation as a numpy array and add one channel dim for CNN policy
-        if self.task_cfg.mdp.obs_is_matrix:
-            obs: np.ndarray = np.expand_dims(np.array(self.observation_deque), axis=0).astype(np.float32)
-        else: # else return observation as a vector for MLP policy
-            obs: np.ndarray = np.array(self.observation_deque).squeeze().flatten().astype(np.float32)
-        return obs
 
 
     def update_errors(self) -> None:
