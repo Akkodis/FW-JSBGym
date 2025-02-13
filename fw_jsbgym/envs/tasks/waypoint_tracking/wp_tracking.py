@@ -71,6 +71,8 @@ class WaypointTracking(JSBSimTask):
         self.prev_target_y = 0.0
         self.prev_target_z = 0.0
 
+        self.in_missed_sphere = False
+
         self.initialize()
         self.telemetry_setup(self.telemetry_file)
 
@@ -176,15 +178,40 @@ class WaypointTracking(JSBSimTask):
 
 
     def is_waypoint_reached(self):
+        """
+            Returns True if the distance to the target is less than 3 meters.
+        """
         if self.dist_to_target < 3:
             print("Target reached!")
             return True
         return False
 
+    def is_waypoint_missed(self):
+        """
+            Returns True if the UAV missed the target.
+        """
+        # in -> out of the missed sphere is set to False by default
+        inout_missed_sphere = False
+        # UAV enters some sphere around the target
+        if self.dist_to_target < 10.0:
+            self.in_missed_sphere = True
+        # UAV exits the sphere
+        if self.in_missed_sphere and self.dist_to_target >= 10.0:
+            self.in_missed_sphere = False
+            inout_missed_sphere = True
+            print("Missed the target!")
+        return inout_missed_sphere
+
 
     def is_terminated(self):
         terminated = self.is_waypoint_reached()
         return terminated
+
+
+    def is_truncated(self):
+        truncated, ep_end, oob = super().is_truncated()
+        truncated = truncated or self.is_waypoint_missed()
+        return truncated, ep_end, oob
 
 
 class WaypointVaTracking(WaypointTracking):
@@ -223,7 +250,8 @@ class WaypointVaTracking(WaypointTracking):
         )
 
         self.reward_prps = (
-            prp.reward_total, prp.reward_dist, prp.reward_actvar, prp.reward_airspeed, prp.dist_to_target_m
+            prp.reward_total, prp.reward_dist, prp.reward_actvar, prp.reward_reached,
+            prp.reward_airspeed, prp.dist_to_target_m
         )
 
         # telemetry properties are an addition of the common telemetry properties, target properties and error properties
@@ -299,8 +327,9 @@ class WaypointVaTracking(WaypointTracking):
         r_reached = 0.0
         # if self.is_waypoint_reached():
         #     r_reached = 100
+        # self.sim[prp.reward_reached] = r_reached
 
-        r_total = -(r_dist + r_airspeed + r_actvar + r_reached)
+        r_total = -(r_dist + r_airspeed + r_actvar) + r_reached
         self.sim[prp.reward_total] = r_total
 
         return r_total
