@@ -139,14 +139,14 @@ class JSBSimEnv(gym.Env, ABC):
         ## Named tuples containing relevant variables of the env
         # declaring state NamedTuple structure
         self.State: NamedTuple = None
-        self.state: self.State = None
+        self.state = None
 
         self.TargetState: NamedTuple = None
-        self.target: self.TargetState = None
+        self.target = None
 
         # declaring error NamedTuple structure
         self.Errors: NamedTuple = None
-        self.errors: self.Errors = None
+        self.errors = None
 
         self.reward: float = None
         
@@ -499,7 +499,9 @@ class JSBSimEnv(gym.Env, ABC):
                     self.gust_start()
 
         # append the fcs commands to the fcs history for this episode
-        self.fcs_pos_hist.append([self.sim[prp.aileron_combined_pos_rad], self.sim[prp.elevator_pos_rad]])
+        self.fcs_pos_hist.append([self.sim[prp.aileron_combined_pos_rad], 
+                                  self.sim[prp.elevator_pos_rad],
+                                  self.sim[prp.throttle_pos]])
 
         # apply the action to the simulation
         self.apply_action(action)
