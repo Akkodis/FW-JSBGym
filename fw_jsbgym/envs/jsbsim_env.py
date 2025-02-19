@@ -528,10 +528,10 @@ class JSBSimEnv(gym.Env, ABC):
         # get the reward
         self.reward: float = self.get_reward(action)
 
-        # check if the episode is terminated modifies the reward with extra penalty if necessary
+        # check if the episode is terminated or truncated
+        truncated, info_trunc = self.is_truncated()
         terminated = self.is_terminated()
-        truncated, episode_end, out_of_bounds = self.is_truncated()
-        self.prev_ep_oob = out_of_bounds # save the last episode oob status (True: it did oob, False: it didn't)
+        self.prev_ep_oob = info_trunc['obs_out_of_bounds'] # save the last episode oob status (True: it did oob, False: it didn't)
 
         # write telemetry to a csv file every agent step
         if self.render_mode in self.metadata["render_modes"][3:]:
@@ -545,9 +545,9 @@ class JSBSimEnv(gym.Env, ABC):
         info: Dict = {"steps_left": self.sim[self.steps_left],
                       "non_norm_obs": self.observation,
                       "non_norm_reward": self.reward,
-                      "episode_end": episode_end,
-                      "out_of_bounds": out_of_bounds,
-                      "fcs_pos_hist": self.fcs_pos_hist
+                      "episode_end": info_trunc["episode_end"],
+                      "out_of_bounds": info_trunc["obs_out_of_bounds"],
+                      "fcs_pos_hist": self.fcs_pos_hist,
                     }
 
         return self.observation, self.reward, terminated, truncated, info
@@ -607,7 +607,7 @@ class JSBSimEnv(gym.Env, ABC):
         return False
 
 
-    def is_truncated(self) -> Tuple[bool, bool, bool]:
+    def is_truncated(self) -> Tuple[bool, Dict]:
         """
             Check if the episode is truncated, i.e. if the episode reaches the maximum number of steps or
             if the observation contains out of bounds obs (due to JSBSim diverging).
@@ -622,8 +622,13 @@ class JSBSimEnv(gym.Env, ABC):
             print(f"Turbulence: {self.sim[prp.turb_type]}")
             print(f"Turbulence: {self.sim[prp.turb_w20_fps]}")
             print(f"Turbulence: {self.sim[prp.turb_severity]}")
+        
+        truncated = episode_end or obs_out_of_bounds
 
-        return episode_end or obs_out_of_bounds, episode_end, obs_out_of_bounds
+        info = dict(episode_end=episode_end, 
+                    obs_out_of_bounds=obs_out_of_bounds)
+
+        return truncated, info
 
 
     def get_observation_space(self) -> gym.spaces.Box:

@@ -2,8 +2,7 @@ import gymnasium as gym
 import numpy as np
 
 from omegaconf import DictConfig
-from typing import Tuple, Deque
-from collections import deque
+from typing import Tuple, Dict
 
 from fw_jsbgym.envs.tasks.jsbsim_task import JSBSimTask
 from fw_jsbgym.utils import jsbsim_properties as prp
@@ -27,8 +26,9 @@ class WaypointTracking(JSBSimTask):
 
         self.state_prps = (
             prp.ecef_x_err_m, prp.ecef_y_err_m, prp.ecef_z_err_m, # position error
-            prp.roll_rad, prp.pitch_rad, # attitude
             prp.airspeed_kph, # airspeed
+            prp.roll_rad, prp.pitch_rad, # attitude
+            # prp.att_qx, prp.att_qy, prp.att_qz, prp.att_qw, # attitude quaternion
             prp.p_radps, prp.q_radps, prp.r_radps, # angular rates
             prp.alpha_rad, prp.beta_rad, # angle of attack, sideslip
             prp.aileron_cmd, prp.elevator_cmd, prp.throttle_cmd # last action
@@ -52,15 +52,13 @@ class WaypointTracking(JSBSimTask):
         )
 
         self.reward_prps = (
-            prp.reward_total, prp.reward_dist, prp.dist_to_target_m
+            prp.reward_total, prp.reward_dist, prp.reward_actvar,
+            prp.dist_to_target_m
         )
 
         # telemetry properties are an addition of the common telemetry properties, target properties and error properties
         self.telemetry_prps = self.common_telemetry_prps + self.target_prps + self.target_enu_prps \
                             + self.error_prps + self.reward_prps
-
-        # declaring observation. Deque with a maximum length of obs_history_size
-        self.observation_deque: Deque[np.ndarray] = deque(maxlen=self.task_cfg.mdp.obs_hist_size) # deque of 1D nparrays containing self.State
 
         # set action and observation space from the task
         self.action_space = self.get_action_space()
@@ -72,6 +70,8 @@ class WaypointTracking(JSBSimTask):
         self.prev_target_z = 0.0
 
         self.in_missed_sphere = False
+        self.inout_missed_sphere = False
+        self.target_reached = False
 
         self.initialize()
         self.telemetry_setup(self.telemetry_file)
@@ -82,15 +82,31 @@ class WaypointTracking(JSBSimTask):
         self.update_action_history(action)
         # step the simulation
         self.observation, self.reward, terminated, truncated, info = super().step(action)
+        info["target_missed"] = self.inout_missed_sphere
+        info["target_reached"] = self.target_reached
+        info["success"] = int(info["target_missed"]) * 1 + int(info["target_reached"]) * 2
+        # reset the flags if the episode is ending for safety and reset distance to target
+        if terminated or truncated:
+            self.target_reached = False
+            self.in_missed_sphere = False
+            self.inout_missed_sphere = False
         return self.observation, self.reward, terminated, truncated, info
 
 
     def observe_state(self, first_obs = False):
-        # compute the distance to the target
-        self.dist_to_target = np.sqrt(self.sim[prp.ecef_x_err_m]**2 + 
-                                      self.sim[prp.ecef_y_err_m]**2 + 
-                                      self.sim[prp.ecef_z_err_m]**2)
+        # it's the first obs (a reset has been called) distance is nan
+        # because at reset the target is a copy of the current state and distance would be 0
+        # which messes up truncation logic
+        # otherwise calculate the distance to the target
+        if first_obs:
+            self.dist_to_target = np.nan
+        else:
+            self.dist_to_target = np.sqrt(self.sim[prp.ecef_x_err_m]**2 + 
+                                          self.sim[prp.ecef_y_err_m]**2 + 
+                                          self.sim[prp.ecef_z_err_m]**2)
+
         self.sim[prp.dist_to_target_m] = self.dist_to_target
+        # print(f"Distance to target: {self.dist_to_target:.3f} m")
         return super().observe_state(first_obs)
 
 
@@ -131,76 +147,61 @@ class WaypointTracking(JSBSimTask):
         self.sim[prp.ecef_x_err_m] = self.sim[prp.target_ecef_x_m] - self.sim[prp.ecef_x_m]
         self.sim[prp.ecef_y_err_m] = self.sim[prp.target_ecef_y_m] - self.sim[prp.ecef_y_m]
         self.sim[prp.ecef_z_err_m] = self.sim[prp.target_ecef_z_m] - self.sim[prp.ecef_z_m]
-        # print('----------------------------------')
-        # print("Curr   Z: ", self.sim[prp.ecef_z_m])
-        # print("Target Z: ", self.sim[prp.target_ecef_z_m])
-        # print("Error  Z: ", self.sim[prp.ecef_z_err_m])
-        # print('Current X: ', self.sim[prp.ecef_x_m])
-        # print('Target  X: ', self.sim[prp.target_ecef_x_m])
-        # print('Error   X: ', self.sim[prp.ecef_x_err_m])
-        # print('Current Y: ', self.sim[prp.ecef_y_m])
-        # print('Target  Y: ', self.sim[prp.target_ecef_y_m])
-        # print('Error   Y: ', self.sim[prp.ecef_y_err_m])
 
         # update the error namedtuple
         self.errors = self.Errors(*[self.sim[prop] for prop in self.error_prps])
 
 
     def get_reward(self, action: np.ndarray) -> float:
-        """
-            Reward function for the waypoint tracking task.
-        """
-        r_dist = self.reward_dist(action)
-        r_total = -r_dist
-        self.sim[prp.reward_total] = r_total
-        return r_total
+        r_w: dict = self.task_cfg.reward.weights
 
-
-    def reward_percoord(self, action: np.ndarray) -> float:
-        r_x = np.abs(self.sim[prp.ecef_x_err_m])
-        r_y = np.abs(self.sim[prp.ecef_y_err_m])
-        r_z = np.abs(self.sim[prp.ecef_z_err_m])
-        r_total = - (r_x + r_y + r_z)
-
-        # populate reward properties
-        self.sim[prp.reward_ecef_x] = r_x
-        self.sim[prp.reward_ecef_y] = r_y
-        self.sim[prp.reward_ecef_z] = r_z
-        self.sim[prp.reward_total] = r_total
-
-        return r_total
-
-
-    def reward_dist(self, action: np.ndarray) -> float:
-        r_dist = 10 * np.tanh(0.003 * self.dist_to_target)
+        r_dist = r_w["r_dist"]["max_r"] * np.tanh(r_w["r_dist"]["tanh_scale"] * self.dist_to_target)
         self.sim[prp.reward_dist] = r_dist
-        return r_dist
+
+        r_actvar = 0.0
+        if r_w["act_var"]["enabled"]:
+            mean_actvar = np.mean(np.abs(action - np.array(self.action_hist)[-2])) # normalized by distance between action limits
+            r_actvar = r_w["act_var"]["max_r"] * np.tanh(r_w["act_var"]["tanh_scale"] * mean_actvar)
+        self.sim[prp.reward_actvar] = r_actvar
+
+        r_reached = 0.0
+        # if self.is_waypoint_reached():
+        #     r_reached = 100
+        # self.sim[prp.reward_reached] = r_reached
+
+        r_total = -(r_dist + r_actvar) + r_reached
+        self.sim[prp.reward_total] = r_total
+
+        return r_total
 
 
     def is_waypoint_reached(self):
         """
             Returns True if the distance to the target is less than 3 meters.
         """
+        self.target_reached = False
         if self.dist_to_target < 3:
-            print("Target reached!")
-            return True
-        return False
+            print("Target Reached!")
+            # resets the missed sphere flag since the target was reached and the episode is about to end
+            self.in_missed_sphere = False
+            self.target_reached = True
+        return self.target_reached
 
     def is_waypoint_missed(self):
         """
             Returns True if the UAV missed the target.
         """
         # in -> out of the missed sphere is set to False by default
-        inout_missed_sphere = False
+        self.inout_missed_sphere = False
         # UAV enters some sphere around the target
         if self.dist_to_target < 10.0:
             self.in_missed_sphere = True
         # UAV exits the sphere
-        if self.in_missed_sphere and self.dist_to_target >= 10.0:
+        if self.in_missed_sphere and self.dist_to_target > 10.0:
             self.in_missed_sphere = False
-            inout_missed_sphere = True
-            print("Missed the target!")
-        return inout_missed_sphere
+            self.inout_missed_sphere = True
+            print("Target Missed!")
+        return self.inout_missed_sphere
 
 
     def is_terminated(self):
@@ -208,10 +209,14 @@ class WaypointTracking(JSBSimTask):
         return terminated
 
 
-    def is_truncated(self):
-        truncated, ep_end, oob = super().is_truncated()
-        truncated = truncated or self.is_waypoint_missed()
-        return truncated, ep_end, oob
+    def is_truncated(self) -> Tuple[bool, Dict]:
+        truncated, info_trunc = super().is_truncated()
+        wp_missed = self.is_waypoint_missed()
+        # add the waypoint missed flag to the info dictionary
+        info_trunc["wp_missed"] = wp_missed
+        # truncation occurs if we missed the waypoint or the episode is truncated (e.g. time limit or out of bounds)
+        truncated = truncated or wp_missed
+        return truncated, info_trunc
 
 
 class WaypointVaTracking(WaypointTracking):
@@ -310,9 +315,6 @@ class WaypointVaTracking(WaypointTracking):
         r_w: dict = self.task_cfg.reward.weights
 
         r_dist = r_w["r_dist"]["max_r"] * np.tanh(r_w["r_dist"]["tanh_scale"] * self.dist_to_target)
-        # r_dist = 8 * np.tanh(0.015 * self.dist_to_target)
-        # r_dist = 8 * np.exp(-(1/300 * self.dist_to_target)**2) - 8
-        # r_dist = np.clip(8 * (self.dist_to_target/1000), 0, 1000)
         self.sim[prp.reward_dist] = r_dist
 
         r_airspeed = r_w["r_airspeed"]["max_r"] * np.tanh(r_w["r_airspeed"]["tanh_scale"] * np.abs(self.sim[prp.airspeed_err_kph]))
@@ -333,17 +335,6 @@ class WaypointVaTracking(WaypointTracking):
         self.sim[prp.reward_total] = r_total
 
         return r_total
-
-
-    # def reward_dist_va(self, action):
-    #     r_dist = super().reward_dist(action)
-    #     airspeed_err_abs = np.abs(self.sim[prp.airspeed_err_kph])
-    #     r_airspeed = 5 * np.tanh(0.05 * airspeed_err_abs)
-
-    #     self.sim[prp.reward_airspeed] = r_airspeed
-
-    #     return r_dist, r_airspeed
-
 
 
 class WaypointTrackingNoVa(WaypointTracking):
