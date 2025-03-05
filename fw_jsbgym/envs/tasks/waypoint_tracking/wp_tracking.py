@@ -27,8 +27,8 @@ class WaypointTracking(JSBSimTask):
         self.state_prps = (
             prp.ecef_x_err_m, prp.ecef_y_err_m, prp.ecef_z_err_m, # position error
             prp.airspeed_kph, # airspeed
-            prp.roll_rad, prp.pitch_rad, # attitude
-            # prp.att_qx, prp.att_qy, prp.att_qz, prp.att_qw, # attitude quaternion
+            prp.u_fps, prp.v_fps, prp.w_fps, # velocity
+            prp.att_qx, prp.att_qy, prp.att_qz, prp.att_qw, # attitude quaternion
             prp.p_radps, prp.q_radps, prp.r_radps, # angular rates
             prp.alpha_rad, prp.beta_rad, # angle of attack, sideslip
             prp.aileron_cmd, prp.elevator_cmd, prp.throttle_cmd # last action
@@ -156,6 +156,7 @@ class WaypointTracking(JSBSimTask):
         r_w: dict = self.task_cfg.reward.weights
 
         r_dist = r_w["r_dist"]["max_r"] * np.tanh(r_w["r_dist"]["tanh_scale"] * self.dist_to_target)
+        # r_dist = np.clip(r_w["r_dist"]["max_r"] * self.dist_to_target / 250, a_min=0.0, a_max=10.0)
         self.sim[prp.reward_dist] = r_dist
 
         r_actvar = 0.0
@@ -181,7 +182,7 @@ class WaypointTracking(JSBSimTask):
         """
         self.target_reached = False
         if self.dist_to_target < 3:
-            print("Target Reached!")
+            print(f"Target Reached! @ step : {self.sim[self.current_step]}")
             # resets the missed sphere flag since the target was reached and the episode is about to end
             self.in_missed_sphere = False
             self.target_reached = True
@@ -200,7 +201,7 @@ class WaypointTracking(JSBSimTask):
         if self.in_missed_sphere and self.dist_to_target > 10.0:
             self.in_missed_sphere = False
             self.inout_missed_sphere = True
-            print("Target Missed!")
+            print(f"Target Missed! @ step : {self.sim[self.current_step]}")
         return self.inout_missed_sphere
 
 
@@ -390,28 +391,6 @@ class AltitudeTracking(JSBSimTask):
 
         self.task_cfg: DictConfig = cfg_env.task
 
-        # SS 1
-        # self.state_prps: Tuple[BoundedProperty] = (
-        #     prp.ecef_z_err_m, 
-        #     prp.roll_rad, prp.pitch_rad,
-        #     prp.p_radps, prp.q_radps,
-        #     prp.alpha_rad, prp.beta_rad,
-        #     prp.airspeed_kph,
-        #     prp.elevator_cmd, prp.throttle_cmd
-        # )
-
-        # SS 2
-        # self.state_prps: Tuple[BoundedProperty] = (
-        #     prp.ecef_z_err_m,
-        #     prp.u_fps, prp.w_fps,
-        #     prp.pitch_rad,
-        #     prp.q_radps,
-        #     prp.alpha_rad, prp.beta_rad,
-        #     prp.airspeed_kph,
-        #     prp.elevator_cmd, prp.throttle_cmd
-        # )
-
-        # SS 3
         self.state_prps: Tuple[BoundedProperty] = (
             prp.ecef_z_err_m,
             prp.roll_rad, prp.pitch_rad,
