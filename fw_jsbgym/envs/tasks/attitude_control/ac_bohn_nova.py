@@ -76,7 +76,7 @@ class ACBohnNoVaTask(ACBohnTask):
         self.action_space = self.get_action_space()
         self.observation_space = self.get_observation_space()
 
-        self.initialize()
+        self.init()
         self.telemetry_setup(self.telemetry_file)
 
         self.prev_target_roll: float = 0.0
@@ -262,7 +262,7 @@ class ACBohnNoVaIErrTask(ACBohnNoVaTask):
         self.action_space = self.get_action_space()
         self.observation_space = self.get_observation_space()
 
-        self.initialize()
+        self.init()
         self.telemetry_setup(self.telemetry_file)
 
 
@@ -320,7 +320,7 @@ class ACBohnNoVaIErrYawTask(ACBohnNoVaIErrTask):
         self.action_space = self.get_action_space()
         self.observation_space = self.get_observation_space()
 
-        self.initialize()
+        self.init()
         self.telemetry_setup(self.telemetry_file)
 
 
@@ -333,6 +333,6 @@ class ACBohnNoVaIErrWindOracleTask(ACBohnNoVaIErrTask):
         self.action_space = self.get_action_space()
         self.observation_space = self.get_observation_space()
 
-        self.initialize()
+        self.init()
         self.telemetry_setup(self.telemetry_file)
 

@@ -59,15 +59,15 @@ class JSBSimTask(JSBSimEnv, ABC):
             Otherwise the observation is the newest `state` appended to the observation history and the oldest is dropped.
         """
         # observe the state of the aircraft, self.state gets updated here
-        super().observe_state()
+        state = super().observe_state()
 
         # if it's the first observation i.e. following a reset(): fill observation with obs_history_size * state
         if first_obs:
             for _ in range(self.task_cfg.mdp.obs_hist_size):
-                self.observation_deque.append(self.state)
+                self.observation_deque.append(state)
         # else just append the newest state
         else:
-            self.observation_deque.append(self.state)
+            self.observation_deque.append(state)
 
         # return observation as a numpy array and add one channel dim for CNN policy
         if self.task_cfg.mdp.obs_is_matrix:

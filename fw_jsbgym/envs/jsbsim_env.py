@@ -138,15 +138,15 @@ class JSBSimEnv(gym.Env, ABC):
 
         ## Named tuples containing relevant variables of the env
         # declaring state NamedTuple structure
-        self.State: NamedTuple = None
-        self.state = None
+        # self.State: NamedTuple = None
+        # self.state = None
 
-        self.TargetState: NamedTuple = None
-        self.target = None
+        # self.TargetState: NamedTuple = None
+        # self.target = None
 
-        # declaring error NamedTuple structure
-        self.Errors: NamedTuple = None
-        self.errors = None
+        # # declaring error NamedTuple structure
+        # self.Errors: NamedTuple = None
+        # self.errors = None
 
         self.reward: float = None
         
@@ -178,21 +178,17 @@ class JSBSimEnv(gym.Env, ABC):
         )
 
 
-    def initialize(self) -> None:
-        # initialize state NamedTuple structure
-        self.State: NamedTuple = namedtuple('State', [state_prp.get_legal_name() for state_prp in self.state_prps])
+    def init(self) -> None:
+        # create the Simulation object
+        assert self.sim is None, "Simulation object already exists."
+        self.sim = Simulation(fdm_frequency =self.fdm_frequency,
+                                aircraft_id=self.aircraft_id,
+                                viz_time_factor=self.viz_time_factor,
+                                enable_fgear_output=self.enable_fgear_output)
 
-        # initialize target state NamedTuple structure
-        self.TargetState: NamedTuple = namedtuple('TargetState', [f"target_{t_state_prp.get_legal_name()}" for t_state_prp in self.target_prps])
-
-        # initialize error NamedTuple structure
-        self.Errors: NamedTuple = namedtuple('Errors', [f"{error_prp.get_legal_name()}_err" for error_prp in self.error_prps])
-
-        # initialize telemetry fieldnames
-        self.telemetry_fieldnames: Tuple[str, ...] = tuple([tele_prp.get_legal_name() for tele_prp in self.telemetry_prps]) 
-
-        if self.jsbsim_cfg.debug:
-            self.print_MDP_info()
+        # convert some properties to SI units @ init time
+        conversions.props2si(self.sim)
+        conversions.euler2quaternion(sim=self.sim)
 
 
     def print_MDP_info(self) -> None:
@@ -230,17 +226,12 @@ class JSBSimEnv(gym.Env, ABC):
             - `state`: the initial state of the environment after reset
         """
         print("\n***Resetting the environment***")
-        if self.sim:
-            # reintialize the simulation
-            self.sim.fdm.reset_to_initial_conditions(0)
-        if self.sim is None:
-            # initialize the simulation
-            self.sim = Simulation(fdm_frequency =self.fdm_frequency,
-                                  aircraft_id=self.aircraft_id,
-                                  viz_time_factor=self.viz_time_factor,
-                                  enable_fgear_output=self.enable_fgear_output)
+        assert self.sim is not None, "Simulation object does not exist. Call init() first."
 
-        # convert some properties to SI units
+        # reset the simulation to initial conditions
+        self.sim.fdm.reset_to_initial_conditions(0)
+
+        # convert some properties to SI units for the 1st step
         conversions.props2si(self.sim)
         conversions.euler2quaternion(sim=self.sim)
 
@@ -568,8 +559,8 @@ class JSBSimEnv(gym.Env, ABC):
         """
             Observe the state of the aircraft from the simulation properties and return the state as a numpy array.
         """
-        self.state = self.State(*[self.sim[prop] for prop in self.state_prps]) # create state named tuple with state variable values from the sim properties
-        np_state = np.array(self.state).astype(np.float32)
+        # return a numpy array of the state properties values
+        np_state = np.array([self.sim[prop] for prop in self.state_prps]).astype(np.float32)
         return np_state
 
 
@@ -705,6 +696,9 @@ class JSBSimEnv(gym.Env, ABC):
         """
             Setup the telemetry file and fieldnames.
         """
+        # initialize telemetry fieldnames
+        self.telemetry_fieldnames: Tuple[str, ...] = tuple([tele_prp.get_legal_name() for tele_prp in self.telemetry_prps]) 
+
         if not os.path.exists('telemetry'):
             os.makedirs('telemetry')
 

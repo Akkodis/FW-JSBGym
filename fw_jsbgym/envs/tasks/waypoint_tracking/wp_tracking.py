@@ -73,7 +73,9 @@ class WaypointTracking(JSBSimTask):
         self.inout_missed_sphere = False
         self.target_reached = False
 
-        self.initialize()
+        if self.jsbsim_cfg.debug:
+            self.print_MDP_info()
+
         self.telemetry_setup(self.telemetry_file)
 
 
@@ -126,8 +128,6 @@ class WaypointTracking(JSBSimTask):
         self.prev_target_y = target_ecef_y_m
         self.prev_target_z = target_ecef_z_m
 
-        self.target = self.TargetState(*[self.sim[prop] for prop in self.target_prps])
-
 
     def reset_target_state(self) -> None:
         """
@@ -149,7 +149,6 @@ class WaypointTracking(JSBSimTask):
         self.sim[prp.ecef_z_err_m] = self.sim[prp.target_ecef_z_m] - self.sim[prp.ecef_z_m]
 
         # update the error namedtuple
-        self.errors = self.Errors(*[self.sim[prop] for prop in self.error_prps])
 
 
     def get_reward(self, action: np.ndarray) -> float:
@@ -270,7 +269,9 @@ class WaypointVaTracking(WaypointTracking):
 
         self.prev_target_airspeed = 0.0
 
-        self.initialize()
+        if self.jsbsim_cfg.debug:
+            self.print_MDP_info()
+
         self.telemetry_setup(self.telemetry_file)
 
 
@@ -293,7 +294,6 @@ class WaypointVaTracking(WaypointTracking):
         self.prev_target_z = target_ecef_z_m
         self.prev_target_airspeed = target_airspeed_kph
 
-        self.target = self.TargetState(*[self.sim[prop] for prop in self.target_prps])
 
 
     def reset_target_state(self):
@@ -309,7 +309,6 @@ class WaypointVaTracking(WaypointTracking):
         self.sim[prp.ecef_y_err_m] = self.sim[prp.target_ecef_y_m] - self.sim[prp.ecef_y_m]
         self.sim[prp.ecef_z_err_m] = self.sim[prp.target_ecef_z_m] - self.sim[prp.ecef_z_m]
         self.sim[prp.airspeed_err_kph] = self.sim[prp.target_airspeed_kph] - self.sim[prp.airspeed_kph]
-        self.errors = self.Errors(*[self.sim[prop] for prop in self.error_prps])
 
 
     def get_reward(self, action: np.ndarray) -> float:
@@ -363,7 +362,9 @@ class WaypointTrackingNoVa(WaypointTracking):
         )
         self.pid_airspeed.set_reference(60)
 
-        self.initialize()
+        if self.jsbsim_cfg.debug:
+            self.print_MDP_info()
+
         self.telemetry_setup(self.telemetry_file)
 
 
@@ -422,7 +423,9 @@ class AltitudeTracking(JSBSimTask):
 
         self.prev_target_z = 0.0
 
-        self.initialize()
+        if self.jsbsim_cfg.debug:
+            self.print_MDP_info()
+
         self.telemetry_setup(self.telemetry_file)
 
 
@@ -443,12 +446,10 @@ class AltitudeTracking(JSBSimTask):
             print("Target Z changed to: ", target_state[0])
         self.sim[prp.target_ecef_z_m] = target_state[0]
         self.prev_target_z = target_state[0]
-        self.target = self.TargetState(*[self.sim[prop] for prop in self.target_prps])
 
 
     def update_errors(self):
         self.sim[prp.ecef_z_err_m] = self.sim[prp.target_ecef_z_m] - self.sim[prp.ecef_z_m]
-        self.errors = self.Errors(*[self.sim[prop] for prop in self.error_prps])
 
 
     def apply_action(self, action):
