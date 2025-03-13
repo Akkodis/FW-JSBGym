@@ -122,6 +122,7 @@ class JSBSimEnv(gym.Env, ABC):
             prp.ecef_x_m, prp.ecef_y_m, prp.ecef_z_m, # position in ECEF
             prp.enu_x_m, prp.enu_y_m, prp.enu_z_m, # position in ENU
             prp.roll_rad, prp.pitch_rad, prp.heading_rad, # attitude
+            prp.u_kph, prp.v_kph, prp.w_kph, # linear body velocities
             prp.alpha_rad, prp.beta_rad, # angle of attack and sideslip
             prp.p_radps, prp.q_radps, prp.r_radps, # angular rates and airspeed
             prp.aileron_cmd, prp.elevator_cmd, prp.throttle_cmd, # control surface commands

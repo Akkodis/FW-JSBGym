@@ -20,6 +20,7 @@ prp_conv_fps2mps: Tuple[BoundedProperty, ...] = (
 )
 
 prp_conv_fps2kph: Tuple[BoundedProperty, ...] = (
+    prp.u_kph, prp.v_kph, prp.w_kph,
     prp.windspeed_north_kph, prp.windspeed_east_kph, prp.windspeed_down_kph,
     prp.total_windspeed_north_kph, prp.total_windspeed_east_kph, prp.total_windspeed_down_kph,
     prp.turb_north_kph, prp.turb_east_kph, prp.turb_down_kph
