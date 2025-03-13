@@ -316,13 +316,17 @@ class JSBSimEnv(gym.Env, ABC):
                 print(f"Fixed Severity")
             if atmo_options.get("wind", False): # if there's a wind key in dict
                 if atmo_options["wind"].get("enable", False): # if wind is enabled
-                    if atmo_options["wind"].get("rand_continuous", False): # if continuous random wind
-                        wind_vec = self.random_wind_vector(windspeed_limit=82.8)
+                    if atmo_options["wind"].get("rand_windspeed", False): # if random wind speed
+                        wind_vec = self.random_wind_vector(windspeed_limit=40.0) # default was 82.8
                         wspeed_n = wind_vec[0] * 0.9115 # kmh to fps
                         wspeed_e = wind_vec[1] * 0.9115 # kmh to fps
                         wspeed_d = wind_vec[2] * 0.9115 # kmh to fps
                     else: # if discrete wind parameters
-                        wind_dir = self.random_wind_direction()
+                        if atmo_options["wind"].get("wind_dir", False): # if wind direction is defined in config
+                            wind_dir = np.array(atmo_options.wind.wind_dir)
+                        else: # if wind direction is not defined
+                            wind_dir = self.random_wind_direction()
+                        print(f"Wind Dir: {wind_dir}")
                         # set wind severity to the selected severity by default
                         wind_severity = severity
                         # overwrite wind severity if it's defined in the wind options
@@ -352,6 +356,12 @@ class JSBSimEnv(gym.Env, ABC):
                                 wspeed_e = wind_vec[1] * 0.9115 # kph to fps
                                 wspeed_d = wind_vec[2] * 0.9115 # kph to fps
                                 print("Severe Wind")
+                            case windspeed if (isinstance(windspeed, float) or isinstance(windspeed, int)) : # custom wind speed
+                                wind_vec = wind_dir * windspeed
+                                wspeed_n = wind_vec[0] * 0.9115
+                                wspeed_e = wind_vec[1] * 0.9115
+                                wspeed_d = wind_vec[2] * 0.9115
+                                print(f"Custom Wind: wind speed {windspeed} kph")
                 else: # if wind is disabled
                     wspeed_n = 0.0
                     wspeed_e = 0.0
@@ -422,9 +432,9 @@ class JSBSimEnv(gym.Env, ABC):
             self.sim[prp.turb_w20_fps] = turb_w20_fps
             self.sim[prp.turb_severity] = turb_severity
             print(f"Wind: \n"
-                  f"  N: {self.sim[prp.windspeed_north_kph]} kph\n"
-                  f"  E: {self.sim[prp.windspeed_east_kph]} kph\n"
-                  f"  D: {self.sim[prp.windspeed_down_kph]} kph\n"
+                  f"  N: {self.sim[prp.windspeed_north_fps] * 1.09728} kph\n"
+                  f"  E: {self.sim[prp.windspeed_east_fps] * 1.09728} kph\n"
+                  f"  D: {self.sim[prp.windspeed_down_fps] * 1.09728} kph\n"
                   f" Magnitude: {np.linalg.norm(wind_vec)} kph\n")
         else:
             print(f"WARNING: No Atmosphere Options Found")
@@ -487,7 +497,7 @@ class JSBSimEnv(gym.Env, ABC):
         if len(atmo_options) != 0:
             if atmo_options["gust"].get("enable"):
                 curr_step = self.sim[self.current_step]
-                if curr_step == 500 or curr_step == 1500:
+                if curr_step == 100:
                     self.gust_start()
 
         # append the fcs commands to the fcs history for this episode
