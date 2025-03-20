@@ -448,7 +448,8 @@ class JSBSimEnv(gym.Env, ABC):
 
 
     def random_wind_direction(self):
-        rand_vec = self.sim_rng.uniform(-1, 1, size=(3))
+        # rand_vec = self.sim_rng.uniform(-1, 1, size=(3))
+        rand_vec = self.sim_rng.uniform([-1, -1, -0.1], [1, 1, 0.1])
         unit_vector = rand_vec / np.linalg.norm(rand_vec)
         return unit_vector
 
