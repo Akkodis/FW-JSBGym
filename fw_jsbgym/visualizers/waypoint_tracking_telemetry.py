@@ -120,9 +120,9 @@ def animate(i, axis, tele_file) -> None:
             axis[1, 0].plot(target_enu_x_m[1], target_enu_y_m[1], target_enu_z_m[1], 'go', label='target')
             axis[1, 0].plot(enu_x_m, enu_y_m, enu_z_m)
             axis[1, 0].set_title('ENU Trajectory [m]')
-            axis[1, 0].set_xlabel("x")
-            axis[1, 0].set_ylabel("y")
-            axis[1, 0].set_zlabel("z")
+            axis[1, 0].set_xlabel("E")
+            axis[1, 0].set_ylabel("N")
+            axis[1, 0].set_zlabel("U")
             axis[1, 0].legend()
 
         # wait for the telemetry file to be filled with some data so that the plotter doesn't crash when computing scale bounds
