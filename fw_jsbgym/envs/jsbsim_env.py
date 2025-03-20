@@ -121,6 +121,7 @@ class JSBSimEnv(gym.Env, ABC):
             prp.lat_gc_deg, prp.lng_gc_deg, prp.altitude_sl_m, # position
             prp.ecef_x_m, prp.ecef_y_m, prp.ecef_z_m, # position in ECEF
             prp.enu_x_m, prp.enu_y_m, prp.enu_z_m, # position in ENU
+            prp.ned_x_m, prp.ned_y_m, prp.ned_z_m, # position in NED
             prp.roll_rad, prp.pitch_rad, prp.heading_rad, # attitude
             prp.u_kph, prp.v_kph, prp.w_kph, # linear body velocities
             prp.alpha_rad, prp.beta_rad, # angle of attack and sideslip
@@ -687,6 +688,20 @@ class JSBSimEnv(gym.Env, ABC):
             self.sim[prp.target_enu_y_m] = enu_target[1]
             self.sim[prp.target_enu_z_m] = enu_target[2]
 
+            # convert ECEF to NED
+            ned = conversions.ecef2ned(self.sim[prp.ecef_x_m], self.sim[prp.ecef_y_m], self.sim[prp.ecef_z_m],
+                                    self.sim[prp.ic_lat_gd_deg], self.sim[prp.ic_long_gc_deg], 0.0)
+            self.sim[prp.ned_x_m] = ned[0]
+            self.sim[prp.ned_y_m] = ned[1]
+            self.sim[prp.ned_z_m] = ned[2]
+
+            # do the same for target
+            ned_target = conversions.ecef2ned(self.sim[prp.target_ecef_x_m], self.sim[prp.target_ecef_y_m], self.sim[prp.target_ecef_z_m],
+                                        self.sim[prp.ic_lat_gd_deg], self.sim[prp.ic_long_gc_deg], 0.0)
+            self.sim[prp.target_ned_x_m] = ned_target[0]
+            self.sim[prp.target_ned_y_m] = ned_target[1]
+            self.sim[prp.target_ned_z_m] = ned_target[2]
+
         # update telemetry field names with additional telemetry field names
         if len(self.telemetry_fieldnames) < len(self.telemetry_prps) + len(additional_tele.keys()):
             self.telemetry_fieldnames += tuple(additional_tele.keys())
@@ -720,6 +735,12 @@ class JSBSimEnv(gym.Env, ABC):
             with open(self.telemetry_file, 'w') as csvfile:
                 csv_writer = csv.DictWriter(csvfile, fieldnames=self.telemetry_fieldnames)
                 csv_writer.writeheader()
+
+    def get_fcs_hist(self) -> np.ndarray:
+        """
+            Get the flight control surface history.
+        """
+        return np.array(self.fcs_pos_hist)
 
 
     def reset_props(self) -> None:

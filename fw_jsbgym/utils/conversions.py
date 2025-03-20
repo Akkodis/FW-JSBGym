@@ -62,6 +62,7 @@ def geodetic2ecef(lat, lon, alt):
     
     return np.array([x, y, z])
 
+
 # convert enu to ecef
 def enu2ecef(x, y, z, ref_lat, ref_lon, ref_alt):
     # Convert reference geodetic coordinates to ECEF
@@ -97,6 +98,26 @@ def ecef2enu(x, y, z, ref_lat, ref_lon, ref_alt):
     enu = R @ ecef_vec
     
     return enu
+
+
+def ecef2ned(x, y, z, ref_lat, ref_lon, ref_alt):
+    # Convert reference geodetic coordinates to ECEF
+    ref_ecef = geodetic2ecef(ref_lat, ref_lon, ref_alt)
+    
+    # Compute transformation matrix
+    lat, lon = np.radians(ref_lat), np.radians(ref_lon)
+
+    R = np.array([
+                  [-np.sin(lat) * np.cos(lon), -np.sin(lat) * np.sin(lon), np.cos(lat)],
+                  [-np.sin(lon)              ,  np.cos(lon)              ,  0],
+                  [-np.cos(lat) * np.cos(lon),  -np.cos(lat) * np.sin(lon), -np.sin(lat)]
+                  ])
+
+    # Convert ECEF to NED
+    ecef_vec = np.array([x, y, z]) - ref_ecef
+    ned = R @ ecef_vec
+    
+    return ned
 
 
 def euler2quaternion(roll=None, pitch=None, yaw=None, sim=None):

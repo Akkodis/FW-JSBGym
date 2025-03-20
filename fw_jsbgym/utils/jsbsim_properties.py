@@ -79,6 +79,11 @@ enu_x_m = BoundedHelperProperty('position/enu-x-m', 'ENU x coordinate [m]', floa
 enu_y_m = BoundedHelperProperty('position/enu-y-m', 'ENU y coordinate [m]', float('-inf'), float('+inf'))
 enu_z_m = BoundedHelperProperty('position/enu-z-m', 'ENU z coordinate [m]', float('-inf'), float('+inf'))
 
+# NED position coordinates
+ned_x_m = BoundedProperty('position/ned-x-m', 'NED x coordinate [m]', float('-inf'), float('+inf'))
+ned_y_m = BoundedProperty('position/ned-y-m', 'NED y coordinate [m]', float('-inf'), float('+inf'))
+ned_z_m = BoundedProperty('position/ned-z-m', 'NED z coordinate [m]', float('-inf'), float('+inf'))
+
 # zero
 zero = BoundedHelperProperty('zero', 'zero value', 0, 0)
 zero_ = BoundedHelperProperty('zero_', 'zero value', 0, 0)
@@ -310,6 +315,10 @@ target_ecef_z_km = BoundedProperty("target/ecef-z-km", "desired ECEF z [km]", fl
 target_enu_x_m = BoundedProperty("target/enu-x-m", "desired ENU x [m]", float('-inf'), float('+inf'))
 target_enu_y_m = BoundedProperty("target/enu-y-m", "desired ENU y [m]", float('-inf'), float('+inf'))
 target_enu_z_m = BoundedProperty("target/enu-z-m", "desired ENU z [m]", float('-inf'), float('+inf'))
+
+target_ned_x_m = BoundedProperty("target/ned-x-m", "desired NED x [m]", float('-inf'), float('+inf'))
+target_ned_y_m = BoundedProperty("target/ned-y-m", "desired NED y [m]", float('-inf'), float('+inf'))
+target_ned_z_m = BoundedProperty("target/ned-z-m", "desired NED z [m]", float('-inf'), float('+inf'))
 
 # action avg over last n steps
 aileron_avg = BoundedProperty("fcs/aileron_avg", "aileron action average", aileron_cmd.min, aileron_cmd.max)
