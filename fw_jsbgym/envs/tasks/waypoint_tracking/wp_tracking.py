@@ -97,10 +97,7 @@ class WaypointTracking(JSBSimTask):
 
 
     def observe_state(self, first_obs = False):
-        #! needs testing can break
         # it's the first obs (a reset has been called) distance is 0.0
-        # because at reset the target is a copy of the current state and distance would be 0
-        # which messes up truncation logic
         # otherwise calculate the distance to the target
         if first_obs:
             self.dist_to_target = 0.0
@@ -110,7 +107,6 @@ class WaypointTracking(JSBSimTask):
             self.dist_to_target = np.sqrt(self.sim[prp.ecef_x_err_m]**2 + 
                                           self.sim[prp.ecef_y_err_m]**2 + 
                                           self.sim[prp.ecef_z_err_m]**2)
-
 
         self.sim[prp.dist_to_target_m] = self.dist_to_target
         # print(f"Distance to target: {self.dist_to_target:.3f} m")
@@ -154,33 +150,45 @@ class WaypointTracking(JSBSimTask):
         self.sim[prp.ecef_z_err_m] = self.sim[prp.target_ecef_z_m] - self.sim[prp.ecef_z_m]
 
 
+    # Distance based reward
+    # def get_reward(self, action: np.ndarray) -> float:
+    #     r_w: dict = self.task_cfg.reward.weights
+
+    #     r_dist = r_w["r_dist"]["max_r"] * np.tanh(r_w["r_dist"]["tanh_scale"] * self.dist_to_target)
+    #     # r_dist = np.clip(r_w["r_dist"]["max_r"] * self.dist_to_target / 250, a_min=0.0, a_max=10.0)
+    #     self.sim[prp.reward_dist] = r_dist
+
+    #     r_actvar = 0.0
+    #     if r_w["act_var"]["enabled"]:
+    #         mean_actvar = np.mean(np.abs(action - np.array(self.action_hist)[-2])) # normalized by distance between action limits
+    #         r_actvar = r_w["act_var"]["max_r"] * np.tanh(r_w["act_var"]["tanh_scale"] * mean_actvar)
+    #     self.sim[prp.reward_actvar] = r_actvar
+
+    #     r_reached = 0.0
+    #     # if self.is_waypoint_reached():
+    #     #     r_reached = 100
+    #     # self.sim[prp.reward_reached] = r_reached
+
+    #     r_total = -(r_dist + r_actvar) + r_reached
+    #     self.sim[prp.reward_total] = r_total
+
+    #     return r_total
+
+
+    # Progress based reward
     def get_reward(self, action: np.ndarray) -> float:
-        r_w: dict = self.task_cfg.reward.weights
-
-        r_dist = r_w["r_dist"]["max_r"] * np.tanh(r_w["r_dist"]["tanh_scale"] * self.dist_to_target)
-        # r_dist = np.clip(r_w["r_dist"]["max_r"] * self.dist_to_target / 250, a_min=0.0, a_max=10.0)
-        self.sim[prp.reward_dist] = r_dist
-
-        r_actvar = 0.0
-        if r_w["act_var"]["enabled"]:
-            mean_actvar = np.mean(np.abs(action - np.array(self.action_hist)[-2])) # normalized by distance between action limits
-            r_actvar = r_w["act_var"]["max_r"] * np.tanh(r_w["act_var"]["tanh_scale"] * mean_actvar)
-        self.sim[prp.reward_actvar] = r_actvar
-
-        r_reached = 0.0
-        # if self.is_waypoint_reached():
-        #     r_reached = 100
-        # self.sim[prp.reward_reached] = r_reached
-
-        r_total = -(r_dist + r_actvar) + r_reached
-        self.sim[prp.reward_total] = r_total
-
-        return r_total
+        # r_progress = 6.25 * (self.prev_dist_to_target - self.dist_to_target)
+        r_progress = np.clip(6.25 * (self.prev_dist_to_target - self.dist_to_target), 
+                             a_min=-1.5, a_max=None) # clip min to avoid big negative on 1st step (prev_dist = 0, dist = 200m)
+        self.sim[prp.reward_total] = r_progress
+        return r_progress
 
 
+    # mix of progress and distance
     # def get_reward(self, action: np.ndarray) -> float:
     #     # print(f"Prev dist: {self.prev_dist_to_target:.5f} Dist: {self.dist_to_target:.5f}")
-    #     r_progress = 6.25 * (self.prev_dist_to_target - self.dist_to_target)
+    #     d_rate = 6.25 * (self.prev_dist_to_target - self.dist_to_target)
+    #     r_progress = d_rate + 9 * np.exp(-0.1 * self.dist_to_target)
     #     # print(f"Progress: {r_progress:.5f}")
     #     self.sim[prp.reward_total] = r_progress
     #     return r_progress
@@ -197,6 +205,7 @@ class WaypointTracking(JSBSimTask):
             self.in_missed_sphere = False
             self.target_reached = True
         return self.target_reached
+
 
     def is_waypoint_missed(self):
         """
