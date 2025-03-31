@@ -239,6 +239,143 @@ class WaypointTracking(JSBSimTask):
         return truncated, info_trunc
 
 
+class WaypointTrackingENU(WaypointTracking):
+    """
+        Waypoint Tracking task. The agent has to track a given waypoint in the sky (described by its
+        x,y,z in ENU coordinates).
+    """
+    def __init__(self, cfg_env: DictConfig, telemetry_file: str='', render_mode: str='none') -> None:
+        super().__init__(cfg_env=cfg_env, telemetry_file=telemetry_file, render_mode=render_mode)
+
+        self.task_cfg: DictConfig = cfg_env.task
+
+        self.state_prps = (
+            prp.enu_x_err_m, prp.enu_y_err_m, prp.enu_z_err_m, # position error
+            prp.airspeed_kph, # airspeed
+            prp.u_fps, prp.v_fps, prp.w_fps, # velocity
+            prp.att_qx, prp.att_qy, prp.att_qz, prp.att_qw, # attitude quaternion
+            prp.p_radps, prp.q_radps, prp.r_radps, # angular rates
+            prp.alpha_rad, prp.beta_rad, # angle of attack, sideslip
+            prp.aileron_cmd, prp.elevator_cmd, prp.throttle_cmd # last action
+        )
+
+        self.action_prps = (
+            prp.aileron_cmd, prp.elevator_cmd, prp.throttle_cmd
+        )
+
+        # ENU target position, for telemetry
+        self.target_prps = (
+            prp.target_enu_x_m, prp.target_enu_y_m, prp.target_enu_z_m # target position in ENU
+        )
+
+        self.error_prps = (
+            prp.enu_x_err_m, prp.enu_y_err_m, prp.enu_z_err_m # position error
+        )
+
+        self.reward_prps = (
+            prp.reward_total, prp.reward_dist, prp.reward_altitude,
+            prp.reward_xy, prp.reward_actvar,
+            prp.dist_to_target_m
+        )
+
+        # telemetry properties are an addition of the common telemetry properties, target properties and error properties
+        self.telemetry_prps = self.common_telemetry_prps  + self.target_prps \
+                            + self.error_prps + self.reward_prps
+
+        # set action and observation space from the task
+        self.action_space = self.get_action_space()
+        self.observation_space = self.get_observation_space()
+
+        self.dist_to_target = 0.0
+        self.prev_dist_to_target = 0.0
+        self.prev_target_x = 0.0
+        self.prev_target_y = 0.0
+        self.prev_target_z = 0.0
+
+        self.in_missed_sphere = False
+        self.inout_missed_sphere = False
+        self.target_reached = False
+
+        if self.jsbsim_cfg.debug:
+            self.print_MDP_info()
+
+        self.telemetry_setup(self.telemetry_file)
+
+
+    def observe_state(self, first_obs=False):
+        if first_obs:
+            self.dist_to_target = 0.0
+            self.prev_dist_to_target = 0.0
+        else:
+            self.prev_dist_to_target = self.dist_to_target
+            self.dist_to_target = np.sqrt(
+                self.sim[prp.enu_x_err_m]**2 + 
+                self.sim[prp.enu_y_err_m]**2 + 
+                self.sim[prp.enu_z_err_m]**2
+            )
+        self.sim[prp.dist_to_target_m] = self.dist_to_target
+        return super(WaypointTracking, self).observe_state(first_obs)
+
+
+    def set_target_state(self, target: np.ndarray) -> None:
+        target_enu_x_m, target_enu_y_m, target_enu_z_m = target
+        if np.any(target != [self.prev_target_x, self.prev_target_y, self.prev_target_z]):
+            print("-- SETTING TARGET --")
+            print(f"Target (ENU) x: {target_enu_x_m:.3f} y: {target_enu_y_m:.3f} z: {target_enu_z_m:.3f}")
+
+        self.sim[prp.target_enu_x_m] = target_enu_x_m
+        self.sim[prp.target_enu_y_m] = target_enu_y_m
+        self.sim[prp.target_enu_z_m] = target_enu_z_m
+
+        self.prev_target_x = target_enu_x_m
+        self.prev_target_y = target_enu_y_m
+        self.prev_target_z = target_enu_z_m
+
+
+    def reset_target_state(self) -> None:
+        """
+            Resets the target state to the current state
+        """
+        print("--- RESETTING TARGET ---")
+        init_target = np.array([self.sim[prp.enu_x_m], self.sim[prp.enu_y_m], self.sim[prp.enu_z_m]])
+        self.set_target_state(init_target)
+        print("------------------------")
+
+
+    def update_errors(self):
+        """
+            Updates the errors based on the current state.
+        """
+        self.sim[prp.enu_x_err_m] = self.sim[prp.target_enu_x_m] - self.sim[prp.enu_x_m]
+        self.sim[prp.enu_y_err_m] = self.sim[prp.target_enu_y_m] - self.sim[prp.enu_y_m]
+        self.sim[prp.enu_z_err_m] = self.sim[prp.target_enu_z_m] - self.sim[prp.enu_z_m]
+
+
+    # Distance based reward but altitude and xy distances are weighted differently
+    def get_reward(self, action: np.ndarray) -> float:
+        assert self.task_cfg.reward.name == "wp_alt_xy_dist" 
+        r_w: dict = self.task_cfg.reward.weights
+
+        abs_z_err = np.abs(self.sim[prp.enu_z_err_m])
+        r_alt = r_w["r_alt"]["tanh_max"] * np.tanh(
+            r_w["r_alt"]["tanh_scale"] * abs_z_err
+        )
+        self.sim[prp.reward_altitude] = r_alt
+
+        abs_xy_err = np.sqrt(self.sim[prp.enu_x_err_m]**2 + self.sim[prp.enu_y_err_m]**2)
+        r_xy = r_w["r_xy"]["tanh_max"] * np.tanh(
+            r_w["r_xy"]["tanh_scale"] * abs_xy_err
+        )
+        self.sim[prp.reward_xy] = r_xy
+
+        r_dist = -(r_alt + r_xy)
+        self.sim[prp.reward_dist] = r_dist
+        self.sim[prp.reward_total] = r_dist
+
+        return r_dist
+
+
+
 class WaypointVaTracking(WaypointTracking):
     """
         Waypoint Tracking task. The agent has to track a given waypoint in the sky (described by its
