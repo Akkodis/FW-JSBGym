@@ -395,9 +395,10 @@ class WaypointVaTracking(WaypointTracking):
 
         self.state_prps = (
             prp.ecef_x_err_m, prp.ecef_y_err_m, prp.ecef_z_err_m, # position error
-            prp.airspeed_kph, prp.airspeed_err_kph, # airspeed
-            prp.roll_rad, prp.pitch_rad, # attitude
-            # prp.att_qx, prp.att_qy, prp.att_qz, prp.att_qw, # attitude quaternion
+            prp.airspeed_err_kph, # airspeed error
+            prp.airspeed_kph, # airspeed
+            prp.u_kph, prp.v_kph, prp.w_kph, # linear body velocity
+            prp.att_qx, prp.att_qy, prp.att_qz, prp.att_qw, # attitude quaternion
             prp.p_radps, prp.q_radps, prp.r_radps, # angular rates
             prp.alpha_rad, prp.beta_rad, # angle of attack, sideslip
             prp.aileron_cmd, prp.elevator_cmd, prp.throttle_cmd # last action
