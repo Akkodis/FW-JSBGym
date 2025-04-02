@@ -279,8 +279,8 @@ class WaypointTrackingENU(WaypointTracking):
         )
 
         self.reward_prps = (
-            prp.reward_total, prp.reward_dist, prp.reward_altitude,
-            prp.reward_xy, prp.reward_actvar,
+            prp.reward_total,
+            prp.reward_enu_x, prp.reward_enu_y, prp.reward_enu_z, 
             prp.dist_to_target_m
         )
 
@@ -297,6 +297,10 @@ class WaypointTrackingENU(WaypointTracking):
         self.prev_target_x = 0.0
         self.prev_target_y = 0.0
         self.prev_target_z = 0.0
+
+        self.prev_enu_x_err_m = 0.0
+        self.prev_enu_y_err_m = 0.0
+        self.prev_enu_z_err_m = 0.0
 
         self.in_missed_sphere = False
         self.inout_missed_sphere = False
@@ -352,33 +356,66 @@ class WaypointTrackingENU(WaypointTracking):
         """
             Updates the errors based on the current state.
         """
+        if first_err:
+            self.prev_enu_x_err_m = 0.0
+            self.prev_enu_y_err_m = 0.0
+            self.prev_enu_z_err_m = 0.0
+        else:
+            self.prev_enu_x_err_m = self.sim[prp.enu_x_err_m]
+            self.prev_enu_y_err_m = self.sim[prp.enu_y_err_m]
+            self.prev_enu_z_err_m = self.sim[prp.enu_z_err_m]
+
+        # update with newly computed errors
         self.sim[prp.enu_x_err_m] = self.sim[prp.target_enu_x_m] - self.sim[prp.enu_x_m]
         self.sim[prp.enu_y_err_m] = self.sim[prp.target_enu_y_m] - self.sim[prp.enu_y_m]
         self.sim[prp.enu_z_err_m] = self.sim[prp.target_enu_z_m] - self.sim[prp.enu_z_m]
 
 
-    # Distance based reward but altitude and xy distances are weighted differently
+    # Distance based reward but z and xy distances are weighted differently
+    # def get_reward(self, action: np.ndarray) -> float:
+    #     assert self.task_cfg.reward.name == "wp_dist_xyz" 
+    #     r_w: dict = self.task_cfg.reward.weights
+
+    #     x_abs_err = np.abs(self.sim[prp.enu_x_err_m])
+    #     r_x = r_w["r_x"]["c_x"] * np.clip(x_abs_err / r_w["r_x"]["max_x"], 0.0, 1.0)
+    #     self.sim[prp.reward_enu_x] = r_x
+
+    #     y_abs_err = np.abs(self.sim[prp.enu_y_err_m])
+    #     r_y = r_w["r_y"]["c_y"] * np.clip(y_abs_err / r_w["r_y"]["max_y"], 0.0, 1.0)
+    #     self.sim[prp.reward_enu_y] = r_y
+
+    #     z_abs_err = np.abs(self.sim[prp.enu_z_err_m])
+    #     r_z = r_w["r_z"]["c_z"] * np.clip(z_abs_err / r_w["r_z"]["max_z"], 0.0, 1.0)
+    #     self.sim[prp.reward_enu_z] = r_z
+
+    #     r_total = -(r_x + r_y + r_z)
+    #     self.sim[prp.reward_total] = r_total
+
+    #     return r_total
+
+
+    # Progress based reward with separated components
     def get_reward(self, action: np.ndarray) -> float:
-        assert self.task_cfg.reward.name == "wp_alt_xy_dist" 
+        assert self.task_cfg.reward.name == "wp_prog_xyz"
         r_w: dict = self.task_cfg.reward.weights
-
+        abs_x_err = np.abs(self.sim[prp.enu_x_err_m])
+        abs_y_err = np.abs(self.sim[prp.enu_y_err_m])
         abs_z_err = np.abs(self.sim[prp.enu_z_err_m])
-        r_alt = r_w["r_alt"]["tanh_max"] * np.tanh(
-            r_w["r_alt"]["tanh_scale"] * abs_z_err
-        )
-        self.sim[prp.reward_altitude] = r_alt
+        abs_prev_x_err = np.abs(self.prev_enu_x_err_m)
+        abs_prev_y_err = np.abs(self.prev_enu_y_err_m)
+        abs_prev_z_err = np.abs(self.prev_enu_z_err_m)
 
-        abs_xy_err = np.sqrt(self.sim[prp.enu_x_err_m]**2 + self.sim[prp.enu_y_err_m]**2)
-        r_xy = r_w["r_xy"]["tanh_max"] * np.tanh(
-            r_w["r_xy"]["tanh_scale"] * abs_xy_err
-        )
-        self.sim[prp.reward_xy] = r_xy
+        r_x_prog = r_w["r_x"]["scale"] * (abs_prev_x_err - abs_x_err)
+        r_y_prog = r_w["r_y"]["scale"] * (abs_prev_y_err - abs_y_err)
+        r_z_prog = r_w["r_z"]["scale"] * (abs_prev_z_err - abs_z_err)
 
-        r_dist = -(r_alt + r_xy)
-        self.sim[prp.reward_dist] = r_dist
-        self.sim[prp.reward_total] = r_dist
+        self.sim[prp.reward_enu_x] = r_x_prog
+        self.sim[prp.reward_enu_y] = r_y_prog
+        self.sim[prp.reward_enu_z] = r_z_prog
 
-        return r_dist
+        r_progress = r_x_prog + r_y_prog + r_z_prog
+        self.sim[prp.reward_total] = r_progress
+        return r_progress
 
 
 
