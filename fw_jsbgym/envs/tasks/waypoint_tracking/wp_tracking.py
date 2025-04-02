@@ -418,7 +418,7 @@ class WaypointVaTracking(WaypointTracking):
         )
 
         self.reward_prps = (
-            prp.reward_total, prp.reward_dist, prp.reward_actvar, prp.reward_reached,
+            prp.reward_total, prp.reward_progress,
             prp.reward_airspeed, prp.dist_to_target_m
         )
 
@@ -474,30 +474,47 @@ class WaypointVaTracking(WaypointTracking):
         self.sim[prp.airspeed_err_kph] = self.sim[prp.target_airspeed_kph] - self.sim[prp.airspeed_kph]
 
 
+    # Progress based reward + Airspeed hold
     def get_reward(self, action: np.ndarray) -> float:
         r_w: dict = self.task_cfg.reward.weights
+        r_progress = super().get_reward(action)  # r_progress [-1.5, ~1.5]
 
-        r_dist = r_w["r_dist"]["max_r"] * np.tanh(r_w["r_dist"]["tanh_scale"] * self.dist_to_target)
-        self.sim[prp.reward_dist] = r_dist
+        # r_airspeed [-max_r, 0]
+        r_airspeed = 0.0
+        if r_w["r_airspeed"]["enabled"]:
+            r_airspeed = -(r_w["r_airspeed"]["max_r"] * np.tanh(r_w["r_airspeed"]["tanh_scale"] * np.abs(self.sim[prp.airspeed_err_kph])))
+            self.sim[prp.reward_airspeed] = r_airspeed
 
-        r_airspeed = r_w["r_airspeed"]["max_r"] * np.tanh(r_w["r_airspeed"]["tanh_scale"] * np.abs(self.sim[prp.airspeed_err_kph]))
-        self.sim[prp.reward_airspeed] = r_airspeed
-
-        r_actvar = np.nan
-        if r_w["act_var"]["enabled"]:
-            mean_actvar = np.mean(np.abs(action - np.array(self.action_hist)[-2])) # normalized by distance between action limits
-            r_actvar = r_w["act_var"]["max_r"] * np.tanh(r_w["act_var"]["tanh_scale"] * mean_actvar)
-        self.sim[prp.reward_actvar] = r_actvar
-
-        r_reached = 0.0
-        # if self.is_waypoint_reached():
-        #     r_reached = 100
-        # self.sim[prp.reward_reached] = r_reached
-
-        r_total = -(r_dist + r_airspeed + r_actvar) + r_reached
+        r_total = r_progress + r_airspeed
         self.sim[prp.reward_total] = r_total
 
         return r_total
+
+
+    # def get_reward(self, action: np.ndarray) -> float:
+    #     r_w: dict = self.task_cfg.reward.weights
+
+    #     r_dist = r_w["r_dist"]["max_r"] * np.tanh(r_w["r_dist"]["tanh_scale"] * self.dist_to_target)
+    #     self.sim[prp.reward_dist] = r_dist
+
+    #     r_airspeed = r_w["r_airspeed"]["max_r"] * np.tanh(r_w["r_airspeed"]["tanh_scale"] * np.abs(self.sim[prp.airspeed_err_kph]))
+    #     self.sim[prp.reward_airspeed] = r_airspeed
+
+    #     r_actvar = np.nan
+    #     if r_w["act_var"]["enabled"]:
+    #         mean_actvar = np.mean(np.abs(action - np.array(self.action_hist)[-2])) # normalized by distance between action limits
+    #         r_actvar = r_w["act_var"]["max_r"] * np.tanh(r_w["act_var"]["tanh_scale"] * mean_actvar)
+    #     self.sim[prp.reward_actvar] = r_actvar
+
+    #     r_reached = 0.0
+    #     # if self.is_waypoint_reached():
+    #     #     r_reached = 100
+    #     # self.sim[prp.reward_reached] = r_reached
+
+    #     r_total = -(r_dist + r_airspeed + r_actvar) + r_reached
+    #     self.sim[prp.reward_total] = r_total
+
+    #     return r_total
 
 
 class WaypointTrackingNoVa(WaypointTracking):
