@@ -765,7 +765,7 @@ class JSBSimEnv(gym.Env, ABC):
         for prop in self.reward_prps:
             self.sim[prop] = float('nan')
         self.reset_target_state() # reset task target state (child class)
-        self.update_errors() # reset task errors (child class)
+        self.update_errors(first_err=True) # reset task errors (child class)
 
     @abstractmethod
     def get_reward(self):

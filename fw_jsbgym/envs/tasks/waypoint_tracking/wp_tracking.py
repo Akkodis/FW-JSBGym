@@ -140,7 +140,7 @@ class WaypointTracking(JSBSimTask):
         print("------------------------")
 
 
-    def update_errors(self):
+    def update_errors(self, first_err=False):
         """
             Updates the errors based on the current state.
         """
@@ -342,7 +342,7 @@ class WaypointTrackingENU(WaypointTracking):
         print("------------------------")
 
 
-    def update_errors(self):
+    def update_errors(self, first_err=False):
         """
             Updates the errors based on the current state.
         """
@@ -460,7 +460,7 @@ class WaypointVaTracking(WaypointTracking):
         print("------------------------")
 
 
-    def update_errors(self):
+    def update_errors(self, first_err=False):
         # update error jsbsim properties
         self.sim[prp.ecef_x_err_m] = self.sim[prp.target_ecef_x_m] - self.sim[prp.ecef_x_m]
         self.sim[prp.ecef_y_err_m] = self.sim[prp.target_ecef_y_m] - self.sim[prp.ecef_y_m]
@@ -605,7 +605,7 @@ class AltitudeTracking(JSBSimTask):
         self.prev_target_z = target_state[0]
 
 
-    def update_errors(self):
+    def update_errors(self, first_err=False):
         self.sim[prp.ecef_z_err_m] = self.sim[prp.target_ecef_z_m] - self.sim[prp.ecef_z_m]
 
 
