@@ -74,8 +74,10 @@ def animate(i, axis, tele_file) -> None:
     r_dist = df.get(prp.reward_dist.get_legal_name(), default=nan_arr)
     r_airspeed = df.get(prp.reward_airspeed.get_legal_name(), default=nan_arr)
     r_actvar = df.get(prp.reward_actvar.get_legal_name(), default=nan_arr)
-    r_alt = df.get(prp.reward_altitude.get_legal_name(), default=nan_arr)
-    r_xy_dist = df.get(prp.reward_xy.get_legal_name(), default=nan_arr)
+    r_progress = df.get(prp.reward_progress.get_legal_name(), default=nan_arr)
+    r_enu_x = df.get(prp.reward_enu_x.get_legal_name(), default=nan_arr)
+    r_enu_y = df.get(prp.reward_enu_y.get_legal_name(), default=nan_arr)
+    r_enu_z = df.get(prp.reward_enu_z.get_legal_name(), default=nan_arr)
 
 
     for(dim_1) in axis:
@@ -141,12 +143,14 @@ def animate(i, axis, tele_file) -> None:
         axis[1, 1].legend()
         axis[1, 1].grid()
 
-        axis[1, 2].plot(tsteps, r_dist, label='r_distance' if not np.isnan(np.sum(r_dist)) else '')
-        axis[1, 2].plot(tsteps, r_airspeed, label='r_airspeed' if not np.isnan(np.sum(r_airspeed)) else '')
-        axis[1, 2].plot(tsteps, r_actvar, label='r_actvar' if not np.isnan(np.sum(r_actvar)) else '')
-        axis[1, 2].plot(tsteps, r_alt, label='r_altitude' if not np.isnan(np.sum(r_alt)) else '')
-        axis[1, 2].plot(tsteps, r_xy_dist, label='r_xy_dist' if not np.isnan(np.sum(r_xy_dist)) else '')
-        axis[1, 2].plot(tsteps, r_total, label='r_total' if not np.isnan(np.sum(r_total)) else '')
+        axis[1, 2].plot(tsteps[2:], r_dist[2:], label='r_distance' if not np.isnan(np.sum(r_dist)) else '')
+        axis[1, 2].plot(tsteps[2:], r_progress[2:], label='r_progress' if not np.isnan(np.sum(r_progress)) else '')
+        axis[1, 2].plot(tsteps[2:], r_airspeed[2:], label='r_airspeed' if not np.isnan(np.sum(r_airspeed)) else '')
+        axis[1, 2].plot(tsteps[2:], r_actvar[2:], label='r_actvar' if not np.isnan(np.sum(r_actvar)) else '')
+        axis[1, 2].plot(tsteps[2:], r_enu_x[2:], label='r_enu_x' if not np.isnan(np.sum(r_enu_x)) else '')
+        axis[1, 2].plot(tsteps[2:], r_enu_y[2:], label='r_enu_y' if not np.isnan(np.sum(r_enu_y)) else '')
+        axis[1, 2].plot(tsteps[2:], r_enu_z[2:], label='r_enu_z' if not np.isnan(np.sum(r_enu_z)) else '')
+        axis[1, 2].plot(tsteps[2:], r_total[2:], label='r_total' if not np.isnan(np.sum(r_total)) else '')
         axis[1, 2].set_title('rewards')
         axis[1, 2].set_ylabel('reward [-]')
         axis[1, 2].legend()

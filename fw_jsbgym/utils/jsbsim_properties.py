@@ -342,11 +342,12 @@ reward_latitude = BoundedProperty("reward/latitude", "latitude reward", 0, float
 reward_ecef_x = BoundedProperty("reward/ecef-x", "ECEF x reward", 0, float('+inf'))
 reward_longitude = BoundedProperty("reward/longitude", "longitude reward", 0, float('+inf'))
 reward_ecef_y = BoundedProperty("reward/ecef-y", "ECEF y reward", 0, float('+inf'))
-reward_altitude = BoundedProperty("reward/altitude", "altitude reward", 0, float('+inf'))
-reward_xy = BoundedProperty("reward/xy", "xy reward", 0, float('+inf'))
 reward_ecef_z = BoundedProperty("reward/ecef-z", "ECEF z reward", 0, float('+inf'))
+reward_enu_x = BoundedProperty("reward/enu-x", "ENU x reward", 0, float('+inf'))
+reward_enu_y = BoundedProperty("reward/enu-y", "ENU y reward", 0, float('+inf'))
+reward_enu_z = BoundedProperty("reward/enu-z", "ENU z reward", 0, float('+inf'))
 reward_dist = BoundedProperty("reward/distance", "distance reward", 0, float('+inf'))
-reward_progress = BoundedProperty("reward/progress", "progress towards waypoint reward", -1.5, float('+inf'))
+reward_progress = BoundedProperty("reward/progress", "progress towards waypoint reward", float('-inf'), float('+inf'))
 reward_reached = BoundedProperty("reward/reached", "reached waypoint reward", 0, float('+inf'))
 
 
