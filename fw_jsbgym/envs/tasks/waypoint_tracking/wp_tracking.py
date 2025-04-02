@@ -152,6 +152,7 @@ class WaypointTracking(JSBSimTask):
 
     # Distance based reward
     # def get_reward(self, action: np.ndarray) -> float:
+    #     assert self.task_cfg.reward.name == "wp_dist"
     #     r_w: dict = self.task_cfg.reward.weights
 
     #     r_dist = r_w["r_dist"]["max_r"] * np.tanh(r_w["r_dist"]["tanh_scale"] * self.dist_to_target)
@@ -177,9 +178,12 @@ class WaypointTracking(JSBSimTask):
 
     # Progress based reward
     def get_reward(self, action: np.ndarray) -> float:
-        # r_progress = 6.25 * (self.prev_dist_to_target - self.dist_to_target)
-        r_progress = np.clip(6.25 * (self.prev_dist_to_target - self.dist_to_target), 
-                             a_min=-1.5, a_max=None) # clip min to avoid big negative on 1st step (prev_dist = 0, dist = 200m)
+        assert "wp_prog" in self.task_cfg.reward.name
+        r_w: dict = self.task_cfg.reward.weights
+        r_progress = r_w["r_prog"]["scale"] * (self.prev_dist_to_target - self.dist_to_target)
+        # r_progress = np.clip(r_w["r_prog"]["scale"] * (self.prev_dist_to_target - self.dist_to_target), 
+        #                      a_min=r_w["r_prog"]["clip_min"], a_max=None) # clip min to avoid big negative on 1st step (prev_dist = 0, dist = 200m)
+        self.sim[prp.reward_progress] = r_progress
         self.sim[prp.reward_total] = r_progress
         return r_progress
 
