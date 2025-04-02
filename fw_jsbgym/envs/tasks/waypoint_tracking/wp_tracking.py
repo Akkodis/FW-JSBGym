@@ -52,7 +52,7 @@ class WaypointTracking(JSBSimTask):
         )
 
         self.reward_prps = (
-            prp.reward_total, prp.reward_dist, prp.reward_actvar,
+            prp.reward_total, prp.reward_dist, prp.reward_progress,
             prp.dist_to_target_m
         )
 
@@ -104,9 +104,11 @@ class WaypointTracking(JSBSimTask):
             self.prev_dist_to_target = 0.0
         else:
             self.prev_dist_to_target = self.dist_to_target
-            self.dist_to_target = np.sqrt(self.sim[prp.ecef_x_err_m]**2 + 
-                                          self.sim[prp.ecef_y_err_m]**2 + 
-                                          self.sim[prp.ecef_z_err_m]**2)
+            self.dist_to_target = np.sqrt(
+                self.sim[prp.ecef_x_err_m]**2 + 
+                self.sim[prp.ecef_y_err_m]**2 + 
+                self.sim[prp.ecef_z_err_m]**2
+            )
 
         self.sim[prp.dist_to_target_m] = self.dist_to_target
         # print(f"Distance to target: {self.dist_to_target:.3f} m")
