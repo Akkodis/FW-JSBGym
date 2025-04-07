@@ -120,7 +120,7 @@ class JSBSimEnv(gym.Env, ABC):
         self.common_telemetry_prps: Tuple[BoundedProperty, ...] = (
             prp.lat_gc_deg, prp.lng_gc_deg, prp.altitude_sl_m, # position
             prp.ecef_x_m, prp.ecef_y_m, prp.ecef_z_m, # position in ECEF
-            prp.enu_x_m, prp.enu_y_m, prp.enu_z_m, # position in ENU
+            prp.enu_e_m, prp.enu_n_m, prp.enu_u_m, # position in ENU
             prp.roll_rad, prp.pitch_rad, prp.heading_rad, # attitude
             prp.u_kph, prp.v_kph, prp.w_kph, # linear body velocities
             prp.alpha_rad, prp.beta_rad, # angle of attack and sideslip
@@ -542,9 +542,9 @@ class JSBSimEnv(gym.Env, ABC):
                 ref_lon=self.sim[prp.ic_long_gc_deg], 
                 ref_alt=0.0,
             )
-            self.sim[prp.enu_x_m] = enu_pos[0]
-            self.sim[prp.enu_y_m] = enu_pos[1]
-            self.sim[prp.enu_z_m] = enu_pos[2]
+            self.sim[prp.enu_e_m] = enu_pos[0]
+            self.sim[prp.enu_n_m] = enu_pos[1]
+            self.sim[prp.enu_u_m] = enu_pos[2]
 
         # update the errors
         self.update_errors()
@@ -700,18 +700,18 @@ class JSBSimEnv(gym.Env, ABC):
             # convert ECEF to ENU
             enu = conversions.ecef2enu(self.sim[prp.ecef_x_m], self.sim[prp.ecef_y_m], self.sim[prp.ecef_z_m],
                                     self.sim[prp.ic_lat_gd_deg], self.sim[prp.ic_long_gc_deg], 0.0)
-            self.sim[prp.enu_x_m] = enu[0]
-            self.sim[prp.enu_y_m] = enu[1]
-            self.sim[prp.enu_z_m] = enu[2]
+            self.sim[prp.enu_e_m] = enu[0]
+            self.sim[prp.enu_n_m] = enu[1]
+            self.sim[prp.enu_u_m] = enu[2]
 
             if "ENU" not in self.spec.id:
             # if we are not in ENU mode, convert ECEF to ENU target position,
             # otherwise the target is already given in ENU coord
-                enu_target = conversions.ecef2enu(self.sim[prp.target_ecef_x_m], self.sim[prp.target_ecef_y_m], self.sim[prp.target_ecef_z_m],
-                                            self.sim[prp.ic_lat_gd_deg], self.sim[prp.ic_long_gc_deg], 0.0)
-                self.sim[prp.target_enu_x_m] = enu_target[0]
-                self.sim[prp.target_enu_y_m] = enu_target[1]
-                self.sim[prp.target_enu_z_m] = enu_target[2]
+            enu_target = conversions.ecef2enu(self.sim[prp.target_ecef_x_m], self.sim[prp.target_ecef_y_m], self.sim[prp.target_ecef_z_m],
+                                        self.sim[prp.ic_lat_gd_deg], self.sim[prp.ic_long_gc_deg], 0.0)
+            self.sim[prp.target_enu_e_m] = enu_target[0]
+            self.sim[prp.target_enu_n_m] = enu_target[1]
+            self.sim[prp.target_enu_u_m] = enu_target[2]
 
         # update telemetry field names with additional telemetry field names
         if len(self.telemetry_fieldnames) < len(self.telemetry_prps) + len(additional_tele.keys()):

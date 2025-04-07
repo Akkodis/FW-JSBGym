@@ -18,18 +18,17 @@ def animate(i, axis, tele_file) -> None:
     lat = df.get(prp.lat_gc_deg.get_legal_name(), default=nan_arr)
     lon = df.get(prp.lng_gc_deg.get_legal_name(), default=nan_arr)
     alt = df.get(prp.altitude_sl_m.get_legal_name(), default=nan_arr)
-
-    enu_x_m = df.get(prp.enu_x_m.get_legal_name(), default=nan_arr)
-    enu_y_m = df.get(prp.enu_y_m.get_legal_name(), default=nan_arr)
-    enu_z_m = df.get(prp.enu_z_m.get_legal_name(), default=nan_arr)
+    enu_e_m = df.get(prp.enu_e_m.get_legal_name(), default=nan_arr)
+    enu_n_m = df.get(prp.enu_n_m.get_legal_name(), default=nan_arr)
+    enu_u_m = df.get(prp.enu_u_m.get_legal_name(), default=nan_arr)
 
     ecef_x_m = df.get(prp.ecef_x_m.get_legal_name(), default=nan_arr)
     ecef_y_m = df.get(prp.ecef_y_m.get_legal_name(), default=nan_arr)
     ecef_z_m = df.get(prp.ecef_z_m.get_legal_name(), default=nan_arr)
 
-    target_enu_x_m = df.get(prp.target_enu_x_m.get_legal_name(), default=nan_arr)
-    target_enu_y_m = df.get(prp.target_enu_y_m.get_legal_name(), default=nan_arr)
-    target_enu_z_m = df.get(prp.target_enu_z_m.get_legal_name(), default=nan_arr)
+    target_enu_e_m = df.get(prp.target_enu_e_m.get_legal_name(), default=nan_arr)
+    target_enu_n_m = df.get(prp.target_enu_n_m.get_legal_name(), default=nan_arr)
+    target_enu_u_m = df.get(prp.target_enu_u_m.get_legal_name(), default=nan_arr)
 
     roll = df.get(prp.roll_rad.get_legal_name(), default=nan_arr)
     pitch = df.get(prp.pitch_rad.get_legal_name(), default=nan_arr)
@@ -75,9 +74,9 @@ def animate(i, axis, tele_file) -> None:
     r_airspeed = df.get(prp.reward_airspeed.get_legal_name(), default=nan_arr)
     r_actvar = df.get(prp.reward_actvar.get_legal_name(), default=nan_arr)
     r_progress = df.get(prp.reward_progress.get_legal_name(), default=nan_arr)
-    r_enu_x = df.get(prp.reward_enu_x.get_legal_name(), default=nan_arr)
-    r_enu_y = df.get(prp.reward_enu_y.get_legal_name(), default=nan_arr)
-    r_enu_z = df.get(prp.reward_enu_z.get_legal_name(), default=nan_arr)
+    r_enu_e = df.get(prp.reward_enu_e.get_legal_name(), default=nan_arr)
+    r_enu_n = df.get(prp.reward_enu_n.get_legal_name(), default=nan_arr)
+    r_enu_u = df.get(prp.reward_enu_u.get_legal_name(), default=nan_arr)
 
 
     for(dim_1) in axis:
@@ -120,9 +119,9 @@ def animate(i, axis, tele_file) -> None:
         axis[0, 2].grid()
 
         if df.index.size > 2:
-            axis[1, 0].plot(enu_x_m[0], enu_y_m[0], enu_z_m[0], 'ro', label='start')
-            axis[1, 0].plot(target_enu_x_m[1], target_enu_y_m[1], target_enu_z_m[1], 'go', label='target')
-            axis[1, 0].plot(enu_x_m, enu_y_m, enu_z_m)
+            axis[1, 0].plot(enu_e_m[0], enu_n_m[0], enu_u_m[0], 'ro', label='start')
+            axis[1, 0].plot(target_enu_e_m[1], target_enu_n_m[1], target_enu_u_m[1], 'go', label='target')
+            axis[1, 0].plot(enu_e_m, enu_n_m, enu_u_m)
             axis[1, 0].set_title('ENU Trajectory [m]')
             axis[1, 0].set_xlabel("E")
             axis[1, 0].set_ylabel("N")
@@ -130,9 +129,9 @@ def animate(i, axis, tele_file) -> None:
             axis[1, 0].legend()
 
         # wait for the telemetry file to be filled with some data so that the plotter doesn't crash when computing scale bounds
-        x_min, x_max = min(enu_x_m.min(), target_enu_x_m.min()) - 10, max(enu_x_m.max(), target_enu_x_m.max()) + 10
-        y_min, y_max = min(enu_y_m.min(), target_enu_y_m.min()) - 10, max(enu_y_m.max(), target_enu_y_m.max()) + 10
-        z_min, z_max = min(enu_z_m.min(), target_enu_z_m.min()) - 10, max(enu_z_m.max(), target_enu_z_m.max()) + 10
+        x_min, x_max = min(enu_e_m.min(), target_enu_e_m.min()) - 10, max(enu_e_m.max(), target_enu_e_m.max()) + 10
+        y_min, y_max = min(enu_n_m.min(), target_enu_n_m.min()) - 10, max(enu_n_m.max(), target_enu_n_m.max()) + 10
+        z_min, z_max = min(enu_u_m.min(), target_enu_u_m.min()) - 10, max(enu_u_m.max(), target_enu_u_m.max()) + 10
         axis[1, 0].set_xlim(x_min, x_max)
         axis[1, 0].set_ylim(y_min, y_max)
         axis[1, 0].set_zlim(z_min, z_max)
@@ -147,9 +146,9 @@ def animate(i, axis, tele_file) -> None:
         axis[1, 2].plot(tsteps[2:], r_progress[2:], label='r_progress' if not np.isnan(np.sum(r_progress)) else '')
         axis[1, 2].plot(tsteps[2:], r_airspeed[2:], label='r_airspeed' if not np.isnan(np.sum(r_airspeed)) else '')
         axis[1, 2].plot(tsteps[2:], r_actvar[2:], label='r_actvar' if not np.isnan(np.sum(r_actvar)) else '')
-        axis[1, 2].plot(tsteps[2:], r_enu_x[2:], label='r_enu_x' if not np.isnan(np.sum(r_enu_x)) else '')
-        axis[1, 2].plot(tsteps[2:], r_enu_y[2:], label='r_enu_y' if not np.isnan(np.sum(r_enu_y)) else '')
-        axis[1, 2].plot(tsteps[2:], r_enu_z[2:], label='r_enu_z' if not np.isnan(np.sum(r_enu_z)) else '')
+        axis[1, 2].plot(tsteps[2:], r_enu_e[2:], label='r_enu_e' if not np.isnan(np.sum(r_enu_e)) else '')
+        axis[1, 2].plot(tsteps[2:], r_enu_n[2:], label='r_enu_n' if not np.isnan(np.sum(r_enu_n)) else '')
+        axis[1, 2].plot(tsteps[2:], r_enu_u[2:], label='r_enu_u' if not np.isnan(np.sum(r_enu_u)) else '')
         axis[1, 2].plot(tsteps[2:], r_total[2:], label='r_total' if not np.isnan(np.sum(r_total)) else '')
         axis[1, 2].set_title('rewards')
         axis[1, 2].set_ylabel('reward [-]')

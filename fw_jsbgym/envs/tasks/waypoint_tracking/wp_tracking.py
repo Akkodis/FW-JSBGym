@@ -44,7 +44,7 @@ class WaypointTracking(JSBSimTask):
 
         # ENU target position, for telemetry
         self.target_enu_prps = (
-            prp.target_enu_x_m, prp.target_enu_y_m, prp.target_enu_z_m # target position in ENU
+            prp.target_enu_e_m, prp.target_enu_n_m, prp.target_enu_u_m # target position in ENU
         )
 
         self.error_prps = (
@@ -256,7 +256,7 @@ class WaypointTrackingENU(WaypointTracking):
         self.task_cfg: DictConfig = cfg_env.task
 
         self.state_prps = (
-            prp.enu_x_err_m, prp.enu_y_err_m, prp.enu_z_err_m, # position error
+            prp.enu_e_err_m, prp.enu_n_err_m, prp.enu_u_err_m, # position error
             prp.airspeed_kph, # airspeed
             prp.u_fps, prp.v_fps, prp.w_fps, # velocity
             prp.att_qx, prp.att_qy, prp.att_qz, prp.att_qw, # attitude quaternion
@@ -271,16 +271,16 @@ class WaypointTrackingENU(WaypointTracking):
 
         # ENU target position, for telemetry
         self.target_prps = (
-            prp.target_enu_x_m, prp.target_enu_y_m, prp.target_enu_z_m # target position in ENU
+            prp.target_enu_e_m, prp.target_enu_n_m, prp.target_enu_u_m # target position in ENU
         )
 
         self.error_prps = (
-            prp.enu_x_err_m, prp.enu_y_err_m, prp.enu_z_err_m # position error
+            prp.enu_e_err_m, prp.enu_n_err_m, prp.enu_u_err_m # position error
         )
 
         self.reward_prps = (
             prp.reward_total,
-            prp.reward_enu_x, prp.reward_enu_y, prp.reward_enu_z, 
+            prp.reward_enu_e, prp.reward_enu_n, prp.reward_enu_u, 
             prp.dist_to_target_m
         )
 
@@ -298,9 +298,9 @@ class WaypointTrackingENU(WaypointTracking):
         self.prev_target_y = 0.0
         self.prev_target_z = 0.0
 
-        self.prev_enu_x_err_m = 0.0
-        self.prev_enu_y_err_m = 0.0
-        self.prev_enu_z_err_m = 0.0
+        self.prev_enu_e_err_m = 0.0
+        self.prev_enu_n_err_m = 0.0
+        self.prev_enu_u_err_m = 0.0
 
         self.in_missed_sphere = False
         self.inout_missed_sphere = False
@@ -319,27 +319,27 @@ class WaypointTrackingENU(WaypointTracking):
         else:
             self.prev_dist_to_target = self.dist_to_target
             self.dist_to_target = np.sqrt(
-                self.sim[prp.enu_x_err_m]**2 + 
-                self.sim[prp.enu_y_err_m]**2 + 
-                self.sim[prp.enu_z_err_m]**2
+                self.sim[prp.enu_e_err_m]**2 + 
+                self.sim[prp.enu_n_err_m]**2 + 
+                self.sim[prp.enu_u_err_m]**2
             )
         self.sim[prp.dist_to_target_m] = self.dist_to_target
         return super(WaypointTracking, self).observe_state(first_obs)
 
 
     def set_target_state(self, target: np.ndarray) -> None:
-        target_enu_x_m, target_enu_y_m, target_enu_z_m = target
+        target_enu_e_m, target_enu_n_m, target_enu_u_m = target
         if np.any(target != [self.prev_target_x, self.prev_target_y, self.prev_target_z]):
             print("-- SETTING TARGET --")
-            print(f"Target (ENU) x: {target_enu_x_m:.3f} y: {target_enu_y_m:.3f} z: {target_enu_z_m:.3f}")
+            print(f"Target (ENU) E: {target_enu_e_m:.3f} N: {target_enu_n_m:.3f} U: {target_enu_u_m:.3f}")
 
-        self.sim[prp.target_enu_x_m] = target_enu_x_m
-        self.sim[prp.target_enu_y_m] = target_enu_y_m
-        self.sim[prp.target_enu_z_m] = target_enu_z_m
+        self.sim[prp.target_enu_e_m] = target_enu_e_m
+        self.sim[prp.target_enu_n_m] = target_enu_n_m
+        self.sim[prp.target_enu_u_m] = target_enu_u_m
 
-        self.prev_target_x = target_enu_x_m
-        self.prev_target_y = target_enu_y_m
-        self.prev_target_z = target_enu_z_m
+        self.prev_target_x = target_enu_e_m
+        self.prev_target_y = target_enu_n_m
+        self.prev_target_z = target_enu_u_m
 
 
     def reset_target_state(self) -> None:
@@ -347,7 +347,7 @@ class WaypointTrackingENU(WaypointTracking):
             Resets the target state to the current state
         """
         print("--- RESETTING TARGET ---")
-        init_target = np.array([self.sim[prp.enu_x_m], self.sim[prp.enu_y_m], self.sim[prp.enu_z_m]])
+        init_target = np.array([self.sim[prp.enu_e_m], self.sim[prp.enu_n_m], self.sim[prp.enu_u_m]])
         self.set_target_state(init_target)
         print("------------------------")
 
@@ -357,18 +357,18 @@ class WaypointTrackingENU(WaypointTracking):
             Updates the errors based on the current state.
         """
         if first_err:
-            self.prev_enu_x_err_m = 0.0
-            self.prev_enu_y_err_m = 0.0
-            self.prev_enu_z_err_m = 0.0
+            self.prev_enu_e_err_m = 0.0
+            self.prev_enu_n_err_m = 0.0
+            self.prev_enu_u_err_m = 0.0
         else:
-            self.prev_enu_x_err_m = self.sim[prp.enu_x_err_m]
-            self.prev_enu_y_err_m = self.sim[prp.enu_y_err_m]
-            self.prev_enu_z_err_m = self.sim[prp.enu_z_err_m]
+            self.prev_enu_e_err_m = self.sim[prp.enu_e_err_m]
+            self.prev_enu_n_err_m = self.sim[prp.enu_n_err_m]
+            self.prev_enu_u_err_m = self.sim[prp.enu_u_err_m]
 
         # update with newly computed errors
-        self.sim[prp.enu_x_err_m] = self.sim[prp.target_enu_x_m] - self.sim[prp.enu_x_m]
-        self.sim[prp.enu_y_err_m] = self.sim[prp.target_enu_y_m] - self.sim[prp.enu_y_m]
-        self.sim[prp.enu_z_err_m] = self.sim[prp.target_enu_z_m] - self.sim[prp.enu_z_m]
+        self.sim[prp.enu_e_err_m] = self.sim[prp.target_enu_e_m] - self.sim[prp.enu_e_m]
+        self.sim[prp.enu_n_err_m] = self.sim[prp.target_enu_n_m] - self.sim[prp.enu_n_m]
+        self.sim[prp.enu_u_err_m] = self.sim[prp.target_enu_u_m] - self.sim[prp.enu_u_m]
 
 
     # Distance based reward but z and xy distances are weighted differently
@@ -376,17 +376,17 @@ class WaypointTrackingENU(WaypointTracking):
     #     assert self.task_cfg.reward.name == "wp_dist_xyz" 
     #     r_w: dict = self.task_cfg.reward.weights
 
-    #     x_abs_err = np.abs(self.sim[prp.enu_x_err_m])
+    #     x_abs_err = np.abs(self.sim[prp.enu_e_err_m])
     #     r_x = r_w["r_x"]["c_x"] * np.clip(x_abs_err / r_w["r_x"]["max_x"], 0.0, 1.0)
-    #     self.sim[prp.reward_enu_x] = r_x
+    #     self.sim[prp.reward_enu_e] = r_x
 
-    #     y_abs_err = np.abs(self.sim[prp.enu_y_err_m])
+    #     y_abs_err = np.abs(self.sim[prp.enu_n_err_m])
     #     r_y = r_w["r_y"]["c_y"] * np.clip(y_abs_err / r_w["r_y"]["max_y"], 0.0, 1.0)
-    #     self.sim[prp.reward_enu_y] = r_y
+    #     self.sim[prp.reward_enu_n] = r_y
 
-    #     z_abs_err = np.abs(self.sim[prp.enu_z_err_m])
+    #     z_abs_err = np.abs(self.sim[prp.enu_u_err_m])
     #     r_z = r_w["r_z"]["c_z"] * np.clip(z_abs_err / r_w["r_z"]["max_z"], 0.0, 1.0)
-    #     self.sim[prp.reward_enu_z] = r_z
+    #     self.sim[prp.reward_enu_u] = r_z
 
     #     r_total = -(r_x + r_y + r_z)
     #     self.sim[prp.reward_total] = r_total
@@ -398,20 +398,20 @@ class WaypointTrackingENU(WaypointTracking):
     def get_reward(self, action: np.ndarray) -> float:
         assert self.task_cfg.reward.name == "wp_prog_xyz"
         r_w: dict = self.task_cfg.reward.weights
-        abs_x_err = np.abs(self.sim[prp.enu_x_err_m])
-        abs_y_err = np.abs(self.sim[prp.enu_y_err_m])
-        abs_z_err = np.abs(self.sim[prp.enu_z_err_m])
-        abs_prev_x_err = np.abs(self.prev_enu_x_err_m)
-        abs_prev_y_err = np.abs(self.prev_enu_y_err_m)
-        abs_prev_z_err = np.abs(self.prev_enu_z_err_m)
+        abs_x_err = np.abs(self.sim[prp.enu_e_err_m])
+        abs_y_err = np.abs(self.sim[prp.enu_n_err_m])
+        abs_z_err = np.abs(self.sim[prp.enu_u_err_m])
+        abs_prev_x_err = np.abs(self.prev_enu_e_err_m)
+        abs_prev_y_err = np.abs(self.prev_enu_n_err_m)
+        abs_prev_z_err = np.abs(self.prev_enu_u_err_m)
 
         r_x_prog = r_w["r_x"]["scale"] * (abs_prev_x_err - abs_x_err)
         r_y_prog = r_w["r_y"]["scale"] * (abs_prev_y_err - abs_y_err)
         r_z_prog = r_w["r_z"]["scale"] * (abs_prev_z_err - abs_z_err)
 
-        self.sim[prp.reward_enu_x] = r_x_prog
-        self.sim[prp.reward_enu_y] = r_y_prog
-        self.sim[prp.reward_enu_z] = r_z_prog
+        self.sim[prp.reward_enu_e] = r_x_prog
+        self.sim[prp.reward_enu_n] = r_y_prog
+        self.sim[prp.reward_enu_u] = r_z_prog
 
         r_progress = r_x_prog + r_y_prog + r_z_prog
         self.sim[prp.reward_total] = r_progress
