@@ -512,7 +512,6 @@ class WaypointVaTracking(WaypointTracking):
         self.prev_target_airspeed = target_airspeed_kph
 
 
-
     def reset_target_state(self):
         print("--- RESETTING TARGET ---")
         init_target = np.array([self.sim[prp.ecef_x_m], self.sim[prp.ecef_y_m], self.sim[prp.ecef_z_m], self.sim[prp.airspeed_kph]])
@@ -594,7 +593,6 @@ class WaypointTrackingNoVa(WaypointTracking):
                            dt=self.fdm_dt, trim=TrimPoint(), 
                            limit=AeroModel().throttle_limit, is_throttle=True
         )
-        self.pid_airspeed.set_reference(60)
 
         if self.jsbsim_cfg.debug:
             self.print_MDP_info()
@@ -618,6 +616,7 @@ class WaypointTrackingNoVa(WaypointTracking):
         """
         super().reset_target_state()
         self.pid_airspeed.reset()
+        self.pid_airspeed.set_reference(60)
 
 
 class CourseAltTracking(WaypointTrackingENU):
@@ -819,6 +818,103 @@ class CourseAltTracking(WaypointTrackingENU):
         self.sim[prp.reward_total] = r_total
 
         return r_total
+
+
+class CourseAltNoVaTracking(CourseAltTracking):
+    """
+        Waypoint Tracking task. The agent has to track a given waypoint in the sky (described by its
+        x, y, z).
+        The airspeed is maintained at 60 kph by a PI controller.
+    """
+    def __init__(self, cfg_env: DictConfig, telemetry_file: str='', render_mode: str='none') -> None:
+        super().__init__(cfg_env=cfg_env, telemetry_file=telemetry_file, render_mode=render_mode)
+
+        self.task_cfg: DictConfig = cfg_env.task
+
+        self.state_prps = (
+            prp.course_err_rad, # course error
+            prp.altitude_err_m, # altitude error
+            prp.airspeed_kph, # airspeed
+            # prp.course_rad,
+            prp.u_fps, prp.v_fps, prp.w_fps, # velocity
+            prp.att_qx, prp.att_qy, prp.att_qz, prp.att_qw, # attitude quaternion
+            prp.p_radps, prp.q_radps, prp.r_radps, # angular rates
+            prp.alpha_rad, prp.beta_rad, # angle of attack, sideslip
+            prp.aileron_cmd, prp.elevator_cmd, prp.throttle_cmd # last action
+        )
+
+        self.action_prps = (
+            prp.aileron_cmd, prp.elevator_cmd, prp.throttle_cmd
+        )
+
+        self.target_prps = (
+            prp.wp_course_rad, # target course
+            prp.uav_to_wp_course_rad, # line of sight course
+            prp.target_altitude_m, # target altitude (asl)
+            prp.target_airspeed_kph, # target airspeed
+        )
+
+        # ENU target position, for telemetry
+        self.target_enu_prps = (
+            prp.target_enu_e_m, 
+            prp.target_enu_n_m,
+            prp.target_enu_u_m,
+        )
+
+        self.error_prps = (
+            prp.course_err_rad,
+            prp.altitude_err_m,
+            prp.airspeed_err_kph,
+        )
+
+        self.reward_prps = (
+            prp.reward_total, 
+            prp.reward_course, prp.reward_altitude,
+            prp.reward_airspeed,
+            prp.dist_to_target_m,
+        )
+
+        # telemetry properties are an addition of the common telemetry properties, target properties and error properties
+        self.telemetry_prps = self.common_telemetry_prps + self.target_prps + self.target_enu_prps \
+                            + self.error_prps + self.reward_prps + (prp.course_rad,)
+
+        # set action and observation space from the task
+        self.action_space = self.get_action_space()
+        self.observation_space = self.get_observation_space()
+
+        # PI controller for airspeed
+        self.pid_airspeed = PID(kp=0.5, ki=0.1, kd=0.0,
+                           dt=self.fdm_dt, trim=TrimPoint(), 
+                           limit=AeroModel().throttle_limit, is_throttle=True
+        )
+
+        self.in_missed_sphere = False
+        self.inout_missed_sphere = False
+        self.target_reached = False
+
+        if self.jsbsim_cfg.debug:
+            self.print_MDP_info()
+
+        self.telemetry_setup(self.telemetry_file)
+
+
+    def apply_action(self, action: np.ndarray):
+        super().apply_action(action)
+
+        if action.shape != self.action_space.shape:
+            raise ValueError(f"Action shape {action.shape} is not compatible with action space {self.action_space.shape}")
+
+        throttle_cmd, airspeed_err, _ = self.pid_airspeed.update(state=self.sim[prp.airspeed_kph], saturate=True)
+        self.sim[prp.throttle_cmd] = throttle_cmd
+
+    
+    def reset_target_state(self) -> None:
+        """
+            Resets the target state to the current state and the PID controller.
+        """
+        super().reset_target_state()
+        self.pid_airspeed.reset()
+        self.pid_airspeed.set_reference(60)
 
 
 class StraightPathTracking(WaypointTrackingENU):
