@@ -763,8 +763,19 @@ class JSBSimEnv(gym.Env, ABC):
         # reset all reward components to nan
         for prop in self.reward_prps:
             self.sim[prop] = float('nan')
+        self.reset_ext_state_props() # reset external state properties (custom properties not defined in the JSBSim FDM)
         self.reset_target_state() # reset task target state (child class)
         self.update_errors(first_err=True) # reset task errors (child class)
+
+
+    @abstractmethod
+    def reset_ext_state_props(self):
+        """
+            Reset external state properties (custom properties not defined in the JSBSim FDM).
+            This method is called when the environment is reset.
+        """
+        raise NotImplementedError
+
 
     @abstractmethod
     def get_reward(self):

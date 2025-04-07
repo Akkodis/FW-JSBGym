@@ -327,6 +327,22 @@ class WaypointTrackingENU(WaypointTracking):
         return super(WaypointTracking, self).observe_state(first_obs)
 
 
+    def reset_ext_state_props(self):
+        """
+            Resets to the initial ENU position of the aircraft.
+            Need to recompute it from ECEF position, since JSBSim does not provide ENU positions.
+        """
+        enu_pos = conversions.ecef2enu(
+            x=self.sim[prp.ecef_x_m], y=self.sim[prp.ecef_y_m], z=self.sim[prp.ecef_z_m],
+            ref_lat=self.sim[prp.ic_lat_gd_deg],
+            ref_lon=self.sim[prp.ic_long_gc_deg], 
+            ref_alt=0.0,
+        )
+        self.sim[prp.enu_e_m] = enu_pos[0]
+        self.sim[prp.enu_n_m] = enu_pos[1]
+        self.sim[prp.enu_u_m] = enu_pos[2]
+
+
     def set_target_state(self, target: np.ndarray) -> None:
         target_enu_e_m, target_enu_n_m, target_enu_u_m = target
         if np.any(target != [self.prev_target_x, self.prev_target_y, self.prev_target_z]):
