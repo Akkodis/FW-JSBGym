@@ -160,3 +160,11 @@ def euler2quaternion(roll=None, pitch=None, yaw=None, sim=None):
         sim[prp.att_qw] = qw
 
     return np.array([qx, qy, qz, qw])
+
+
+def wpENU_to_wpCourseAlt(target_enu):
+    """Converts waypoint positions (ENU) to course and altitude targets."""
+    course_target = np.arctan2(target_enu[0], target_enu[1])
+    altitude_target = target_enu[2]
+    path_targets = np.array([course_target, altitude_target])
+    return path_targets
