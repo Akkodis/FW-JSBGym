@@ -620,6 +620,388 @@ class WaypointTrackingNoVa(WaypointTracking):
         self.pid_airspeed.reset()
 
 
+class CourseAltTracking(WaypointTrackingENU):
+    """
+        Waypoint Tracking task. The agent has to track a given waypoint in the sky.
+        The agent is provided with the waypoint position coordinates in ENU and the target altitude.
+        It then computes the waypoint course angle, and tracks the waypoint using the angle and the given altitude.
+    """
+    def __init__(self, cfg_env: DictConfig, telemetry_file: str='', render_mode: str='none') -> None:
+        super().__init__(cfg_env=cfg_env, telemetry_file=telemetry_file, render_mode=render_mode)
+
+        self.task_cfg: DictConfig = cfg_env.task
+
+        self.state_prps = (
+            prp.course_err_rad, # course error
+            prp.altitude_err_m, # altitude error
+            # prp.airspeed_err_kph, # airspeed error
+            prp.airspeed_kph, # airspeed
+            # prp.course_rad,
+            prp.u_fps, prp.v_fps, prp.w_fps, # velocity
+            prp.att_qx, prp.att_qy, prp.att_qz, prp.att_qw, # attitude quaternion
+            prp.p_radps, prp.q_radps, prp.r_radps, # angular rates
+            prp.alpha_rad, prp.beta_rad, # angle of attack, sideslip
+            prp.aileron_cmd, prp.elevator_cmd, prp.throttle_cmd # last action
+        )
+
+        self.action_prps = (
+            prp.aileron_cmd, prp.elevator_cmd, prp.throttle_cmd
+        )
+
+        self.target_prps = (
+            prp.wp_course_rad, # target course
+            prp.uav_to_wp_course_rad, # line of sight course
+            prp.target_altitude_m, # target altitude (asl)
+            prp.target_airspeed_kph, # target airspeed
+        )
+
+        # ENU target position, for telemetry
+        self.target_enu_prps = (
+            prp.target_enu_e_m, 
+            prp.target_enu_n_m,
+            prp.target_enu_u_m,
+        )
+
+        self.error_prps = (
+            prp.course_err_rad,
+            prp.altitude_err_m,
+            prp.airspeed_err_kph,
+        )
+
+        self.reward_prps = (
+            prp.reward_total, 
+            prp.reward_course, prp.reward_altitude,
+            prp.reward_airspeed,
+            prp.dist_to_target_m,
+        )
+
+        # telemetry properties are an addition of the common telemetry properties, target properties and error properties
+        self.telemetry_prps = self.common_telemetry_prps + self.target_prps + self.target_enu_prps \
+                            + self.error_prps + self.reward_prps + (prp.course_rad,)
+
+        # set action and observation space from the task
+        self.action_space = self.get_action_space()
+        self.observation_space = self.get_observation_space()
+
+        self.in_missed_sphere = False
+        self.inout_missed_sphere = False
+        self.target_reached = False
+
+        if self.jsbsim_cfg.debug:
+            self.print_MDP_info()
+
+        self.telemetry_setup(self.telemetry_file)
+
+
+    def observe_state(self, first_obs=False):
+        self.sim[prp.course_rad] = np.arctan2(
+            self.sim[prp.v_east_fps],
+            self.sim[prp.v_north_fps]
+        )
+        return super().observe_state(first_obs)
+
+
+    def reset_ext_state_props(self):
+        """
+            Resets the initial course angle of the aircraft.
+            Need to recompute it from the ground velocity vector, since JSBSim does not provide it.
+        """
+        # reset the ENU position of the aircraft
+        super().reset_ext_state_props()
+        # reset the course angle of the aircraft
+        self.sim[prp.course_rad] = np.arctan2(
+            self.sim[prp.v_east_fps],
+            self.sim[prp.v_north_fps]
+        )
+
+
+    def set_target_state(self, target: np.ndarray) -> None:
+        """
+            Set the target state.
+            Takes the waypoint coordinates in ENU and converts them to path tracking parameters.
+        """
+        target_enu_e_m, target_enu_n_m, target_enu_u_m = target
+        if np.any(target != [self.prev_target_x, self.prev_target_y, self.prev_target_z]):
+            print("-- SETTING TARGET --")
+            # Convert waypoint coordinates to path tracking parameters
+            wp_path_course_rad, wp_path_alt_m = conversions.wpENU_to_wpCourseAlt(target).flatten()
+            print(f"Target (ENU) x: {target_enu_e_m:.3f} y: {target_enu_n_m:.3f} z: {target_enu_u_m:.3f}")
+            print(f"Target Course: {wp_path_course_rad:.3f} Altitude: {wp_path_alt_m:.3f}")
+
+            self.sim[prp.wp_course_rad] = wp_path_course_rad
+            self.sim[prp.target_altitude_m] = wp_path_alt_m
+            self.sim[prp.target_airspeed_kph] = 60.0 # hardcoded target airspeed
+            self.sim[prp.target_enu_e_m] = target_enu_e_m
+            self.sim[prp.target_enu_n_m] = target_enu_n_m
+            self.sim[prp.target_enu_u_m] = target_enu_u_m
+
+        self.prev_target_x = target_enu_e_m
+        self.prev_target_y = target_enu_n_m
+        self.prev_target_z = target_enu_u_m
+
+
+    def reset_target_state(self):
+        """
+            Resets the target state to the current state
+        """
+        print("--- RESETTING TARGET ---")
+        init_target = np.array([0, 0, 600])
+        self.set_target_state(init_target)
+        print("------------------------")
+
+
+    def update_errors(self, first_err=False):
+        """
+            Updates the errors based on the current state.
+        """
+
+        # self.sim[prp.wp_course_wrapped_rad] = self.sim[prp.wp_course_rad]
+        # if (self.sim[prp.wp_course_rad] - self.sim[prp.course_rad]) < -np.pi:
+        #     self.sim[prp.wp_course_wrapped_rad] = self.sim[prp.wp_course_rad] + 2*np.pi
+        # elif (self.sim[prp.wp_course_rad] - self.sim[prp.course_rad]) > np.pi:
+        #     self.sim[prp.wp_course_wrapped_rad] = self.sim[prp.wp_course_rad] - 2*np.pi
+        # self.sim[prp.course_err_rad] = self.sim[prp.wp_course_wrapped_rad] - self.sim[prp.course_rad]
+
+        # Computing the course error : the line of sight to the waypoint
+        uav_to_wp_n = self.sim[prp.target_enu_n_m] - self.sim[prp.enu_n_m]
+        uav_to_wp_e = self.sim[prp.target_enu_e_m] - self.sim[prp.enu_e_m]
+        self.sim[prp.uav_to_wp_course_rad] = np.arctan2(uav_to_wp_e, uav_to_wp_n)
+        if (self.sim[prp.uav_to_wp_course_rad] - self.sim[prp.course_rad]) < -np.pi:
+            self.sim[prp.uav_to_wp_course_rad] = self.sim[prp.uav_to_wp_course_rad] + 2*np.pi
+        elif (self.sim[prp.uav_to_wp_course_rad] - self.sim[prp.course_rad]) > np.pi:
+            self.sim[prp.uav_to_wp_course_rad] = self.sim[prp.uav_to_wp_course_rad] - 2*np.pi
+        self.sim[prp.course_err_rad] = self.sim[prp.uav_to_wp_course_rad] - self.sim[prp.course_rad]
+
+        self.sim[prp.altitude_err_m] = self.sim[prp.target_altitude_m] - self.sim[prp.altitude_sl_m]
+
+        self.sim[prp.airspeed_err_kph] = self.sim[prp.target_airspeed_kph] - self.sim[prp.airspeed_kph]
+
+        super().update_errors(first_err)
+
+
+    def get_reward(self, action: np.ndarray) -> float:
+        """
+            Computes the reward based on the current state and action.
+            The reward is a combination of the course error and altitude error.
+        """
+        assert self.task_cfg.reward.name == "wp_course_alt"
+        r_w: dict = self.task_cfg.reward.weights
+
+        r_course = r_w["r_course"]["weight"] * np.clip(
+            np.abs(self.sim[prp.course_err_rad]) / r_w["r_course"]["scale"],
+            a_min=0.0,
+            a_max=r_w["r_course"]["clip_max"]
+        )
+        self.sim[prp.reward_course] = r_course
+
+        # altitude error
+        # r_altitude = r_w["r_altitude"]["scale"] * np.tanh(r_w["r_altitude"]["tanh_scale"] * np.abs(self.sim[prp.altitude_err_m]))
+        # [min, max] target alt is [-30, 30]m, range is 60m
+        r_altitude = r_w["r_alt"]["weight"] * np.clip(
+            np.abs(self.sim[prp.altitude_err_m]) / r_w["r_alt"]["scale"],
+            a_min=0.0,
+            a_max=r_w["r_alt"]["clip_max"]
+        )
+        self.sim[prp.reward_altitude] = r_altitude
+
+        # airspeed error
+        r_airspeed = 0.0
+        if r_w["r_airspeed"]["enabled"]:
+            r_airspeed = r_w["r_airspeed"]["weight"] * np.clip(
+                np.abs(self.sim[prp.airspeed_err_kph]) / r_w["r_airspeed"]["scale"],
+                a_min=0.0,
+                a_max=r_w["r_airspeed"]["clip_max"]
+            )
+        self.sim[prp.reward_airspeed] = r_airspeed
+
+        # total reward
+        r_total = -(r_course + r_altitude + r_airspeed)
+        self.sim[prp.reward_total] = r_total
+
+        return r_total
+
+
+class StraightPathTracking(WaypointTrackingENU):
+    """
+        Waypoint Tracking task. The agent has to track a given waypoint in the sky.
+        The agent is provided with the waypoint course angle (in radians) to follow and a target airspeed (in kph).
+    """
+    def __init__(self, cfg_env: DictConfig, telemetry_file: str='', render_mode: str='none') -> None:
+        super().__init__(cfg_env=cfg_env, telemetry_file=telemetry_file, render_mode=render_mode)
+
+        self.task_cfg: DictConfig = cfg_env.task
+
+        self.state_prps = (
+            prp.course_err_rad, # course error
+            prp.altitude_err_m, # altitude error
+            prp.airspeed_kph, # airspeed
+            prp.course_rad,
+            prp.u_fps, prp.v_fps, prp.w_fps, # velocity
+            prp.att_qx, prp.att_qy, prp.att_qz, prp.att_qw, # attitude quaternion
+            prp.p_radps, prp.q_radps, prp.r_radps, # angular rates
+            prp.alpha_rad, prp.beta_rad, # angle of attack, sideslip
+            prp.aileron_cmd, prp.elevator_cmd, prp.throttle_cmd # last action
+        )
+
+        self.action_prps = (
+            prp.aileron_cmd, prp.elevator_cmd, prp.throttle_cmd
+        )
+
+        self.target_prps = (
+            prp.wp_course_rad, # target waypoint course
+            prp.uav_to_line_course_des_rad, # desired course towards the line path
+            prp.target_altitude_m, # target altitude (asl)
+        )
+
+        # ENU target position, for telemetry
+        self.target_enu_prps = (
+            prp.target_enu_e_m, 
+            prp.target_enu_n_m,
+            prp.target_enu_u_m,
+        )
+
+        self.error_prps = (
+            prp.course_err_rad,
+            prp.altitude_err_m,
+        )
+
+        self.reward_prps = (
+            prp.reward_total, 
+            prp.reward_course, prp.reward_altitude,
+            prp.dist_to_target_m,
+        )
+
+        # telemetry properties are an addition of the common telemetry properties, target properties and error properties
+        self.telemetry_prps = self.common_telemetry_prps + self.target_prps + self.target_enu_prps \
+                            + self.error_prps + self.reward_prps + (prp.course_rad,)
+
+        # set action and observation space from the task
+        self.action_space = self.get_action_space()
+        self.observation_space = self.get_observation_space()
+
+        self.in_missed_sphere = False
+        self.inout_missed_sphere = False
+        self.target_reached = False
+
+        if self.jsbsim_cfg.debug:
+            self.print_MDP_info()
+
+        self.telemetry_setup(self.telemetry_file)
+
+
+    def observe_state(self, first_obs=False):
+        self.sim[prp.course_rad] = np.arctan2(
+            self.sim[prp.v_east_fps],
+            self.sim[prp.v_north_fps]
+        )
+        return super().observe_state(first_obs)
+
+
+    def reset_ext_state_props(self):
+        """
+            Resets the initial course angle of the aircraft.
+            Need to recompute it from the ground velocity vector, since JSBSim does not provide it.
+        """
+        # reset the ENU position of the aircraft
+        super().reset_ext_state_props()
+        # reset the course angle of the aircraft
+        self.sim[prp.course_rad] = np.arctan2(
+            self.sim[prp.v_east_fps],
+            self.sim[prp.v_north_fps]
+        )
+
+
+    def set_target_state(self, target: np.ndarray) -> None:
+        """
+            Set the target state.
+            Takes the waypoint coordinates in ENU and converts them to path tracking parameters.
+        """
+        target_enu_e_m, target_enu_n_m, target_enu_u_m = target
+        if np.any(target != [self.prev_target_x, self.prev_target_y, self.prev_target_z]):
+            print("-- SETTING TARGET --")
+            # Convert waypoint coordinates to path tracking parameters
+            wp_path_course_rad, wp_path_alt_m = conversions.wpENU_to_wpCourseAlt(target).flatten()
+            print(f"Target (ENU) x: {target_enu_e_m:.3f} y: {target_enu_n_m:.3f} z: {target_enu_u_m:.3f}")
+            print(f"Target Course: {wp_path_course_rad:.3f} Altitude: {wp_path_alt_m:.3f}")
+
+            self.sim[prp.wp_course_rad] = wp_path_course_rad
+            self.sim[prp.target_altitude_m] = wp_path_alt_m
+            self.sim[prp.target_enu_e_m] = target_enu_e_m
+            self.sim[prp.target_enu_n_m] = target_enu_n_m
+            self.sim[prp.target_enu_u_m] = target_enu_u_m
+
+        self.prev_target_x = target_enu_e_m
+        self.prev_target_y = target_enu_n_m
+        self.prev_target_z = target_enu_u_m
+
+
+    def reset_target_state(self):
+        """
+            Resets the target state to the current state
+        """
+        print("--- RESETTING TARGET ---")
+        init_target = np.array([0, 0, 600])
+        self.set_target_state(init_target)
+        print("------------------------")
+
+
+    def update_errors(self, first_err=False):
+        """
+            Updates the errors based on the current state.
+        """
+
+        self.sim[prp.wp_course_wrapped_rad] = self.sim[prp.wp_course_rad]
+        if (self.sim[prp.wp_course_rad] - self.sim[prp.course_rad]) <= -np.pi:
+            self.sim[prp.wp_course_wrapped_rad] = self.sim[prp.wp_course_rad] + 2*np.pi
+        elif (self.sim[prp.wp_course_rad] - self.sim[prp.course_rad]) > np.pi:
+            self.sim[prp.wp_course_wrapped_rad] = self.sim[prp.wp_course_rad] - 2*np.pi
+
+        prev_wp_enu_e = 0.0
+        prev_wp_enu_n = 0.0
+        path_params = self.task_cfg.reward.line_path_params
+        cross_track_err = -np.sin(self.sim[prp.wp_course_wrapped_rad]) * (self.sim[prp.enu_n_m] - prev_wp_enu_n) + \
+            np.cos(self.sim[prp.wp_course_wrapped_rad]) * (self.sim[prp.enu_e_m] - prev_wp_enu_e)
+        self.sim[prp.uav_to_line_course_des_rad] = self.sim[prp.wp_course_wrapped_rad] - path_params["course_inf"] * \
+            2/np.pi * np.arctan(path_params["k_path"] * cross_track_err)
+        self.sim[prp.course_err_rad] = self.sim[prp.uav_to_line_course_des_rad] - self.sim[prp.course_rad]
+
+        self.sim[prp.altitude_err_m] = self.sim[prp.target_altitude_m] - self.sim[prp.altitude_sl_m]
+
+        super().update_errors(first_err)
+
+
+    def get_reward(self, action: np.ndarray) -> float:
+        """
+            Computes the reward based on the current state and action.
+            The reward is a combination of the course error and altitude error.
+        """
+        assert self.task_cfg.reward.name == "wp_st_path"
+        r_w: dict = self.task_cfg.reward.weights
+
+        r_course = r_w["r_course"]["weight"] * np.clip(
+            np.abs(self.sim[prp.course_err_rad]) / r_w["r_course"]["scale"],
+            a_min=0.0,
+            a_max=r_w["r_course"]["clip_max"]
+        )
+        self.sim[prp.reward_course] = r_course
+
+        # altitude error
+        # r_altitude = r_w["r_altitude"]["scale"] * np.tanh(r_w["r_altitude"]["tanh_scale"] * np.abs(self.sim[prp.altitude_err_m]))
+        # [min, max] target alt is [-30, 30]m, range is 60m
+        r_altitude = r_w["r_alt"]["weight"] * np.clip(
+            np.abs(self.sim[prp.altitude_err_m]) / r_w["r_alt"]["scale"],
+            a_min=0.0,
+            a_max=r_w["r_alt"]["clip_max"]
+        )
+        self.sim[prp.reward_altitude] = r_altitude
+
+        # total reward
+        r_total = -(r_course + r_altitude)
+        self.sim[prp.reward_total] = r_total
+
+        return r_total
+
+
 class AltitudeTracking(JSBSimTask):
     def __init__(self, cfg_env, telemetry_file: str='', render_mode: str='none'):
         super().__init__(cfg_env, telemetry_file, render_mode)

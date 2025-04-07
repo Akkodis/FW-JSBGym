@@ -18,6 +18,9 @@ def animate(i, axis, tele_file) -> None:
     lat = df.get(prp.lat_gc_deg.get_legal_name(), default=nan_arr)
     lon = df.get(prp.lng_gc_deg.get_legal_name(), default=nan_arr)
     alt = df.get(prp.altitude_sl_m.get_legal_name(), default=nan_arr)
+    alt_target = df.get(prp.target_altitude_m.get_legal_name(), default=nan_arr)
+    alt_error = df.get(prp.altitude_err_m.get_legal_name(), default=nan_arr)
+
     enu_e_m = df.get(prp.enu_e_m.get_legal_name(), default=nan_arr)
     enu_n_m = df.get(prp.enu_n_m.get_legal_name(), default=nan_arr)
     enu_u_m = df.get(prp.enu_u_m.get_legal_name(), default=nan_arr)
@@ -33,6 +36,15 @@ def animate(i, axis, tele_file) -> None:
     roll = df.get(prp.roll_rad.get_legal_name(), default=nan_arr)
     pitch = df.get(prp.pitch_rad.get_legal_name(), default=nan_arr)
     heading = df.get(prp.heading_rad.get_legal_name(), default=nan_arr)
+
+    course_rad = df.get(prp.course_rad.get_legal_name(), default=nan_arr)
+    course_target_wrapped = df.get(prp.wp_course_wrapped_rad.get_legal_name(), default=nan_arr)
+    course_target_rad = df.get(prp.wp_course_rad.get_legal_name(), default=nan_arr)
+    course_err = df.get(prp.course_err_rad.get_legal_name(), default=nan_arr)
+    uav_to_wp_course_rad = df.get(prp.uav_to_wp_course_rad.get_legal_name(), default=nan_arr)
+    uav_to_wp_course_err_rad = df.get(prp.uav_to_wp_course_err_rad.get_legal_name(), default=nan_arr)
+    uav_to_line_course_des_rad = df.get(prp.uav_to_line_course_des_rad.get_legal_name(), default=nan_arr)
+
 
     roll_rate = df.get(prp.p_radps.get_legal_name(), default=nan_arr)
     pitch_rate = df.get(prp.q_radps.get_legal_name(), default=nan_arr)
@@ -77,6 +89,8 @@ def animate(i, axis, tele_file) -> None:
     r_enu_e = df.get(prp.reward_enu_e.get_legal_name(), default=nan_arr)
     r_enu_n = df.get(prp.reward_enu_n.get_legal_name(), default=nan_arr)
     r_enu_u = df.get(prp.reward_enu_u.get_legal_name(), default=nan_arr)
+    r_course = df.get(prp.reward_course.get_legal_name(), default=nan_arr)
+    r_altitude = df.get(prp.reward_altitude.get_legal_name(), default=nan_arr)
 
 
     for(dim_1) in axis:
@@ -88,6 +102,8 @@ def animate(i, axis, tele_file) -> None:
 
     if df.index.size > 0:
         axis[0, 0].plot(tsteps, alt, label='altitude' if not np.isnan(np.sum(alt)) else '')
+        axis[0, 0].plot(tsteps, alt_target, color='r', linestyle='--', label='altitude_ref' if not np.isnan(np.sum(alt_target)) else '')
+        # axis[0, 0].plot(tsteps, alt_error, color='y', label='altitude_err' if not np.isnan(np.sum(alt_error)) else '')
         # axis[0, 0].set_xlabel("timestep")
         axis[0, 0].set_ylabel("altitude [m]")
         axis[0, 0].set_title("altitude control")
@@ -149,18 +165,31 @@ def animate(i, axis, tele_file) -> None:
         axis[1, 2].plot(tsteps[2:], r_enu_e[2:], label='r_enu_e' if not np.isnan(np.sum(r_enu_e)) else '')
         axis[1, 2].plot(tsteps[2:], r_enu_n[2:], label='r_enu_n' if not np.isnan(np.sum(r_enu_n)) else '')
         axis[1, 2].plot(tsteps[2:], r_enu_u[2:], label='r_enu_u' if not np.isnan(np.sum(r_enu_u)) else '')
+        axis[1, 2].plot(tsteps[2:], r_course[2:], label='r_course' if not np.isnan(np.sum(r_course)) else '')
+        # axis[1, 2].plot(tsteps[2:], r_path_cross_err[2:], label='r_path_cross_err' if not np.isnan(np.sum(r_path_cross_err)) else '')
+        axis[1, 2].plot(tsteps[2:], r_altitude[2:], label='r_altitude' if not np.isnan(np.sum(r_altitude)) else '')
         axis[1, 2].plot(tsteps[2:], r_total[2:], label='r_total' if not np.isnan(np.sum(r_total)) else '')
         axis[1, 2].set_title('rewards')
         axis[1, 2].set_ylabel('reward [-]')
         axis[1, 2].legend()
         axis[1, 2].grid()
 
-        axis[2, 0].plot(tsteps, u_kph, label='u' if not np.isnan(np.sum(u_kph)) else '')
-        axis[2, 0].plot(tsteps, v_kph, label='v' if not np.isnan(np.sum(v_kph)) else '')
-        axis[2, 0].plot(tsteps, w_kph, label='w' if not np.isnan(np.sum(w_kph)) else '')
-        axis[2, 0].set_title('body velocities')
+        axis[2, 0].plot(tsteps, course_rad, label='course' if not np.isnan(np.sum(course_rad)) else '')
+        # axis[2, 0].plot(tsteps, course_err, color='y', label='course_err' if not np.isnan(np.sum(course_err)) else '')
+        axis[2, 0].plot(tsteps, uav_to_wp_course_rad, color='c', label='uav_to_target_course' if not np.isnan(np.sum(uav_to_wp_course_rad)) else '')
+        axis[2, 0].plot(tsteps, uav_to_wp_course_err_rad, color='m', label='uav_to_target_course_err' if not np.isnan(np.sum(uav_to_wp_course_err_rad)) else '')
+        axis[2, 0].plot(tsteps, uav_to_line_course_des_rad, color='b', label='uav_to_line_course_des' if not np.isnan(np.sum(uav_to_line_course_des_rad)) else '')
+        axis[2, 0].plot(tsteps, course_target_rad, color='r', linestyle='--', label='course_target' if not np.isnan(np.sum(course_target_rad)) else '')
+        axis[2, 0].plot(tsteps, course_target_wrapped, color='g', linestyle='--', label='course_target_wrapped' if not np.isnan(np.sum(course_target_wrapped)) else '')
+        axis[2, 0].set_title('Course Angle and Error [rad]')
+        axis[2, 0].set_ylabel('[rad]')
+
+        # axis[2, 0].plot(tsteps, u_kph, label='u' if not np.isnan(np.sum(u_kph)) else '')
+        # axis[2, 0].plot(tsteps, v_kph, label='v' if not np.isnan(np.sum(v_kph)) else '')
+        # axis[2, 0].plot(tsteps, w_kph, label='w' if not np.isnan(np.sum(w_kph)) else '')
+        # axis[2, 0].set_title('body velocities')
+        # axis[2, 0].set_ylabel("body velocities [km/h]")
         axis[2, 0].set_xlabel("timestep")
-        axis[2, 0].set_ylabel("body velocities [km/h]")
         axis[2, 0].legend()
         axis[2, 0].grid()
 

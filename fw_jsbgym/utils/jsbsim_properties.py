@@ -304,7 +304,7 @@ target_lat_deg = BoundedProperty("target/lat-deg", "desired latitude [deg]", -90
 target_lon_deg = BoundedProperty("target/lon-deg", "desired longitude [deg]", -90, 90)
 target_alt_m = BoundedProperty("target/altitude-m", "desired altitude [m]", 0, float('+inf'))
 
-# waypoint tracking - x, y, z in ECEF
+# targets: ECEF
 target_ecef_x_m = BoundedProperty("target/ecef-x-m", "desired ECEF x [m]", float('-inf'), float('+inf'))
 target_ecef_y_m = BoundedProperty("target/ecef-y-m", "desired ECEF y [m]", float('-inf'), float('+inf'))
 target_ecef_z_m = BoundedProperty("target/ecef-z-m", "desired ECEF z [m]", float('-inf'), float('+inf'))
@@ -341,6 +341,28 @@ reward_enu_u = BoundedProperty("reward/enu-u", "ENU z reward", 0, float('+inf'))
 reward_dist = BoundedProperty("reward/distance", "distance reward", 0, float('+inf'))
 reward_progress = BoundedProperty("reward/progress", "progress towards waypoint reward", float('-inf'), float('+inf'))
 reward_reached = BoundedProperty("reward/reached", "reached waypoint reward", 0, float('+inf'))
+
+
+### COURSE ALT OR STRAIGHT PATH TRACKING ###
+# state properties, only course because altitude is already provided by JSBSim
+course_rad = BoundedProperty("course/course-rad", "uav course angle [rad]", -math.pi, math.pi)
+
+# targets properties
+wp_course_rad = BoundedProperty("course/course-target-rad", "desired course angle [rad]", -math.pi, math.pi)
+uav_to_wp_course_rad = BoundedProperty("course/uav-to-target-course-rad", "uav to target course angle [rad]", -math.pi, math.pi)
+uav_to_wp_course_err_rad = BoundedProperty("course/uav-target-course-err-rad", "uav to target course error [rad]", -math.pi, math.pi)
+uav_to_line_course_des_rad = BoundedProperty("course/uav-to-line-course-rad", "uav to line course angle [rad]", -math.pi, math.pi)
+wp_course_wrapped_rad = BoundedProperty("course/wrapped-course-target-rad", "wrapped desired course angle [rad]", -math.pi, math.pi)
+target_altitude_m = BoundedProperty("course/altitude-target-m", "desired altitude [m]", float('-inf'), float('+inf'))
+
+# errors properties
+course_err_rad = BoundedProperty("error/course-err-rad", "course error [rad]", -2*math.pi, 2*math.pi)
+altitude_err_m = BoundedProperty("error/altitude-err-m", "altitude error [m]", float('-inf'), float('+inf'))
+
+# reward properties
+reward_course = BoundedProperty("reward/course", "course reward", 0, float('+inf'))
+reward_path_cross_err = BoundedProperty("reward/path-cross-err", "cross track error reward", 0, float('+inf'))
+reward_altitude = BoundedProperty("reward/altitude", "altitude reward", 0, float('+inf'))
 
 
 # PID-RL properties
