@@ -793,7 +793,7 @@ class CourseAltTracking(WaypointTrackingENU):
             Computes the reward based on the current state and action.
             The reward is a combination of the course error and altitude error.
         """
-        assert self.task_cfg.reward.name == "wp_course_alt"
+        assert self.task_cfg.reward.name == "wp_course_alt" or self.task_cfg.reward.name == "wp_course_alt_va"
         r_w: dict = self.task_cfg.reward.weights
 
         r_course = r_w["r_course"]["weight"] * np.clip(
@@ -812,6 +812,13 @@ class CourseAltTracking(WaypointTrackingENU):
             a_max=r_w["r_alt"]["clip_max"]
         )
         self.sim[prp.reward_altitude] = r_altitude
+
+        # total reward
+        r_total = -(r_course + r_altitude)
+        self.sim[prp.reward_total] = r_total
+
+        return r_total
+    
 
         # airspeed error
         r_airspeed = 0.0
