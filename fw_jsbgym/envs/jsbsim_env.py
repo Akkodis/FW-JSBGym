@@ -466,7 +466,7 @@ class JSBSimEnv(gym.Env, ABC):
         # self.sim[prp.gust_dir_y_fps] = 1
         # self.sim[prp.gust_dir_z_fps] = 0
         # self.sim[prp.gust_start] = 1
-        print("Gust Start")
+        print(f"Gust Start @ {self.sim[self.current_step]}")
 
 
     def randomize_fdm(self):
@@ -498,7 +498,7 @@ class JSBSimEnv(gym.Env, ABC):
         if len(atmo_options) != 0:
             if atmo_options["gust"].get("enable"):
                 curr_step = self.sim[self.current_step]
-                if curr_step == 100:
+                if curr_step == 250: # start the gust @ 250 steps (2.5s @ 100Hz)
                     self.gust_start()
 
         # append the fcs commands to the fcs history for this episode
