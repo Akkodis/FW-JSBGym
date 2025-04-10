@@ -820,18 +820,69 @@ class CourseAltTracking(WaypointTrackingENU):
         return r_total
     
 
+class CourseAltVaTracking(CourseAltTracking):
+    """
+        Waypoint Tracking task. The agent has to track a given waypoint in the sky.
+        The agent is provided with the waypoint position coordinates in ENU and the target altitude.
+        It then computes the waypoint course angle, and tracks the waypoint using the angle and the given altitude.
+        In addition the agent has to maintain an airspeed of 60 kph.
+    """
+    def __init__(self, cfg_env: DictConfig, telemetry_file: str='', render_mode: str='none') -> None:
+        super().__init__(cfg_env=cfg_env, telemetry_file=telemetry_file, render_mode=render_mode)
+
+        self.task_cfg: DictConfig = cfg_env.task
+
+        self.state_prps = (
+            prp.course_err_rad, # course error
+            prp.altitude_err_m, # altitude error
+            prp.airspeed_err_kph, # airspeed error
+            prp.airspeed_kph, # airspeed
+            prp.course_rad, # course angle
+            prp.u_fps, prp.v_fps, prp.w_fps, # velocity
+            prp.att_qx, prp.att_qy, prp.att_qz, prp.att_qw, # attitude quaternion
+            prp.p_radps, prp.q_radps, prp.r_radps, # angular rates
+            prp.alpha_rad, prp.beta_rad, # angle of attack, sideslip
+            prp.aileron_cmd, prp.elevator_cmd, prp.throttle_cmd # last action
+        )
+
+        # telemetry properties are an addition of the common telemetry properties, target properties and error properties
+        self.telemetry_prps = self.common_telemetry_prps + self.target_prps + self.target_enu_prps \
+                            + self.error_prps + self.reward_prps + (prp.course_rad,)
+
+        # set action and observation space from the task
+        self.action_space = self.get_action_space()
+        self.observation_space = self.get_observation_space()
+
+        self.in_missed_sphere = False
+        self.inout_missed_sphere = False
+        self.target_reached = False
+
+        if self.jsbsim_cfg.debug:
+            self.print_MDP_info()
+
+        self.telemetry_setup(self.telemetry_file)
+
+
+    def get_reward(self, action: np.ndarray) -> float:
+        """
+            Computes the reward based on the current state and action.
+            The reward is a combination of the course error and altitude error.
+        """
+        assert self.task_cfg.reward.name == "wp_course_alt_va"
+        r_w: dict = self.task_cfg.reward.weights
+        # get course and altitude rewards from the parent class
+        r_course_alt = super().get_reward(action)
+
         # airspeed error
-        r_airspeed = 0.0
-        if r_w["r_airspeed"]["enabled"]:
-            r_airspeed = r_w["r_airspeed"]["weight"] * np.clip(
-                np.abs(self.sim[prp.airspeed_err_kph]) / r_w["r_airspeed"]["scale"],
-                a_min=0.0,
-                a_max=r_w["r_airspeed"]["clip_max"]
-            )
+        r_airspeed = r_w["r_airspeed"]["weight"] * np.clip(
+            np.abs(self.sim[prp.airspeed_err_kph]) / r_w["r_airspeed"]["scale"],
+            a_min=0.0,
+            a_max=r_w["r_airspeed"]["clip_max"]
+        )
         self.sim[prp.reward_airspeed] = r_airspeed
 
         # total reward
-        r_total = -(r_course + r_altitude + r_airspeed)
+        r_total = r_course_alt - r_airspeed
         self.sim[prp.reward_total] = r_total
 
         return r_total
@@ -852,7 +903,7 @@ class CourseAltNoVaTracking(CourseAltTracking):
             prp.course_err_rad, # course error
             prp.altitude_err_m, # altitude error
             prp.airspeed_kph, # airspeed
-            # prp.course_rad,
+            prp.course_rad,
             prp.u_fps, prp.v_fps, prp.w_fps, # velocity
             prp.att_qx, prp.att_qy, prp.att_qz, prp.att_qw, # attitude quaternion
             prp.p_radps, prp.q_radps, prp.r_radps, # angular rates
@@ -861,7 +912,7 @@ class CourseAltNoVaTracking(CourseAltTracking):
         )
 
         self.action_prps = (
-            prp.aileron_cmd, prp.elevator_cmd, prp.throttle_cmd
+            prp.aileron_cmd, prp.elevator_cmd
         )
 
         self.target_prps = (
