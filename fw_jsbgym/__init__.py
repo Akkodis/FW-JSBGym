@@ -141,6 +141,17 @@ gymnasium.register(
 )
 
 gymnasium.register(
+    id='CourseAltVaTracking-v0',
+    entry_point='fw_jsbgym.envs.tasks.waypoint_tracking.wp_tracking:CourseAltVaTracking'
+)
+
+
+gymnasium.register(
+    id='CourseAltNoVaTracking-v0',
+    entry_point='fw_jsbgym.envs.tasks.waypoint_tracking.wp_tracking:CourseAltNoVaTracking'
+)
+
+gymnasium.register(
     id='StraightPathTracking-v0',
     entry_point='fw_jsbgym.envs.tasks.waypoint_tracking.wp_tracking:StraightPathTracking'
 )
