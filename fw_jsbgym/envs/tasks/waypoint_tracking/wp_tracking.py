@@ -644,9 +644,8 @@ class CourseAltTracking(WaypointTrackingENU):
         self.state_prps = (
             prp.course_err_rad, # course error
             prp.altitude_err_m, # altitude error
-            # prp.airspeed_err_kph, # airspeed error
             prp.airspeed_kph, # airspeed
-            # prp.course_rad,
+            prp.course_rad,
             prp.u_fps, prp.v_fps, prp.w_fps, # velocity
             prp.att_qx, prp.att_qy, prp.att_qz, prp.att_qw, # attitude quaternion
             prp.p_radps, prp.q_radps, prp.r_radps, # angular rates
