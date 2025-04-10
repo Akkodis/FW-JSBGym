@@ -14,7 +14,7 @@ class PlotVisualizer(object):
         if "AC" in env_id:
             viz_plot_path = resource_filename('fw_jsbgym', 'visualizers/attitude_control_telemetry.py')
         elif "Waypoint" in env_id or "Path" in env_id or \
-            "CourseAltTracking" in env_id:
+            "CourseAlt" in env_id:
             viz_plot_path = resource_filename('fw_jsbgym', 'visualizers/waypoint_tracking_telemetry.py')
         assert viz_plot_path != "", "Invalid env_id. Please provide a valid env_id."
 
@@ -43,7 +43,7 @@ class PlotVisualizer(object):
             ax = setup_axes()
             animate(0, ax, self.telemetry_file)
         elif "Waypoint" in self.env_id or "Path" in self.env_id or \
-            "CourseAltTracking" in self.env_id:
+            "CourseAlt" in self.env_id:
             # we run the waypoint tracking telemetry plot in the current process
             from fw_jsbgym.visualizers.waypoint_tracking_telemetry import setup_axes, animate
             ax = setup_axes()
