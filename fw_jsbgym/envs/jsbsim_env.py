@@ -235,18 +235,6 @@ class JSBSimEnv(gym.Env, ABC):
         # convert some properties to SI units for the 1st step
         conversions.props2si(self.sim)
         conversions.euler2quaternion(sim=self.sim)
-        if "ENU" in self.spec.id:
-            # convert ecef to enu current UAV position
-            enu_pos = conversions.ecef2enu(
-                x=self.sim[prp.ecef_x_m], y=self.sim[prp.ecef_y_m], z=self.sim[prp.ecef_z_m],
-                ref_lat=self.sim[prp.ic_lat_gd_deg],
-                ref_lon=self.sim[prp.ic_long_gc_deg], 
-                ref_alt=0.0,
-            )
-            self.sim[prp.enu_x_m] = enu_pos[0]
-            self.sim[prp.enu_y_m] = enu_pos[1]
-            self.sim[prp.enu_z_m] = enu_pos[2]
-
 
         # if reset arg "options" is provided, overwrite some of the sim_options fields
         if options is not None:
@@ -533,18 +521,6 @@ class JSBSimEnv(gym.Env, ABC):
         # conversions here
         conversions.props2si(self.sim)
         conversions.euler2quaternion(sim=self.sim)
-        # if we are in a task that requires UAV ENU coordinates, convert the ECEF coordinates (computed by JSBSim) to ENU
-        if "ENU" in self.spec.id:
-            # convert ecef to enu current UAV position
-            enu_pos = conversions.ecef2enu(
-                x=self.sim[prp.ecef_x_m], y=self.sim[prp.ecef_y_m], z=self.sim[prp.ecef_z_m],
-                ref_lat=self.sim[prp.ic_lat_gd_deg],
-                ref_lon=self.sim[prp.ic_long_gc_deg], 
-                ref_alt=0.0,
-            )
-            self.sim[prp.enu_e_m] = enu_pos[0]
-            self.sim[prp.enu_n_m] = enu_pos[1]
-            self.sim[prp.enu_u_m] = enu_pos[2]
 
         # update the errors
         self.update_errors()

@@ -313,6 +313,17 @@ class WaypointTrackingENU(WaypointTracking):
 
 
     def observe_state(self, first_obs=False):
+        # convert ecef to enu current UAV position
+        enu_pos = conversions.ecef2enu(
+            x=self.sim[prp.ecef_x_m], y=self.sim[prp.ecef_y_m], z=self.sim[prp.ecef_z_m],
+            ref_lat=self.sim[prp.ic_lat_gd_deg],
+            ref_lon=self.sim[prp.ic_long_gc_deg], 
+            ref_alt=0.0,
+        )
+        self.sim[prp.enu_e_m] = enu_pos[0]
+        self.sim[prp.enu_n_m] = enu_pos[1]
+        self.sim[prp.enu_u_m] = enu_pos[2]
+
         if first_obs:
             self.dist_to_target = 0.0
             self.prev_dist_to_target = 0.0
