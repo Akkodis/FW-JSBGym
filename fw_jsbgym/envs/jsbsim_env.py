@@ -672,15 +672,15 @@ class JSBSimEnv(gym.Env, ABC):
         """
         telemetry: dict[str, float] = {}
 
-        if 'Waypoint' in self.spec.id:
-            # convert ECEF to ENU
+        if "Waypoint" in self.spec.id and self.spec.id != "WaypointTrackingENU-v0":
+            # convert ECEF to ENU. 
+            # For Waypoint tracking envs (the ENU version, PathTracking, CourseAlt) the target is already in ENU so no need
             enu = conversions.ecef2enu(self.sim[prp.ecef_x_m], self.sim[prp.ecef_y_m], self.sim[prp.ecef_z_m],
                                     self.sim[prp.ic_lat_gd_deg], self.sim[prp.ic_long_gc_deg], 0.0)
             self.sim[prp.enu_e_m] = enu[0]
             self.sim[prp.enu_n_m] = enu[1]
             self.sim[prp.enu_u_m] = enu[2]
 
-            if "ENU" not in self.spec.id:
             # if we are not in ENU mode, convert ECEF to ENU target position,
             # otherwise the target is already given in ENU coord
             enu_target = conversions.ecef2enu(self.sim[prp.target_ecef_x_m], self.sim[prp.target_ecef_y_m], self.sim[prp.target_ecef_z_m],
