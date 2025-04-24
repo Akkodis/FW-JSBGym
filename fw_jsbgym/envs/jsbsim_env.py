@@ -256,18 +256,21 @@ class JSBSimEnv(gym.Env, ABC):
 
         # set the jsbsim env internal number generator
         self.sim_rng = np.random.default_rng(int(self.sim_options.seed))
-
         print("self.sim_options: ", self.sim_options)
         if len(self.sim_options) != 0:
             if "seed" in self.sim_options:
                 self.sim["simulation/randomseed"] = self.sim_options["seed"]
+                self.sim["atmosphere/randomseed"] = self.sim_options["seed"]
             if self.fdm_rng is None:
                 self.fdm_rng = np.random.default_rng(int(self.sim["simulation/randomseed"]))
             if self.sim_options["rand_fdm"]["enable"]:
                 self.randomize_fdm()
                 print(f"CD_alpha = {self.sim[prp.aero_CDalpha]}, Cmq = {self.sim[prp.aero_Cmq]}, Clr = {self.sim[prp.aero_Clr]}")
 
-        print(f"JSBSim Seed: {self.sim['simulation/randomseed']}")
+        print(f"JSBSim Seeds:\n" \
+            f"  FDM: {self.sim['simulation/randomseed']} \n" \
+            f"  Atmosphere: {self.sim['atmosphere/randomseed']}"
+        )
 
         # set the atmospehere (wind and turbulences)
         print(f"Last Ep OOB: {self.prev_ep_oob}")
