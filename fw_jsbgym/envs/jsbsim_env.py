@@ -400,30 +400,29 @@ class JSBSimEnv(gym.Env, ABC):
                 turb_severity = 0
                 print("No Turbulence")
             if atmo_options["gust"].get("enable", False): # if gust key in dict
-                if atmo_options["gust"].get("enable", False):
-                    gust_startup_duration_sec = 0.25
-                    gust_steady_duration_sec = 0.5
-                    gust_end_duration_sec = 0.25
-                    gust_frame = 3 # 1: Body frame, 2: Wind frame, 3: inertial NED frame
-                    # gust_frame = 1 # 1: Body frame, 2: Wind frame, 3: inertial NED frame
-                    match severity:
-                        case "off": # no gust
-                            gust_mag_fps = 0
-                            print("No Gust")
-                        case "light": # light gust
-                            gust_mag_fps = 25.2 * 0.9115 # 7 mps = 25.2 kph
-                            print("Light Gust")
-                        case "moderate": # moderate gust
-                            gust_mag_fps = 54 * 0.9115 # 15 mps = 54 kph
-                            print("Moderate Gust")
-                        case "severe":
-                            gust_mag_fps = 82.8 * 0.9115 # 23 mps = 82.8 kph
-                            print("Severe Gust")
-                    self.sim[prp.gust_startup_duration_sec] = gust_startup_duration_sec
-                    self.sim[prp.gust_steady_duration_sec] = gust_steady_duration_sec
-                    self.sim[prp.gust_end_duration_sec] = gust_end_duration_sec
-                    self.sim[prp.gust_mag_fps] = gust_mag_fps # ft/s
-                    self.sim[prp.gust_frame] = gust_frame 
+                gust_startup_duration_sec = 0.25
+                gust_steady_duration_sec = 0.5
+                gust_end_duration_sec = 0.25
+                gust_frame = 3 # 1: Body frame, 2: Wind frame, 3: inertial NED frame
+                # gust_frame = 1 # 1: Body frame, 2: Wind frame, 3: inertial NED frame
+                match severity:
+                    case "off": # no gust
+                        gust_mag_fps = 0
+                        print("No Gust")
+                    case "light": # light gust
+                        gust_mag_fps = 25.2 * 0.9115 # 7 mps = 25.2 kph
+                        print("Light Gust")
+                    case "moderate": # moderate gust
+                        gust_mag_fps = 54 * 0.9115 # 15 mps = 54 kph
+                        print("Moderate Gust")
+                    case "severe":
+                        gust_mag_fps = 82.8 * 0.9115 # 23 mps = 82.8 kph
+                        print("Severe Gust")
+                self.sim[prp.gust_startup_duration_sec] = gust_startup_duration_sec
+                self.sim[prp.gust_steady_duration_sec] = gust_steady_duration_sec
+                self.sim[prp.gust_end_duration_sec] = gust_end_duration_sec
+                self.sim[prp.gust_mag_fps] = gust_mag_fps # ft/s
+                self.sim[prp.gust_frame] = gust_frame 
 
             self.sim[prp.windspeed_north_fps] = wspeed_n
             self.sim[prp.windspeed_east_fps] = wspeed_e
