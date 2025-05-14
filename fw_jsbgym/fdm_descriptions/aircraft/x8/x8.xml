@@ -279,7 +279,7 @@
                 <output>fcs/effective-aileron-pos</output>
             </pure_gain>
 
-            <pure_gain name="normalized-elevator-pos">
+            <pure_gain name="normalized-aileron-pos">
                 <input>fcs/effective-aileron-pos</input>
                 <gain>1.9102196</gain> <!-- so 0.5235rad = 1 -->
                 <output>fcs/effective-aileron-pos-norm</output>
