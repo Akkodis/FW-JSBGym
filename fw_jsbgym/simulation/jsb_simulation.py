@@ -74,14 +74,14 @@ class Simulation(object):
         self.load_run_ic()
 
 
-    def __getitem__(self, prop: Union[prp.Property, prp.HelperProperty, prp.BoundedProperty, prp.BoundedHelperProperty] | str) -> float:
+    def __getitem__(self, prop) -> float:
         if isinstance(prop, str):
             return self.fdm[prop]
         else:
             return self.fdm[prop.name]
 
 
-    def __setitem__(self, prop: Union[prp.Property, prp.HelperProperty, prp.BoundedProperty, prp.BoundedHelperProperty] | str, value) -> None:
+    def __setitem__(self, prop, value) -> None:
         if isinstance(prop, str):
             self.fdm[prop] = value
         else:

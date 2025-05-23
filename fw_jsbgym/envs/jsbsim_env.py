@@ -335,36 +335,35 @@ class JSBSimEnv(gym.Env, ABC):
                         # overwrite wind severity if it's defined in the wind options
                         if atmo_options["wind"].get("wind_severity", False):
                             wind_severity = atmo_options.wind.wind_severity
-                        match wind_severity:
-                            case "off": # no wind
-                                wspeed_n= 0.0
-                                wspeed_e = 0.0
-                                wspeed_d = 0.0
-                                print("No Wind")
-                            case "light": # light wind
-                                wind_vec = wind_dir * 25.2 # 7 mps = 25.2 kph
-                                wspeed_n = wind_vec[0] * 0.9115 # kph to fps
-                                wspeed_e = wind_vec[1] * 0.9115 # kph to fps
-                                wspeed_d = wind_vec[2] * 0.9115 # kph to fps
-                                print("Light Wind")
-                            case "moderate": # moderate wind
-                                wind_vec = wind_dir * 54 # 15 mps = 54 kph
-                                wspeed_n = wind_vec[0] * 0.9115 # kph to fps
-                                wspeed_e = wind_vec[1] * 0.9115 # kph to fps
-                                wspeed_d = wind_vec[2] * 0.9115 # kph to fps
-                                print("Moderate Wind")
-                            case "severe": # strong wind
-                                wind_vec = wind_dir * 82.8 # 23 mps = 82.8 kph
-                                wspeed_n = wind_vec[0] * 0.9115 # kph to fps
-                                wspeed_e = wind_vec[1] * 0.9115 # kph to fps
-                                wspeed_d = wind_vec[2] * 0.9115 # kph to fps
-                                print("Severe Wind")
-                            case windspeed if (isinstance(windspeed, float) or isinstance(windspeed, int)) : # custom wind speed
-                                wind_vec = wind_dir * windspeed
-                                wspeed_n = wind_vec[0] * 0.9115
-                                wspeed_e = wind_vec[1] * 0.9115
-                                wspeed_d = wind_vec[2] * 0.9115
-                                print(f"Custom Wind: wind speed {windspeed} kph")
+                        if wind_severity ==  "off": # no wind
+                            wspeed_n= 0.0
+                            wspeed_e = 0.0
+                            wspeed_d = 0.0
+                            print("No Wind")
+                        if wind_severity ==  "light": # light wind
+                            wind_vec = wind_dir * 25.2 # 7 mps = 25.2 kph
+                            wspeed_n = wind_vec[0] * 0.9115 # kph to fps
+                            wspeed_e = wind_vec[1] * 0.9115 # kph to fps
+                            wspeed_d = wind_vec[2] * 0.9115 # kph to fps
+                            print("Light Wind")
+                        if wind_severity ==  "moderate": # moderate wind
+                            wind_vec = wind_dir * 54 # 15 mps = 54 kph
+                            wspeed_n = wind_vec[0] * 0.9115 # kph to fps
+                            wspeed_e = wind_vec[1] * 0.9115 # kph to fps
+                            wspeed_d = wind_vec[2] * 0.9115 # kph to fps
+                            print("Moderate Wind")
+                        if wind_severity ==  "severe": # strong wind
+                            wind_vec = wind_dir * 82.8 # 23 mps = 82.8 kph
+                            wspeed_n = wind_vec[0] * 0.9115 # kph to fps
+                            wspeed_e = wind_vec[1] * 0.9115 # kph to fps
+                            wspeed_d = wind_vec[2] * 0.9115 # kph to fps
+                            print("Severe Wind")
+                        if (isinstance(wind_severity, float) or isinstance(wind_severity, int)) : # custom wind speed
+                            wind_vec = wind_dir * wind_severity
+                            wspeed_n = wind_vec[0] * 0.9115
+                            wspeed_e = wind_vec[1] * 0.9115
+                            wspeed_d = wind_vec[2] * 0.9115
+                            print(f"Custom Wind: wind speed {wind_severity} kph")
                 else: # if wind is disabled
                     wspeed_n = 0.0
                     wspeed_e = 0.0
@@ -376,27 +375,26 @@ class JSBSimEnv(gym.Env, ABC):
                 wspeed_d = 0.0
                 print("No Wind")
             if atmo_options["turb"].get("enable", False): # if turbulence is enabled
-                match severity:
-                    case "off": # no turbulence
-                        turb_type = 3
-                        turb_w20_fps = 0
-                        turb_severity = 0
-                        print("No Turbulence")
-                    case "light": # light turbulence
-                        turb_type = 3
-                        turb_w20_fps = 25
-                        turb_severity = 3
-                        print("Light Turbulence")
-                    case "moderate": # moderate turbulence
-                        turb_type = 3
-                        turb_w20_fps = 50
-                        turb_severity = 4
-                        print("Moderate Turbulence")
-                    case "severe": # severe turbulence
-                        turb_type = 3
-                        turb_w20_fps = 75
-                        turb_severity = 6
-                        print("Severe Turbulence")
+                if severity == "off": # no turbulence
+                    turb_type = 3
+                    turb_w20_fps = 0
+                    turb_severity = 0
+                    print("No Turbulence")
+                if severity == "light": # light turbulence
+                    turb_type = 3
+                    turb_w20_fps = 25
+                    turb_severity = 3
+                    print("Light Turbulence")
+                if severity == "moderate": # moderate turbulence
+                    turb_type = 3
+                    turb_w20_fps = 50
+                    turb_severity = 4
+                    print("Moderate Turbulence")
+                if severity == "severe": # severe turbulence
+                    turb_type = 3
+                    turb_w20_fps = 75
+                    turb_severity = 6
+                    print("Severe Turbulence")
             else: # if turbulence is disabled
                 turb_type = 3
                 turb_w20_fps = 0
@@ -408,19 +406,18 @@ class JSBSimEnv(gym.Env, ABC):
                 gust_end_duration_sec = 0.25
                 gust_frame = 3 # 1: Body frame, 2: Wind frame, 3: inertial NED frame
                 # gust_frame = 1 # 1: Body frame, 2: Wind frame, 3: inertial NED frame
-                match severity:
-                    case "off": # no gust
-                        gust_mag_fps = 0
-                        print("No Gust")
-                    case "light": # light gust
-                        gust_mag_fps = 25.2 * 0.9115 # 7 mps = 25.2 kph
-                        print("Light Gust")
-                    case "moderate": # moderate gust
-                        gust_mag_fps = 54 * 0.9115 # 15 mps = 54 kph
-                        print("Moderate Gust")
-                    case "severe":
-                        gust_mag_fps = 82.8 * 0.9115 # 23 mps = 82.8 kph
-                        print("Severe Gust")
+                if severity == "off": # no gust
+                    gust_mag_fps = 0
+                    print("No Gust")
+                if severity == "light": # light gust
+                    gust_mag_fps = 25.2 * 0.9115 # 7 mps = 25.2 kph
+                    print("Light Gust")
+                if severity == "moderate": # moderate gust
+                    gust_mag_fps = 54 * 0.9115 # 15 mps = 54 kph
+                    print("Moderate Gust")
+                if severity == "severe":
+                    gust_mag_fps = 82.8 * 0.9115 # 23 mps = 82.8 kph
+                    print("Severe Gust")
                 self.sim[prp.gust_startup_duration_sec] = gust_startup_duration_sec
                 self.sim[prp.gust_steady_duration_sec] = gust_steady_duration_sec
                 self.sim[prp.gust_end_duration_sec] = gust_end_duration_sec
