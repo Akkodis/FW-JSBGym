@@ -650,7 +650,8 @@ class CourseAltTracking(WaypointTrackingENU):
             prp.att_qx, prp.att_qy, prp.att_qz, prp.att_qw, # attitude quaternion
             prp.p_radps, prp.q_radps, prp.r_radps, # angular rates
             prp.alpha_rad, prp.beta_rad, # angle of attack, sideslip
-            prp.aileron_cmd, prp.elevator_cmd, prp.throttle_cmd # last action
+            # prp.aileron_cmd, prp.elevator_cmd, prp.throttle_cmd # last action
+            prp.aileron_combined_pos_norm, prp.elevator_pos_norm, prp.throttle_pos # actuator positions
         )
 
         self.action_prps = (
