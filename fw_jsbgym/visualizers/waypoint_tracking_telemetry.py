@@ -127,7 +127,7 @@ def animate(i, axis, tele_file) -> None:
         # axis[0, 1].grid()
 
         axis[0, 2].plot(tsteps, airspeed, label='airspeed' if not np.isnan(np.sum(airspeed)) else '')
-        axis[0, 2].plot(tsteps, airspeed_ref, color='r', linestyle='--', label='airspeed_ref' if not np.isnan(np.sum(airspeed_ref)) else '')
+        axis[0, 2].plot(tsteps, airspeed_ref, color='r', linestyle='--', label='airspeed 60 kph' if not np.isnan(np.sum(airspeed_ref)) else '')
         axis[0, 2].set_title('airspeed control')
         # axis[0, 2].set_xlabel("timestep")
         axis[0, 2].set_ylabel("airspeed [km/h]")
@@ -160,7 +160,7 @@ def animate(i, axis, tele_file) -> None:
 
         axis[1, 2].plot(tsteps[2:], r_dist[2:], label='r_distance' if not np.isnan(np.sum(r_dist)) else '')
         axis[1, 2].plot(tsteps[2:], r_progress[2:], label='r_progress' if not np.isnan(np.sum(r_progress)) else '')
-        axis[1, 2].plot(tsteps[2:], r_airspeed[2:], label='r_airspeed' if not np.isnan(np.sum(r_airspeed)) else '')
+        # axis[1, 2].plot(tsteps[2:], r_airspeed[2:], label='r_airspeed' if not np.isnan(np.sum(r_airspeed)) else '')
         axis[1, 2].plot(tsteps[2:], r_actvar[2:], label='r_actvar' if not np.isnan(np.sum(r_actvar)) else '')
         axis[1, 2].plot(tsteps[2:], r_enu_e[2:], label='r_enu_e' if not np.isnan(np.sum(r_enu_e)) else '')
         axis[1, 2].plot(tsteps[2:], r_enu_n[2:], label='r_enu_n' if not np.isnan(np.sum(r_enu_n)) else '')
