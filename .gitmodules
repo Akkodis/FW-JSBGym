@@ -1,0 +1,3 @@
+[submodule "external/dubins_path_planning"]
+	path = external/dubins_path_planning
+	url = git@github.com:Dobid/dubins_path_planning.git
