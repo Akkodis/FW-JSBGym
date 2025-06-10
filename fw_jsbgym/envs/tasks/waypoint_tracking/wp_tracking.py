@@ -732,11 +732,11 @@ class CourseAltTracking(WaypointTrackingENU):
         """
         target_enu_e_m, target_enu_n_m, target_enu_u_m = target
         if np.any(target != [self.prev_target_x, self.prev_target_y, self.prev_target_z]):
-            print("-- SETTING TARGET --")
+            print("\t-- SETTING TARGET --")
             # Convert waypoint coordinates to path tracking parameters
             wp_path_course_rad, wp_path_alt_m = conversions.wpENU_to_wpCourseAlt(target).flatten()
-            print(f"Target (ENU) x: {target_enu_e_m:.3f} y: {target_enu_n_m:.3f} z: {target_enu_u_m:.3f}")
-            print(f"Target Course: {wp_path_course_rad:.3f} Altitude: {wp_path_alt_m:.3f}")
+            print(f"\tTarget (ENU) x: {target_enu_e_m:.3f} y: {target_enu_n_m:.3f} z: {target_enu_u_m:.3f}")
+            print(f"\tTarget Course: {wp_path_course_rad:.3f} Altitude: {wp_path_alt_m:.3f}")
 
             self.sim[prp.wp_course_rad] = wp_path_course_rad
             self.sim[prp.target_altitude_m] = wp_path_alt_m

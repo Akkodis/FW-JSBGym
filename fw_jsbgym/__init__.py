@@ -160,3 +160,8 @@ gymnasium.register(
     id='AltitudeTracking-v0',
     entry_point='fw_jsbgym.envs.tasks.waypoint_tracking.wp_tracking:AltitudeTracking'
 )
+
+gymnasium.register(
+    id='DubinsPathTracking-v0',
+    entry_point='fw_jsbgym.envs.tasks.waypoint_tracking.dubins_path_tracking:DubinsPathTracking'
+)

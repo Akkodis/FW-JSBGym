@@ -308,10 +308,14 @@ ecef_x_err_km = BoundedHelperProperty("error/ecef-x-err-km", "ECEF x error [km]"
 ecef_y_err_km = BoundedHelperProperty("error/ecef-y-err-km", "ECEF y error [km]", float('-inf'), float('+inf'))
 ecef_z_err_km = BoundedHelperProperty("error/ecef-z-err-km", "ECEF z error [km]", float('-inf'), float('+inf'))
 dist_to_target_m = BoundedHelperProperty("error/distance-to-target-m", "distance to target [m]", float('-inf'), float('+inf'))
+dist_to_final_target_m = BoundedHelperProperty("error/distance-to-final-target-m", "distance to final target [m]", float('-inf'), float('+inf'))
 
 enu_e_err_m = BoundedHelperProperty("error/enu-e-err-m", "ENU x error [m]", float('-inf'), float('+inf'))
 enu_n_err_m = BoundedHelperProperty("error/enu-n-err-m", "ENU y error [m]", float('-inf'), float('+inf'))
 enu_u_err_m = BoundedHelperProperty("error/enu-u-err-m", "ENU z error [m]", float('-inf'), float('+inf'))
+enu_e_final_err_m = BoundedHelperProperty("error/final-enu-e-err-m", "final target ENU x error [m]", float('-inf'), float('+inf'))
+enu_n_final_err_m = BoundedHelperProperty("error/final-enu-n-err-m", "final target ENU y error [m]", float('-inf'), float('+inf'))
+enu_u_final_err_m = BoundedHelperProperty("error/final-enu-u-err-m", "final target ENU z error [m]", float('-inf'), float('+inf'))
 
 # targets: lat, lon, alt
 target_lat_deg = BoundedProperty("target/lat-deg", "desired latitude [deg]", -90, 90)
@@ -330,6 +334,10 @@ target_ecef_z_km = BoundedProperty("target/ecef-z-km", "desired ECEF z [km]", fl
 target_enu_e_m = BoundedProperty("target/enu-e-m", "desired ENU x [m]", float('-inf'), float('+inf'))
 target_enu_n_m = BoundedProperty("target/enu-n-m", "desired ENU y [m]", float('-inf'), float('+inf'))
 target_enu_u_m = BoundedProperty("target/enu-u-m", "desired ENU z [m]", float('-inf'), float('+inf'))
+
+final_target_enu_e_m = BoundedProperty("target/final-enu-e-m", "final target ENU x [m]", float('-inf'), float('+inf'))
+final_target_enu_n_m = BoundedProperty("target/final-enu-n-m", "final target ENU y [m]", float('-inf'), float('+inf'))
+final_target_enu_u_m = BoundedProperty("target/final-enu-u-m", "final target ENU z [m]", float('-inf'), float('+inf'))
 
 # reward properties
 reward_latitude = BoundedProperty("reward/latitude", "latitude reward", 0, float('+inf'))
