@@ -168,3 +168,29 @@ def wpENU_to_wpCourseAlt(target_enu):
     altitude_target = target_enu[2]
     path_targets = np.array([course_target, altitude_target])
     return path_targets
+
+
+def angle_rad_wrap_to_pi(angle_rad):
+    """
+    Wraps an angle in radians to the range [-π, π].
+    
+    Parameters:
+        angle_rad (float): Angle in radians.
+        
+    Returns:
+        float: Wrapped angle in radians.
+    """
+    return (angle_rad + np.pi) % (2 * np.pi) - np.pi
+
+
+def angle_rad_wrap_to_2pi(angle_rad):
+    """
+    Wraps an angle in radians to the range [0, 2π].
+    
+    Parameters:
+        angle_rad (float): Angle in radians.
+        
+    Returns:
+        float: Wrapped angle in radians.
+    """
+    return angle_rad % (2 * np.pi)

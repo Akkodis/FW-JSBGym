@@ -162,6 +162,11 @@ gymnasium.register(
 )
 
 gymnasium.register(
-    id='DubinsPathTracking-v0',
-    entry_point='fw_jsbgym.envs.tasks.waypoint_tracking.dubins_path_tracking:DubinsPathTracking'
+    id='DubinsPathTrackingv0-v0',
+    entry_point='fw_jsbgym.envs.tasks.waypoint_tracking.dubins_path_tracking:DubinsPathTrackingv0'
+)
+
+gymnasium.register(
+    id='DubinsPathTrackingv1-v0',
+    entry_point='fw_jsbgym.envs.tasks.waypoint_tracking.dubins_path_tracking:DubinsPathTrackingv1'
 )

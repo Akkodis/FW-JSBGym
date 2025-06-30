@@ -46,7 +46,8 @@ heading_deg = BoundedProperty('attitude/psi-deg', 'heading [deg]', 0, 360)
 phi_rad = BoundedProperty('attitude/phi-rad', 'phi [rad]', -math.pi, math.pi)
 theta_rad = BoundedProperty('attitude/theta-rad', 'theta [rad]', -math.pi, math.pi)
 psi_rad = BoundedProperty('attitude/psi-rad', 'psi [rad]', -math.pi, math.pi)
-flight_path_rad: float = BoundedProperty('flight-path/psi-gt-rad', 'flight path angle [rad]', -math.pi, math.pi)
+flight_path_rad = BoundedProperty('flight-path/psi-gt-rad', 'flight path angle [rad]', 0, 2*math.pi)
+flightpath_gamma_rad = BoundedProperty('flight-path/gamma-rad', 'flight path angle [rad]', -math.pi, math.pi)
 sideslip_deg = BoundedProperty('aero/beta-deg', 'sideslip [deg]', -180, +180)
 lat_gc_deg = BoundedProperty('position/lat-gc-deg', 'geocentric latitude [deg]', -180, 180)
 lng_gc_deg = BoundedProperty('position/long-gc-deg', 'geocentric longitude [deg]', -180, 180)
@@ -338,6 +339,11 @@ target_enu_u_m = BoundedProperty("target/enu-u-m", "desired ENU z [m]", float('-
 final_target_enu_e_m = BoundedProperty("target/final-enu-e-m", "final target ENU x [m]", float('-inf'), float('+inf'))
 final_target_enu_n_m = BoundedProperty("target/final-enu-n-m", "final target ENU y [m]", float('-inf'), float('+inf'))
 final_target_enu_u_m = BoundedProperty("target/final-enu-u-m", "final target ENU z [m]", float('-inf'), float('+inf'))
+
+dubins_target_course_rad = BoundedProperty("target/dubins-target-course-rad", "dubins target course angle [rad]", -math.pi, math.pi)
+dubins_target_flightpath_rad = BoundedProperty("target/dubins-target-flightpath-rad", "dubins target flightpath angle [rad]", -math.pi, math.pi)
+dubins_target_course_err = BoundedProperty("error/dubins-target-course-err-rad", "dubins target course error [rad]", -2*math.pi, 2*math.pi)
+dubins_target_flightpath_err = BoundedProperty("error/dubins-target-flightpath-err-m", "dubins target flightpath error [rad]", -2*math.pi, 2*math.pi)
 
 # reward properties
 reward_latitude = BoundedProperty("reward/latitude", "latitude reward", 0, float('+inf'))
