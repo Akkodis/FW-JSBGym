@@ -425,9 +425,10 @@
                 <product>
                     <property>aero/qbar-area</property>
                     <!-- <property>aero/alpha-rad</property> -->
+                    <!-- <property>aero/stab-coef/CDalpha</property> -->
                     <table>
                         <independentVar lookup="row">aero/alpha-rad</independentVar>
-                        <tableData>
+                        <!-- <tableData>
                             -1.5702    2.1255
                             -1.4497    1.8147
                             -1.2088    1.2558
@@ -442,6 +443,18 @@
                              1.1952    1.3060
                              1.3681    1.7173
                              1.5723    2.2448
+                        </tableData> -->
+                        <tableData>
+                            -0.5235    0.24157882  
+                            -0.4071    0.15065182
+                            -0.2908    0.08356223
+                            -0.1745    0.04030362
+                            -0.0581    0.02088696
+                            0.0581     0.0253051
+                            0.1745     0.05356137
+                            0.2908     0.10565625
+                            0.4071     0.18158545
+                            0.5235     0.28134915
                         </tableData>
                     </table>
                 </product>
