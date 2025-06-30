@@ -206,6 +206,7 @@ class WaypointTracking(JSBSimTask):
         """
         self.target_reached = False
         if self.dist_to_target < 3:
+        # if self.dist_to_target < 5:
             print(f"Target Reached! @ step : {self.sim[self.current_step]}")
             # resets the missed sphere flag since the target was reached and the episode is about to end
             self.in_missed_sphere = False
@@ -736,7 +737,7 @@ class CourseAltTracking(WaypointTrackingENU):
             # Convert waypoint coordinates to path tracking parameters
             wp_path_course_rad, wp_path_alt_m = conversions.wpENU_to_wpCourseAlt(target).flatten()
             print(f"\tTarget (ENU) x: {target_enu_e_m:.3f} y: {target_enu_n_m:.3f} z: {target_enu_u_m:.3f}")
-            print(f"\tTarget Course: {wp_path_course_rad:.3f} Altitude: {wp_path_alt_m:.3f}")
+            print(f"\tCourse (Init/Target): {wp_path_course_rad:.3f} Altitude: {wp_path_alt_m:.3f}")
 
             self.sim[prp.wp_course_rad] = wp_path_course_rad
             self.sim[prp.target_altitude_m] = wp_path_alt_m
