@@ -345,6 +345,10 @@ dubins_target_flightpath_rad = BoundedProperty("target/dubins-target-flightpath-
 dubins_target_course_err = BoundedProperty("error/dubins-target-course-err-rad", "dubins target course error [rad]", -2*math.pi, 2*math.pi)
 dubins_target_flightpath_err = BoundedProperty("error/dubins-target-flightpath-err-m", "dubins target flightpath error [rad]", -2*math.pi, 2*math.pi)
 
+reward_target_course = BoundedProperty("reward/target-course", "target course reward", 0, float('+inf'))
+reward_target_flightpath = BoundedProperty("reward/target-flightpath", "target flightpath reward", 0, float('+inf'))
+is_last_dubins_point = BoundedProperty("target/is-last-dubins-point", "is last dubins point [bool]", 0, 1)
+
 # reward properties
 reward_latitude = BoundedProperty("reward/latitude", "latitude reward", 0, float('+inf'))
 reward_ecef_x = BoundedProperty("reward/ecef-x", "ECEF x reward", 0, float('+inf'))

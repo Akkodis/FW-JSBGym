@@ -142,7 +142,7 @@ class DubinsPathTrackingv0(CourseAltTracking):
             Returns True if the distance to the target is less than 3 meters.
         """
         self.target_reached = False
-        if self.dist_to_final_target < 3:
+        if self.dist_to_final_target < self.task_cfg.mdp.final_target_missed_dist:
             print(f"Target Reached! @ step : {self.sim[self.current_step]}")
             # resets the missed sphere flag since the target was reached and the episode is about to end
             self.in_missed_sphere = False
@@ -157,10 +157,10 @@ class DubinsPathTrackingv0(CourseAltTracking):
         # in -> out of the missed sphere is set to False by default
         self.inout_missed_sphere = False
         # UAV enters some sphere around the target
-        if self.dist_to_final_target < 10.0:
+        if self.dist_to_final_target < self.task_cfg.mdp.final_target_missed_dist:
             self.in_missed_sphere = True
         # UAV exits the sphere
-        if self.in_missed_sphere and self.dist_to_final_target > 10.0:
+        if self.in_missed_sphere and (self.dist_to_final_target > self.task_cfg.mdp.final_target_missed_dist):
             self.in_missed_sphere = False
             self.inout_missed_sphere = True
             print(f"Target Missed! @ step : {self.sim[self.current_step]}")
@@ -274,3 +274,198 @@ class DubinsPathTrackingv1(DubinsPathTrackingv0):
         self.sim[prp.dubins_target_course_err] = self.sim[prp.dubins_target_course_rad] - self.sim[prp.course_rad]
         self.sim[prp.dubins_target_flightpath_err] = self.sim[prp.dubins_target_flightpath_rad] - self.sim[prp.flightpath_gamma_rad]
         super().update_errors(first_err)
+
+
+class DubinsPathTrackingIndep(DubinsPathTrackingv1):
+    """
+        Task for tracking a sequence of Dubins paths. 
+        Particularity here is that we give the next goal as:
+        [pos_x, pos_y, pos_z, goal_course_rad, goal_flightpath_rad]
+        where pos_x, pos_y, pos_z are the ENU coordinates of the goal.
+        Reward is based on the distance to the goal (instead of the UAV-to-goal course error) + Error 
+    """
+    def __init__(self, cfg_env: DictConfig, telemetry_file: str='', render_mode: str='none') -> None:
+        super().__init__(cfg_env=cfg_env, telemetry_file=telemetry_file, render_mode=render_mode)
+
+        self.task_cfg: DictConfig = cfg_env.task
+
+        self.state_prps = (
+            prp.enu_e_err_m, prp.enu_n_err_m, prp.enu_u_err_m,  # ENU position errors to next waypoint
+            prp.airspeed_kph,  # Airspeed
+            prp.course_rad, prp.flightpath_gamma_rad,  # Course and flight path
+            prp.u_kph, prp.v_kph, prp.w_kph,  # Velocity in ENU coordinates
+            prp.att_qx, prp.att_qy, prp.att_qz, prp.att_qw,  # Attitude quaternion
+            prp.p_radps, prp.q_radps, prp.r_radps,  # Angular rates
+            prp.alpha_rad, prp.beta_rad,  # Angle of attack and sideslip
+            prp.aileron_combined_pos_norm, prp.elevator_pos_norm, prp.throttle_pos, # actuator positions
+            prp.dubins_target_course_err, prp.dubins_target_flightpath_err,  # Dubins target course and flight path errors
+        )
+
+        # self.state_prps = (
+        #     prp.course_err_rad, # course error
+        #     prp.altitude_err_m, # altitude error
+        #     prp.airspeed_kph, # airspeed
+        #     prp.course_rad,
+        #     prp.u_fps, prp.v_fps, prp.w_fps, # velocity
+        #     prp.att_qx, prp.att_qy, prp.att_qz, prp.att_qw, # attitude quaternion
+        #     prp.p_radps, prp.q_radps, prp.r_radps, # angular rates
+        #     prp.alpha_rad, prp.beta_rad, # angle of attack, sideslip
+        #     prp.aileron_combined_pos_norm, prp.elevator_pos_norm, prp.throttle_pos, # actuator positions
+        #     prp.dubins_target_course_err, prp.dubins_target_flightpath_err, # Dubins intermediate target errors (course and flight path angle errors)
+        # ) 
+
+        # self.action_prps = ()
+
+        self.target_prps = (
+            prp.target_enu_e_m, prp.target_enu_n_m, prp.target_enu_u_m, # target position in ENU
+            prp.dubins_target_course_rad,  # Target course angle in radians
+            prp.dubins_target_flightpath_rad,  # Target flight path angle in
+        )
+        
+        # self.target_enu_prps = ()
+
+        self.error_prps = (
+            prp.enu_e_err_m, prp.enu_n_err_m, prp.enu_u_err_m, # position error
+            prp.dubins_target_course_err, prp.dubins_target_flightpath_err,  # Dubins target course and flight path errors
+        )
+
+        self.reward_prps = (
+            prp.reward_total,
+            prp.reward_enu_e, prp.reward_enu_n, prp.reward_enu_u, 
+            prp.reward_target_course, prp.reward_target_flightpath,  # Rewards for target course and flight path
+            prp.dist_to_target_m,
+        )
+
+        # telemetry properties are an addition of the common telemetry properties, target properties and error properties
+        self.telemetry_prps = self.common_telemetry_prps  + self.target_prps \
+                            + self.error_prps + self.reward_prps
+
+        self.action_space = self.get_action_space()
+        self.observation_space = self.get_observation_space()
+
+        self.prev_dubins_target_course_rad = 0.0
+        self.prev_dubins_target_flightpath_rad = 0.0
+        self.dist_to_curr_dubins_pt = 1000  # Initialize with a large distance
+
+        if self.jsbsim_cfg.debug:
+            self.print_MDP_info()
+        self.telemetry_setup(self.telemetry_file)
+
+
+    def set_dubins_target(self):
+        # Computes the distance to the current Dubins point and prints it
+        current_pos_enu = np.array([self.sim[prp.enu_e_m], self.sim[prp.enu_n_m], self.sim[prp.enu_u_m]])
+        dist_to_curr_dubins_pt = np.sqrt(np.sum((current_pos_enu - self.dubins_points[self.dubins_pt_idx, :3]) ** 2))
+
+        # Sets the Dubins point as the single target state of a CourseAltTracking (parent) task
+        print(f"Tracking Dubins point {self.dubins_pt_idx+1}/{len(self.dubins_points)} @ dist: {dist_to_curr_dubins_pt:.3f} m")
+        super(DubinsPathTrackingv0, self).set_target_state(self.dubins_points[self.dubins_pt_idx, :3])
+
+        # Sets the target course and flight path angle from the Dubins points
+        self.sim[prp.dubins_target_course_rad] = self.dubins_points[self.dubins_pt_idx, 3]  # Set the target course from the Dubins points
+        self.sim[prp.dubins_target_flightpath_rad] = self.dubins_points[self.dubins_pt_idx, 4]  # Set the target flight path angle from the Dubins points
+        print(f"\tDubins Constraints: \n\t\t Course {self.sim[prp.dubins_target_course_rad]:.3f} rad, Flight Path: {self.sim[prp.dubins_target_flightpath_rad]:.3f} rad")
+
+
+    def set_target_state(self, target):
+        """
+            Sets the target state for the environment
+            :param target: Final target state as a numpy array [x, y, z] (ENU coordinates)
+        """
+        if np.all(target == [0, 0, 600]): # if target is the initial state
+            super().set_target_state(target)
+            return
+        elif np.any(target != [self.prev_final_target_x, self.prev_final_target_y, self.prev_final_target_z]):
+            print(f"New final target: ({target[0]:.3f}, {target[1]:.3f}, {target[2]:.3f})")
+            # compute intermediary Dubins path points
+            self.dubins_points = self.compute_dubins_path(target)[1:] # Skip the first point, which is the initial state
+            print(f"Last Dubins point: {self.dubins_points[-1]}")
+            self.set_dubins_target()
+
+        # Changing to next dubins point, if we have reached the current one
+        # (small enough 3D xyz distance AND course/flightpath errors)
+        if self.is_dubins_reached():
+            if self.dubins_pt_idx < len(self.dubins_points) - 1:
+                self.dubins_pt_idx += 1
+
+            self.sim[prp.final_target_enu_e_m] = target[0]
+            self.sim[prp.final_target_enu_n_m] = target[1]
+            self.sim[prp.final_target_enu_u_m] = target[2]
+            self.set_dubins_target()
+
+        self.prev_final_target_x = target[0]
+        self.prev_final_target_y = target[1]
+        self.prev_final_target_z = target[2]
+
+
+    def is_dubins_reached(self):
+        curr_pos_enu = np.array([self.sim[prp.enu_e_m], self.sim[prp.enu_n_m], self.sim[prp.enu_u_m]])
+        current_dubins_pt = self.dubins_points[self.dubins_pt_idx]
+        self.dist_to_curr_dubins_pt = np.sqrt(np.sum((curr_pos_enu - current_dubins_pt[:3]) ** 2))
+
+        # True if the dubins target is reached (meets distance and course/flight path angle errors constraints)
+        is_dubins_target_reached = (self.dist_to_curr_dubins_pt < self.task_cfg.mdp.dub_switch_dist) and \
+        (np.abs(self.sim[prp.dubins_target_course_err]) < self.task_cfg.mdp.dub_switch_course) and \
+        (np.abs(self.sim[prp.dubins_target_flightpath_err]) < self.task_cfg.mdp.dub_switch_flightpath)
+        return is_dubins_target_reached
+
+
+    def is_waypoint_reached(self):
+        """
+            Returns True if the distance to the current dubins target is less than 3 meters.
+        """
+        self.target_reached = False
+        # True if the final target is reached (we're at the last dubins point)
+        self.sim[prp.is_last_dubins_point] = int(self.dubins_pt_idx == len(self.dubins_points) - 1)
+
+        if self.sim[prp.is_last_dubins_point] and self.is_dubins_reached():
+            # If the last dubins point is reached, we consider the target reached
+            print(f"\tFinal Target Reached! @ step : {self.sim[self.current_step]}")
+            self.in_missed_sphere = False
+            self.target_reached = True
+        elif self.is_dubins_reached():
+            print(f"\tDubins Target Reached! @ step : {self.sim[self.current_step]}\n"
+                  f"\t\tDist to Dubins point: {self.dist_to_curr_dubins_pt:.3f} m\n"
+                  f"\t\tCourse Error: {self.sim[prp.dubins_target_course_err]:.3f} rad\n"
+                  f"\t\tFlight Path Error: {self.sim[prp.dubins_target_flightpath_err]:.3f} rad")
+            # resets the missed sphere flag since the target was reached and the episode is about to end
+            self.in_missed_sphere = False
+            self.target_reached = True
+
+        return self.target_reached
+
+
+    def is_waypoint_missed(self):
+        """
+            Returns True if the UAV missed the current dubins target.
+        """
+        # in -> out of the missed sphere is set to False by default
+        self.inout_missed_sphere = False
+        return self.inout_missed_sphere
+
+
+    def get_reward(self, action) -> float:
+        assert self.task_cfg.reward.name == "wp_dubins_indep"
+        r_w: dict = self.task_cfg.reward.weights
+
+        x_abs_err = np.abs(self.sim[prp.enu_e_err_m])
+        y_abs_err = np.abs(self.sim[prp.enu_n_err_m])
+        z_abs_err = np.abs(self.sim[prp.enu_u_err_m])
+        course_err_at_target = np.abs(self.sim[prp.dubins_target_course_err])
+        flightpath_err_at_target = np.abs(self.sim[prp.dubins_target_flightpath_err])
+
+        r_x = r_w["r_x"]["c_x"] * np.clip(x_abs_err / r_w["r_x"]["max_x"], 0, 1)
+        r_y = r_w["r_y"]["c_y"] * np.clip(y_abs_err / r_w["r_y"]["max_y"], 0, 1)
+        r_z = r_w["r_z"]["c_z"] * np.clip(z_abs_err / r_w["r_z"]["max_z"], 0, 1)
+        r_course = r_w["r_course"]["c_course"] * np.clip(course_err_at_target / r_w["r_course"]["max_course"], 0, 1)
+        r_flightpath = r_w["r_flightpath"]["c_flightpath"] * np.clip(flightpath_err_at_target / r_w["r_flightpath"]["max_flightpath"], 0, 1)
+
+        self.sim[prp.reward_enu_e] = r_x
+        self.sim[prp.reward_enu_n] = r_y
+        self.sim[prp.reward_enu_u] = r_z
+        self.sim[prp.reward_target_course] = r_course
+        self.sim[prp.reward_target_flightpath] = r_flightpath
+
+        r_total = -(r_x + r_y + r_z + r_course + r_flightpath)
+        self.sim[prp.reward_total] = r_total
+        return r_total
