@@ -142,7 +142,7 @@ class DubinsPathTrackingv0(CourseAltTracking):
             Returns True if the distance to the target is less than 3 meters.
         """
         self.target_reached = False
-        if self.dist_to_final_target < self.task_cfg.mdp.final_target_missed_dist:
+        if self.dist_to_final_target < self.task_cfg.mdp.final_target_reached_dist:
             print(f"Target Reached! @ step : {self.sim[self.current_step]}")
             # resets the missed sphere flag since the target was reached and the episode is about to end
             self.in_missed_sphere = False
@@ -445,27 +445,34 @@ class DubinsPathTrackingIndep(DubinsPathTrackingv1):
 
 
     def get_reward(self, action) -> float:
-        assert self.task_cfg.reward.name == "wp_dubins_indep"
+        assert self.task_cfg.reward.name == "wp_dubins_indep_dense" or self.task_cfg.reward.name == "wp_dubins_indep_sparse"
         r_w: dict = self.task_cfg.reward.weights
 
-        x_abs_err = np.abs(self.sim[prp.enu_e_err_m])
-        y_abs_err = np.abs(self.sim[prp.enu_n_err_m])
-        z_abs_err = np.abs(self.sim[prp.enu_u_err_m])
-        course_err_at_target = np.abs(self.sim[prp.dubins_target_course_err])
-        flightpath_err_at_target = np.abs(self.sim[prp.dubins_target_flightpath_err])
+        if self.task_cfg.reward.name == "wp_dubins_indep_dense":
+            x_abs_err = np.abs(self.sim[prp.enu_e_err_m])
+            y_abs_err = np.abs(self.sim[prp.enu_n_err_m])
+            z_abs_err = np.abs(self.sim[prp.enu_u_err_m])
+            course_err_at_target = np.abs(self.sim[prp.dubins_target_course_err])
+            flightpath_err_at_target = np.abs(self.sim[prp.dubins_target_flightpath_err])
 
-        r_x = r_w["r_x"]["c_x"] * np.clip(x_abs_err / r_w["r_x"]["max_x"], 0, 1)
-        r_y = r_w["r_y"]["c_y"] * np.clip(y_abs_err / r_w["r_y"]["max_y"], 0, 1)
-        r_z = r_w["r_z"]["c_z"] * np.clip(z_abs_err / r_w["r_z"]["max_z"], 0, 1)
-        r_course = r_w["r_course"]["c_course"] * np.clip(course_err_at_target / r_w["r_course"]["max_course"], 0, 1)
-        r_flightpath = r_w["r_flightpath"]["c_flightpath"] * np.clip(flightpath_err_at_target / r_w["r_flightpath"]["max_flightpath"], 0, 1)
+            r_x = r_w["r_x"]["c_x"] * np.clip(x_abs_err / r_w["r_x"]["max_x"], 0, 1)
+            r_y = r_w["r_y"]["c_y"] * np.clip(y_abs_err / r_w["r_y"]["max_y"], 0, 1)
+            r_z = r_w["r_z"]["c_z"] * np.clip(z_abs_err / r_w["r_z"]["max_z"], 0, 1)
+            r_course = r_w["r_course"]["c_course"] * np.clip(course_err_at_target / r_w["r_course"]["max_course"], 0, 1)
+            r_flightpath = r_w["r_flightpath"]["c_flightpath"] * np.clip(flightpath_err_at_target / r_w["r_flightpath"]["max_flightpath"], 0, 1)
 
-        self.sim[prp.reward_enu_e] = r_x
-        self.sim[prp.reward_enu_n] = r_y
-        self.sim[prp.reward_enu_u] = r_z
-        self.sim[prp.reward_target_course] = r_course
-        self.sim[prp.reward_target_flightpath] = r_flightpath
+            self.sim[prp.reward_enu_e] = r_x
+            self.sim[prp.reward_enu_n] = r_y
+            self.sim[prp.reward_enu_u] = r_z
+            self.sim[prp.reward_target_course] = r_course
+            self.sim[prp.reward_target_flightpath] = r_flightpath
 
-        r_total = -(r_x + r_y + r_z + r_course + r_flightpath)
-        self.sim[prp.reward_total] = r_total
+            r_total = -(r_x + r_y + r_z + r_course + r_flightpath)
+            self.sim[prp.reward_total] = r_total
+        elif self.task_cfg.reward.name == "wp_dubins_indep_sparse":
+            if self.is_dubins_reached():
+                r_total = r_w["wp_reached"]
+                self.sim[prp.reward_total] = r_total
+                self.sim[prp.dist_to_target_m] = 0.0
+
         return r_total
