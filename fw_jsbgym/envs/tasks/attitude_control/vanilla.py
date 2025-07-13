@@ -32,7 +32,7 @@ class ACVanillaTask(ACBohnNoVaTask):
         self.action_space = self.get_action_space()
         self.observation_space = self.get_observation_space()
 
-        self.init()
+        
         self.telemetry_setup(self.telemetry_file)
 
 
@@ -56,7 +56,7 @@ class ACVanillaYawTask(ACVanillaTask):
         self.action_space = self.get_action_space()
         self.observation_space = self.get_observation_space()
 
-        self.init()
+        
         self.telemetry_setup(self.telemetry_file)
 
 class ACVanillaActTask(ACVanillaTask):
@@ -73,7 +73,7 @@ class ACVanillaActTask(ACVanillaTask):
         self.action_space = self.get_action_space()
         self.observation_space = self.get_observation_space()
 
-        self.init()
+        
         self.telemetry_setup(self.telemetry_file)
 
 
@@ -91,7 +91,7 @@ class ACVanillaAlphaTask(ACVanillaTask):
         self.action_space = self.get_action_space()
         self.observation_space = self.get_observation_space()
 
-        self.init()
+        
         self.telemetry_setup(self.telemetry_file)
 
 
@@ -109,7 +109,7 @@ class ACVanillaBetaTask(ACVanillaTask):
         self.action_space = self.get_action_space()
         self.observation_space = self.get_observation_space()
 
-        self.init()
+        
         self.telemetry_setup(self.telemetry_file)
 
 
@@ -127,7 +127,7 @@ class ACVanillaAlphaBetaTask(ACVanillaTask):
         self.action_space = self.get_action_space()
         self.observation_space = self.get_observation_space()
 
-        self.init()
+        
         self.telemetry_setup(self.telemetry_file)
 
 
@@ -161,7 +161,7 @@ class ACVanillaThrTask(ACBohnNoVaTask):
         self.action_space = self.get_action_space()
         self.observation_space = self.get_observation_space()
 
-        self.init()
+        
         self.telemetry_setup(self.telemetry_file)
 
 
@@ -194,7 +194,7 @@ class ACVanillaIErrTask(ACBohnNoVaIErrTask):
         self.action_space = self.get_action_space()
         self.observation_space = self.get_observation_space()
 
-        self.init()
+        
         self.telemetry_setup(self.telemetry_file)
 
 
@@ -215,7 +215,7 @@ class ACVanillaActIErrTask(ACVanillaIErrTask):
         self.action_space = self.get_action_space()
         self.observation_space = self.get_observation_space()
 
-        self.init()
+        
         self.telemetry_setup(self.telemetry_file)
 
 
@@ -236,7 +236,7 @@ class ACVanillaActIErrAlphaTask(ACVanillaActIErrTask):
         self.action_space = self.get_action_space()
         self.observation_space = self.get_observation_space()
 
-        self.init()
+        
         self.telemetry_setup(self.telemetry_file)
 
 
@@ -257,6 +257,6 @@ class ACVanillaActIErrBetaTask(ACVanillaActIErrTask):
         self.action_space = self.get_action_space()
         self.observation_space = self.get_observation_space()
 
-        self.init()
+        
         self.telemetry_setup(self.telemetry_file)
 

@@ -76,7 +76,7 @@ class ACBohnNoVaTask(ACBohnTask):
         self.action_space = self.get_action_space()
         self.observation_space = self.get_observation_space()
 
-        self.init()
+        # 
         self.telemetry_setup(self.telemetry_file)
 
         self.prev_target_roll: float = 0.0
@@ -96,7 +96,7 @@ class ACBohnNoVaTask(ACBohnTask):
         self.sim[prp.throttle_cmd] = throttle_cmd
 
 
-    def update_errors(self) -> None:
+    def update_errors(self, first_err=False) -> None:
         """
             Update the error properties of the aircraft, i.e. the difference between the target state and the current state.
         """
@@ -104,9 +104,6 @@ class ACBohnNoVaTask(ACBohnTask):
 
         self.sim[prp.roll_err] = self.sim[prp.target_roll_rad] - self.sim[prp.roll_rad]
         self.sim[prp.pitch_err] = self.sim[prp.target_pitch_rad] - self.sim[prp.pitch_rad]
-
-        # fill errors namedtuple with error variable values from the sim properties
-        self.errors = self.Errors(*[self.sim[prop] for prop in self.error_prps])
 
 
     def update_action_avg(self) -> None:
@@ -140,9 +137,6 @@ class ACBohnNoVaTask(ACBohnTask):
 
         self.prev_target_roll = target_state[0]
         self.prev_target_pitch = target_state[1]
-
-        # fill target state namedtuple with target state attributes
-        self.target = self.TargetState(str(target_state[0]), str(target_state[1]))
 
 
     def reset_target_state(self) -> None:
@@ -246,6 +240,7 @@ class ACBohnNoVaIErrTask(ACBohnNoVaTask):
         Added angle of attack and sideslip angle to the state variables.
     """
     def __init__(self, cfg_env: DictConfig, telemetry_file: str='', render_mode: str='none') -> None:
+        print("Initializing ACBohnNoVaIErrTask...")
         super().__init__(cfg_env, telemetry_file, render_mode)
 
         self.state_prps += (prp.roll_integ_err, prp.pitch_integ_err) # integral errors
@@ -262,7 +257,7 @@ class ACBohnNoVaIErrTask(ACBohnNoVaTask):
         self.action_space = self.get_action_space()
         self.observation_space = self.get_observation_space()
 
-        self.init()
+        # 
         self.telemetry_setup(self.telemetry_file)
 
 
@@ -279,7 +274,7 @@ class ACBohnNoVaIErrTask(ACBohnNoVaTask):
         self.sim[prp.pitch_integ_err] = 0.0
 
 
-    def update_errors(self) -> None:
+    def update_errors(self, first_err=False) -> None:
         """
             Update the error and integral errors properties of the aircraft, i.e. the difference between the target state and the current state.
         """
@@ -290,9 +285,6 @@ class ACBohnNoVaIErrTask(ACBohnNoVaTask):
         self.sim[prp.pitch_integ_err] = 1.00 * self.sim[prp.pitch_integ_err] + self.sim[prp.pitch_err] * 0.01
         # print(f"roll integ err: {self.sim[prp.roll_integ_err]}")
         # print(f"pitch integ err: {self.sim[prp.pitch_integ_err]}")
-
-        # fill errors namedtuple with error variable values from the sim properties
-        self.errors = self.Errors(*[self.sim[prop] for prop in self.error_prps])
 
 
     def reset_target_state(self) -> None:
@@ -320,7 +312,7 @@ class ACBohnNoVaIErrYawTask(ACBohnNoVaIErrTask):
         self.action_space = self.get_action_space()
         self.observation_space = self.get_observation_space()
 
-        self.init()
+        # 
         self.telemetry_setup(self.telemetry_file)
 
 
@@ -333,6 +325,6 @@ class ACBohnNoVaIErrWindOracleTask(ACBohnNoVaIErrTask):
         self.action_space = self.get_action_space()
         self.observation_space = self.get_observation_space()
 
-        self.init()
+        # 
         self.telemetry_setup(self.telemetry_file)
 

@@ -120,7 +120,6 @@ class JSBSimEnv(gym.Env, ABC):
         self.common_telemetry_prps: Tuple[BoundedProperty, ...] = (
             prp.lat_gc_deg, prp.lng_gc_deg, prp.altitude_sl_m, # position
             prp.ecef_x_m, prp.ecef_y_m, prp.ecef_z_m, # position in ECEF
-            prp.enu_e_m, prp.enu_n_m, prp.enu_u_m, # position in ENU
             prp.roll_rad, prp.pitch_rad, prp.heading_rad, # attitude
             prp.u_kph, prp.v_kph, prp.w_kph, # linear body velocities
             prp.alpha_rad, prp.beta_rad, # angle of attack and sideslip

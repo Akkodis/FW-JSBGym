@@ -60,7 +60,7 @@ class SimpleAC_OMAC(JSBSimEnv):
         self.action_space = self.get_action_space()
         self.observation_space = self.get_observation_space()
 
-        self.init()
+        
         self.telemetry_setup(self.telemetry_file)
 
 

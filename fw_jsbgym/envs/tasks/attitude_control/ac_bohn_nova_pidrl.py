@@ -80,7 +80,7 @@ class ACNoVaPIDRLAddTask(ACBohnNoVaIErrTask):
                             #  limit = 1.0
                              )
 
-        self.init()
+        
         self.telemetry_setup(self.telemetry_file)
 
 
@@ -223,7 +223,7 @@ class ACNoVaPIDRLTask(ACBohnNoVaIErrTask):
                             #  limit = 1.0
                              )
 
-        self.init()
+        
         self.telemetry_setup(self.telemetry_file) 
 
 

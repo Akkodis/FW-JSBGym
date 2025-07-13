@@ -71,7 +71,7 @@ class ACBohnTask(JSBSimTask):
         self.action_space = self.get_action_space()
         self.observation_space = self.get_observation_space()
 
-        self.init()
+        # 
         self.telemetry_setup(self.telemetry_file)
 
 
@@ -115,7 +115,7 @@ class ACBohnTask(JSBSimTask):
         return self.observation, self.reward, terminated, truncated, info
 
 
-    def update_errors(self) -> None:
+    def update_errors(self, first_err=False) -> None:
         """
             Update the error properties of the aircraft, i.e. the difference between the target state and the current state.
         """
@@ -123,9 +123,6 @@ class ACBohnTask(JSBSimTask):
         self.sim[prp.roll_err] = self.sim[prp.target_roll_rad] - self.sim[prp.roll_rad]
         self.sim[prp.pitch_err] = self.sim[prp.target_pitch_rad] - self.sim[prp.pitch_rad]
         self.sim[prp.airspeed_err] = self.sim[prp.target_airspeed_kph] - self.sim[prp.airspeed_kph]
-
-        # fill errors namedtuple with error variable values from the sim properties
-        self.errors = self.Errors(*[self.sim[prop] for prop in self.error_prps])
 
 
     def update_action_avg(self) -> None:
@@ -151,9 +148,6 @@ class ACBohnTask(JSBSimTask):
         self.sim[prp.target_pitch_rad] = target_state[1]
         self.sim[prp.target_airspeed_kph] = target_state[2]
 
-        # fill target state namedtuple with target state attributes
-        self.target = self.TargetState(str(target_state[0]), str(target_state[1]), str(target_state[2]))
-
 
     def reset_target_state(self) -> None:
         """
@@ -163,6 +157,10 @@ class ACBohnTask(JSBSimTask):
         self.set_target_state(np.array([self.sim[prp.ic_roll_rad],
                                           self.sim[prp.ic_pitch_rad],
                                           self.sim[prp.ic_airspeed_kts] * 1.852])) # converting kts to kph
+
+
+    def reset_ext_state_props(self):
+        pass
 
 
     def get_reward(self, action: np.ndarray) -> float:
