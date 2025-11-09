@@ -56,8 +56,11 @@ class WaypointTracking(JSBSimTask):
             prp.dist_to_target_m
         )
 
+        self.enu_prps = (
+            prp.enu_e_m, prp.enu_n_m, prp.enu_u_m, # position in ENU
+        )
         # telemetry properties are an addition of the common telemetry properties, target properties and error properties
-        self.telemetry_prps = self.common_telemetry_prps + self.target_prps + self.target_enu_prps \
+        self.telemetry_prps = self.common_telemetry_prps + self.target_prps + self.enu_prps + self.target_enu_prps \
                             + self.error_prps + self.reward_prps
 
         # set action and observation space from the task
@@ -152,39 +155,40 @@ class WaypointTracking(JSBSimTask):
         self.sim[prp.ecef_z_err_m] = self.sim[prp.target_ecef_z_m] - self.sim[prp.ecef_z_m]
 
 
+    def get_reward(self, action: np.ndarray) -> float:
+        if self.task_cfg.reward.name == "wp_dist":
+            return self.distance_reward(action)
+        elif self.task_cfg.reward.name == "wp_prog":
+            return self.progress_reward(action)
+        else:
+            raise ValueError(f"Unknown reward type: {self.task_cfg.reward.name}")
+
+
     # Distance based reward
-    # def get_reward(self, action: np.ndarray) -> float:
-    #     assert self.task_cfg.reward.name == "wp_dist"
-    #     r_w: dict = self.task_cfg.reward.weights
+    def distance_reward(self, action: np.ndarray) -> float:
+        assert self.task_cfg.reward.name == "wp_dist"
+        r_w: dict = self.task_cfg.reward.weights
 
-    #     r_dist = r_w["r_dist"]["max_r"] * np.tanh(r_w["r_dist"]["tanh_scale"] * self.dist_to_target)
-    #     # r_dist = np.clip(r_w["r_dist"]["max_r"] * self.dist_to_target / 250, a_min=0.0, a_max=10.0)
-    #     self.sim[prp.reward_dist] = r_dist
+        r_dist = r_w["r_dist"]["max_r"] * np.tanh(r_w["r_dist"]["tanh_scale"] * self.dist_to_target)
+        self.sim[prp.reward_dist] = r_dist
 
-    #     r_actvar = 0.0
-    #     if r_w["act_var"]["enabled"]:
-    #         mean_actvar = np.mean(np.abs(action - np.array(self.action_hist)[-2])) # normalized by distance between action limits
-    #         r_actvar = r_w["act_var"]["max_r"] * np.tanh(r_w["act_var"]["tanh_scale"] * mean_actvar)
-    #     self.sim[prp.reward_actvar] = r_actvar
+        r_actvar = 0.0
+        if r_w["act_var"]["enabled"]:
+            mean_actvar = np.mean(np.abs(action - np.array(self.action_hist)[-2])) # normalized by distance between action limits
+            r_actvar = r_w["act_var"]["max_r"] * np.tanh(r_w["act_var"]["tanh_scale"] * mean_actvar)
+        self.sim[prp.reward_actvar] = r_actvar
 
-    #     r_reached = 0.0
-    #     # if self.is_waypoint_reached():
-    #     #     r_reached = 100
-    #     # self.sim[prp.reward_reached] = r_reached
+        r_total = -(r_dist + r_actvar)
+        self.sim[prp.reward_total] = r_total
 
-    #     r_total = -(r_dist + r_actvar) + r_reached
-    #     self.sim[prp.reward_total] = r_total
-
-    #     return r_total
+        return r_total
 
 
     # Progress based reward
-    def get_reward(self, action: np.ndarray) -> float:
-        assert "wp_prog" in self.task_cfg.reward.name
+    def progress_reward(self, action: np.ndarray) -> float:
+        assert self.task_cfg.reward.name == "wp_prog"
         r_w: dict = self.task_cfg.reward.weights
         r_progress = r_w["r_prog"]["scale"] * (self.prev_dist_to_target - self.dist_to_target)
-        # r_progress = np.clip(r_w["r_prog"]["scale"] * (self.prev_dist_to_target - self.dist_to_target), 
-        #                      a_min=r_w["r_prog"]["clip_min"], a_max=None) # clip min to avoid big negative on 1st step (prev_dist = 0, dist = 200m)
         self.sim[prp.reward_progress] = r_progress
         self.sim[prp.reward_total] = r_progress
         return r_progress
@@ -244,6 +248,9 @@ class WaypointTracking(JSBSimTask):
         # truncation occurs if we missed the waypoint or the episode is truncated (e.g. time limit or out of bounds)
         truncated = truncated or wp_missed
         return truncated, info_trunc
+    
+    def reset_ext_state_props(self):
+        pass
 
 
 class WaypointTrackingENU(WaypointTracking):
@@ -286,7 +293,8 @@ class WaypointTrackingENU(WaypointTracking):
         )
 
         # telemetry properties are an addition of the common telemetry properties, target properties and error properties
-        self.telemetry_prps = self.common_telemetry_prps  + self.target_prps \
+
+        self.telemetry_prps = self.common_telemetry_prps + self.target_prps \
                             + self.error_prps + self.reward_prps
 
         # set action and observation space from the task
@@ -586,6 +594,7 @@ class WaypointTrackingNoVa(WaypointTracking):
     """
         Waypoint Tracking task. The agent has to track a given waypoint in the sky (described by its
         x, y, z).
+        The agent controls only the aileron and elevator, while the throttle is controlled by a PI controller
     """
     def __init__(self, cfg_env: DictConfig, telemetry_file: str='', render_mode: str='none') -> None:
         super().__init__(cfg_env=cfg_env, telemetry_file=telemetry_file, render_mode=render_mode)
@@ -652,8 +661,17 @@ class CourseAltTracking(WaypointTrackingENU):
             prp.p_radps, prp.q_radps, prp.r_radps, # angular rates
             prp.alpha_rad, prp.beta_rad, # angle of attack, sideslip
             # prp.aileron_cmd, prp.elevator_cmd, prp.throttle_cmd # last action
-            prp.aileron_combined_pos_norm, prp.elevator_pos_norm, prp.throttle_pos # actuator positions
+            # prp.aileron_combined_pos_norm, prp.elevator_pos_norm, prp.throttle_pos # actuator positions
         )
+
+        if self.task_cfg.mdp.act_pos_in_state == True:
+            self.state_prps += (
+                prp.aileron_combined_pos_norm, prp.elevator_pos_norm, prp.throttle_pos # actuator positions
+            )
+        else:
+            self.state_prps += (
+                prp.aileron_cmd, prp.elevator_cmd, prp.throttle_cmd # last action
+            )
 
         self.action_prps = (
             prp.aileron_cmd, prp.elevator_cmd, prp.throttle_cmd
@@ -687,7 +705,7 @@ class CourseAltTracking(WaypointTrackingENU):
         )
 
         # telemetry properties are an addition of the common telemetry properties, target properties and error properties
-        self.telemetry_prps = self.common_telemetry_prps + self.target_prps + self.target_enu_prps \
+        self.telemetry_prps = self.common_telemetry_prps + self.target_prps + self.enu_prps + self.target_enu_prps \
                             + self.error_prps + self.reward_prps + (prp.course_rad,)
 
         # set action and observation space from the task
@@ -911,6 +929,7 @@ class CourseAltNoVaTracking(CourseAltTracking):
             prp.p_radps, prp.q_radps, prp.r_radps, # angular rates
             prp.alpha_rad, prp.beta_rad, # angle of attack, sideslip
             prp.aileron_cmd, prp.elevator_cmd, prp.throttle_cmd # last action
+            # prp.aileron_combined_pos_norm, prp.elevator_pos_norm, prp.throttle_pos # actuator positions
         )
 
         self.action_prps = (
@@ -944,8 +963,12 @@ class CourseAltNoVaTracking(CourseAltTracking):
             prp.dist_to_target_m,
         )
 
+        self.enu_prps = (
+            prp.enu_e_m, prp.enu_n_m, prp.enu_u_m, # position in ENU
+        )
+
         # telemetry properties are an addition of the common telemetry properties, target properties and error properties
-        self.telemetry_prps = self.common_telemetry_prps + self.target_prps + self.target_enu_prps \
+        self.telemetry_prps = self.common_telemetry_prps + self.enu_prps + self.target_prps + self.target_enu_prps \
                             + self.error_prps + self.reward_prps + (prp.course_rad,)
 
         # set action and observation space from the task
