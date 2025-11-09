@@ -215,6 +215,15 @@ class JSBSimEnv(gym.Env, ABC):
             print(f"    {error_prp.get_legal_name()}")
 
 
+    def reset_init_conditions(self, options) -> None:
+        """
+        Reset the initial conditions of the simulation.
+        This method can be overridden in a child class to set specific initial conditions.
+        The default behavior is to reset the simulation to the initial conditions defined in the JSBSim configuration file.
+        """
+        self.sim.fdm.reset_to_initial_conditions(0)
+
+
     def reset(self, seed: int=None, options: dict=None) -> Tuple[np.ndarray, dict]:
         """
         Resets the state of the environment and returns an initial observation.
@@ -229,7 +238,8 @@ class JSBSimEnv(gym.Env, ABC):
         assert self.sim is not None, "Simulation object does not exist. Call init() first."
 
         # reset the simulation to initial conditions
-        self.sim.fdm.reset_to_initial_conditions(0)
+        print(f"options: {options}")
+        self.reset_init_conditions(options)
 
         # convert some properties to SI units for the 1st step
         conversions.props2si(self.sim)

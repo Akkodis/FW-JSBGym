@@ -120,6 +120,27 @@ def ecef2ned(x, y, z, ref_lat, ref_lon, ref_alt):
     return ned
 
 
+def ecef2geodetic(x, y, z, tol=1e-12):
+    a = 6378137.0 
+    f = 1 / 298.257223563
+    e_sq = f * (2 - f)
+    lam = np.degrees(np.arctan2(y, x))
+    p = np.hypot(x, y)
+    phi = np.arctan2(z, p * (1 - e_sq))  # initial guess
+    N = 0
+    h = 0
+    for _ in range(5):
+        N = a / np.sqrt(1 - e_sq * np.sin(phi)**2)
+        h = p / np.cos(phi) - N
+        phi = np.arctan2(z, p * (1 - e_sq * N / (N + h)))
+    return np.degrees(phi), lam, h
+
+
+def enu2geodetic(x, y, z, ref_lat, ref_lon, ref_alt):
+    enu = enu2ecef(x, y, z, ref_lat, ref_lon, ref_alt)
+    return ecef2geodetic(enu[0], enu[1], enu[2])
+
+
 def euler2quaternion(roll=None, pitch=None, yaw=None, sim=None):
     """
     Convert Euler angles (roll, pitch, yaw) to quaternion representation.

@@ -51,6 +51,7 @@ flightpath_gamma_rad = BoundedProperty('flight-path/gamma-rad', 'flight path ang
 sideslip_deg = BoundedProperty('aero/beta-deg', 'sideslip [deg]', -180, +180)
 lat_gc_deg = BoundedProperty('position/lat-gc-deg', 'geocentric latitude [deg]', -180, 180)
 lng_gc_deg = BoundedProperty('position/long-gc-deg', 'geocentric longitude [deg]', -180, 180)
+lat_gd_deg = BoundedProperty('position/lat-geod-deg', 'geodetic latitude [deg]', -90, 90)
 lat_travel_m = BoundedProperty('position/distance-from-start-lat-mt', 'latitude distance travelled from start [m]',
                                float('-inf'), float('+inf'))
 lng_travel_m = BoundedProperty('position/distance-from-start-lon-mt', 'longitude distance travelled from start [m]',
@@ -102,6 +103,9 @@ v_down_fps = BoundedProperty('velocities/v-down-fps', 'velocity downwards [ft/s]
 p_radps = BoundedProperty('velocities/p-rad_sec', 'roll rate [rad/s]', -35, 35)
 q_radps = BoundedProperty('velocities/q-rad_sec', 'pitch rate [rad/s]', -35, 35)
 r_radps = BoundedProperty('velocities/r-rad_sec', 'yaw rate [rad/s]', -35, 35)
+p_aero_radps = BoundedProperty('velocities/p-aero-rad_sec', 'aerodynamic roll rate [rad/s]', -35, 35)
+q_aero_radps = BoundedProperty('velocities/q-aero-rad_sec', 'aerodynamic pitch rate [rad/s]', -35, 35)
+r_aero_radps = BoundedProperty('velocities/r-aero-rad_sec', 'aerodynamic yaw rate [rad/s]', -35, 35)
 altitude_rate_fps = Property('velocities/h-dot-fps', 'Rate of altitude change [ft/s]')
 airspeed_fps = BoundedProperty('velocities/vt-fps', 'True aircraft airspeed [ft/s]', float('-inf'), float('+inf'))
 airspeed_kts = BoundedProperty('velocities/vtrue-kts', 'True aircraft airspeed [kts]', float('-inf'), float('+inf'))
@@ -218,6 +222,7 @@ ic_q_radps = Property('ic/q-rad_sec', 'pitch rate [rad/s]')
 ic_r_radps = Property('ic/r-rad_sec', 'yaw rate [rad/s]')
 ic_roc_fpm = Property('ic/roc-fpm', 'initial rate of climb [ft/min]')
 ic_heading_deg = Property('ic/psi-true-deg', 'initial (true) heading [deg]')
+ic_heading_rad = Property('ic/psi-true-rad', 'initial (true) heading [rad]')
 ic_airspeed_kts = Property('ic/vt-kts', 'initial airspeeed [kts]')
 
 # metrics

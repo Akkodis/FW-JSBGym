@@ -4,7 +4,8 @@ from omegaconf import DictConfig
 from typing import Tuple, Dict
 from fw_jsbgym.envs.tasks.waypoint_tracking.wp_tracking import WaypointTrackingENU, CourseAltTracking
 from fw_jsbgym.utils import jsbsim_properties as prp
-from fw_jsbgym.utils.conversions import angle_rad_wrap_to_pi
+from fw_jsbgym.utils.conversions import angle_rad_wrap_to_pi, enu2geodetic
+from fw_jsbgym.trim.trim_point import TrimPoint
 from dubins_path_planning.trajectory_planning import DubinsManeuver3D_func, compute_sampling
 
 
@@ -301,19 +302,6 @@ class DubinsPathTrackingIndep(DubinsPathTrackingv1):
             prp.dubins_target_course_err, prp.dubins_target_flightpath_err,  # Dubins target course and flight path errors
         )
 
-        # self.state_prps = (
-        #     prp.course_err_rad, # course error
-        #     prp.altitude_err_m, # altitude error
-        #     prp.airspeed_kph, # airspeed
-        #     prp.course_rad,
-        #     prp.u_fps, prp.v_fps, prp.w_fps, # velocity
-        #     prp.att_qx, prp.att_qy, prp.att_qz, prp.att_qw, # attitude quaternion
-        #     prp.p_radps, prp.q_radps, prp.r_radps, # angular rates
-        #     prp.alpha_rad, prp.beta_rad, # angle of attack, sideslip
-        #     prp.aileron_combined_pos_norm, prp.elevator_pos_norm, prp.throttle_pos, # actuator positions
-        #     prp.dubins_target_course_err, prp.dubins_target_flightpath_err, # Dubins intermediate target errors (course and flight path angle errors)
-        # ) 
-
         # self.action_prps = ()
 
         self.target_prps = (
@@ -337,7 +325,7 @@ class DubinsPathTrackingIndep(DubinsPathTrackingv1):
         )
 
         # telemetry properties are an addition of the common telemetry properties, target properties and error properties
-        self.telemetry_prps = self.common_telemetry_prps  + self.target_prps \
+        self.telemetry_prps = self.common_telemetry_prps + self.enu_prps + self.target_prps \
                             + self.error_prps + self.reward_prps
 
         self.action_space = self.get_action_space()
@@ -346,10 +334,119 @@ class DubinsPathTrackingIndep(DubinsPathTrackingv1):
         self.prev_dubins_target_course_rad = 0.0
         self.prev_dubins_target_flightpath_rad = 0.0
         self.dist_to_curr_dubins_pt = 1000  # Initialize with a large distance
+        self.is_last_dubins_pt = False
+        self.was_reached = False  # Flag to indicate if the Dubins point of last ep was reached
+        self.ep_was_trunc = False  # Flag to indicate if the last episode was truncated
+
+        self.trim_points = TrimPoint()
 
         if self.jsbsim_cfg.debug:
             self.print_MDP_info()
         self.telemetry_setup(self.telemetry_file)
+
+
+    def reset_init_conditions(self, options):
+        # if it was the last Dubins point, or if it's the first reset after a final target change (e.g. not computed the Dubins path yet)
+        self.eval = options['eval']
+        if self.is_last_dubins_pt or self.dubins_points.shape[0] == 0:
+            print("Last Dubins point reached (or 1st reset), resetting to initial conditions (from ic file)")
+            self.sim.load_run_ic()
+            self.sim[prp.dubins_target_course_rad] = 0.0  # Initialize the Dubins target course
+            self.sim[prp.dubins_target_flightpath_rad] = 0.0  # Initialize the Dubins target flight path angle
+            self.sim[prp.final_target_enu_e_m] = 0.0
+            self.sim[prp.final_target_enu_n_m] = 0.0
+            self.sim[prp.final_target_enu_u_m] = 600.0
+            self.sim[prp.target_enu_e_m] = 0.0
+            self.sim[prp.target_enu_n_m] = 0.0
+            self.sim[prp.target_enu_u_m] = 600.0
+            self.sim[prp.target_altitude_m] = 600.0
+            self.sim[prp.target_airspeed_kph] = 60.0
+            self.is_last_dubins_pt = False  # Reset the last Dubins point flag
+        else:
+            self.sim.load_run_ic()  # Load the initial conditions from the IC file
+            prev_dubins_idx = self.dubins_pt_idx
+            prev_dubins_pt = self.dubins_points[prev_dubins_idx]  # Get the previous Dubins point
+            print(f"Resetting at last Dubins point ({prev_dubins_idx+1}) initial conditions...\n" \
+                  f"\tE: {prev_dubins_pt[0]:.3f}, " \
+                  f"N: {prev_dubins_pt[1]:.3f}, "\
+                  f"U: {prev_dubins_pt[2]:.3f}, ")
+            # Override the initial conditions with the last Dubins point
+            # positions
+            ic_geodetic = enu2geodetic(
+                prev_dubins_pt[0],
+                prev_dubins_pt[1],
+                prev_dubins_pt[2],
+                47.635784,
+                2.460938,
+                600.0,
+            )
+            self.sim[prp.ic_lat_gd_deg] = ic_geodetic[0]  # Set the initial latitude
+            self.sim[prp.ic_long_gc_deg] = ic_geodetic[1]  # Set the initial longitude
+            self.sim[prp.ic_altitude_ft] = prev_dubins_pt[2] * 3.281 # Set the initial altitude
+
+            # orientation (missing roll, set to 0 by default, can be problematic)
+            self.sim[prp.ic_heading_rad] = prev_dubins_pt[3]  # Set the initial heading from the Dubins points
+            self.sim[prp.ic_pitch_rad] = prev_dubins_pt[4]  # Set the initial pitch from the Dubins points flight path
+
+            # airspeed
+            init_airspeed_kts = 60 / 1.852  # Convert 60 kph to kts
+            self.sim[prp.ic_airspeed_kts] = np.random.normal(
+                init_airspeed_kts,  # Convert 60 kph to kts
+                init_airspeed_kts * 0.2, # 20% standard deviation
+            )
+
+            # actions
+            self.sim[prp.aileron_combined_pos_norm] = np.random.normal(
+                self.trim_points.aileron,  # Use the trim point aileron value
+                0.1,  # 10% standard deviation
+            )
+            self.sim[prp.elevator_pos_norm] = np.random.normal(
+                self.trim_points.elevator,  # Use the trim point elevator value
+                0.1,  # 10% standard deviation
+            )
+            self.sim[prp.throttle_pos] = np.random.normal(
+                self.trim_points.throttle,  # Use the trim point throttle value
+                0.1,  # 10% standard deviation
+            )
+
+
+            print(
+                f"-- Current Final Target:\n" \
+                f"\tE: {self.sim[prp.final_target_enu_e_m]:.3f}, " \
+                f"N: {self.sim[prp.final_target_enu_n_m]:.3f}, " \
+                f"U: {self.sim[prp.final_target_enu_u_m]:.3f}, \n" \
+                f"\tCourse: {self.sim[prp.dubins_target_course_rad]:.3f}, " \
+                f"Flight Path: {self.sim[prp.dubins_target_flightpath_rad]:.3f}"
+            )
+
+            if self.dubins_pt_idx < len(self.dubins_points) - 1:
+                self.dubins_pt_idx += 1
+            self.set_dubins_target()  # Set dubins target to the current Dubins point
+
+            diff_dub_course = self.sim[prp.dubins_target_course_rad] - prev_dubins_pt[3]
+            print(f"Diff Dubins Course: {diff_dub_course:.3f} rad")
+            if diff_dub_course >= 0:
+                print("Diff Dubins >= 0, initializing a negative roll for a left turn")
+                self.sim[prp.ic_roll_rad] = np.random.normal(
+                    -0.1,  # Negative roll for left turn
+                    0.05,  # 5% standard deviation
+                )
+            else:
+                print("Diff Dubins < 0, initializing a positive roll for a right turn")
+                self.sim[prp.ic_roll_rad] = np.random.normal(
+                    0.1,  # Positive roll for right turn
+                    0.05,  # 5% standard deviation
+                )
+
+            # Call run_ic again to apply the overridden initial conditions
+            self.sim.fdm.run_ic()
+
+            # Double checking that the initial conditions were set correctly
+            # print(
+            #     f"-- IC after reset -- :\n" \
+            #     f"\t lat: {self.sim[prp.lat_gd_deg]:.3f}, lon: {self.sim[prp.lng_gc_deg]:.3f}, alt: {self.sim[prp.altitude_sl_m]:.3f}\n" \
+            #     f"\t Heading : {self.sim[prp.heading_rad]:.3f}, Pitch: {self.sim[prp.pitch_rad]:.3f}, Roll: {self.sim[prp.roll_rad]:.3f}\n" \
+            # )
 
 
     def set_dubins_target(self):
@@ -377,21 +474,22 @@ class DubinsPathTrackingIndep(DubinsPathTrackingv1):
             return
         elif np.any(target != [self.prev_final_target_x, self.prev_final_target_y, self.prev_final_target_z]):
             print(f"New final target: ({target[0]:.3f}, {target[1]:.3f}, {target[2]:.3f})")
+            self.dubins_pt_idx = 0  # Reset the Dubins point index to 0
             # compute intermediary Dubins path points
             self.dubins_points = self.compute_dubins_path(target)[1:] # Skip the first point, which is the initial state
             print(f"Last Dubins point: {self.dubins_points[-1]}")
             self.set_dubins_target()
-
-        # Changing to next dubins point, if we have reached the current one
-        # (small enough 3D xyz distance AND course/flightpath errors)
-        if self.is_dubins_reached():
-            if self.dubins_pt_idx < len(self.dubins_points) - 1:
-                self.dubins_pt_idx += 1
-
             self.sim[prp.final_target_enu_e_m] = target[0]
             self.sim[prp.final_target_enu_n_m] = target[1]
             self.sim[prp.final_target_enu_u_m] = target[2]
-            self.set_dubins_target()
+
+        # Changing to next dubins point, if we have reached the current one
+        # (small enough 3D xyz distance AND course/flightpath errors)
+        # if self.was_reached or self.ep_was_trunc:
+        #     if self.dubins_pt_idx < len(self.dubins_points) - 1:
+        #         self.dubins_pt_idx += 1
+        #         print(f"Switching to next Dubins point {self.dubins_pt_idx+1}/{len(self.dubins_points)}")
+        #     self.set_dubins_target()
 
         self.prev_final_target_x = target[0]
         self.prev_final_target_y = target[1]
@@ -407,6 +505,7 @@ class DubinsPathTrackingIndep(DubinsPathTrackingv1):
         is_dubins_target_reached = (self.dist_to_curr_dubins_pt < self.task_cfg.mdp.dub_switch_dist) and \
         (np.abs(self.sim[prp.dubins_target_course_err]) < self.task_cfg.mdp.dub_switch_course) and \
         (np.abs(self.sim[prp.dubins_target_flightpath_err]) < self.task_cfg.mdp.dub_switch_flightpath)
+        self.was_reached = is_dubins_target_reached
         return is_dubins_target_reached
 
 
@@ -416,9 +515,10 @@ class DubinsPathTrackingIndep(DubinsPathTrackingv1):
         """
         self.target_reached = False
         # True if the final target is reached (we're at the last dubins point)
-        self.sim[prp.is_last_dubins_point] = int(self.dubins_pt_idx == len(self.dubins_points) - 1)
+        self.is_last_dubins_pt = (self.dubins_pt_idx == len(self.dubins_points) - 1)
+        self.sim[prp.is_last_dubins_point] = self.is_last_dubins_pt # set the flag in a sim property too
 
-        if self.sim[prp.is_last_dubins_point] and self.is_dubins_reached():
+        if self.is_last_dubins_pt and self.is_dubins_reached():
             # If the last dubins point is reached, we consider the target reached
             print(f"\tFinal Target Reached! @ step : {self.sim[self.current_step]}")
             self.in_missed_sphere = False
@@ -433,6 +533,20 @@ class DubinsPathTrackingIndep(DubinsPathTrackingv1):
             self.target_reached = True
 
         return self.target_reached
+    
+
+    def reset_ext_state_props(self):
+        super().reset_ext_state_props()
+
+
+    def reset_target_state(self):
+        pass
+
+
+    def is_truncated(self):
+        truncated, info_trunc = super().is_truncated()
+        self.ep_was_trunc = truncated
+        return truncated, info_trunc
 
 
     def is_waypoint_missed(self):
