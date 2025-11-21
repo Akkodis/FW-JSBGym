@@ -9,8 +9,8 @@ from matplotlib.animation import FuncAnimation
 from fw_jsbgym.utils import jsbsim_properties as prp
 
 
-def animate(i, axis, args) -> None:
-    df = pd.read_csv(args.tele_file)
+def animate(i, axis, tele_file) -> None:
+    df = pd.read_csv(tele_file)
     nan_arr = np.empty(df.index.size)
     nan_arr.fill(np.nan)
 
@@ -238,27 +238,40 @@ def animate(i, axis, args) -> None:
         # axis[2, 2].grid()
 
 
-# parse command line arguments
-parser = ArgumentParser(description='Plotting Telemetry Data')
-parser.add_argument('--scale', action='store_true', help='True: keep aspect ratio, False: scale to fit data (for trajectory plot)')
-parser.add_argument('--tele-file', type=str, required=True, help='Telemetry csv file from where to read and plot data from')
-parser.add_argument('--fullscreen', action='store_true', help='True: fullscreen, False: windowed')
-args: Namespace = parser.parse_args()
+def setup_axes():
+    # setting up axis for animation
+    fig, ax = plt.subplots(3, 3)
+    # plt.rcParams["figure.figsize"] = [7.00, 3.50]
+    plt.rcParams["figure.autolayout"] = True
+    return ax
+ 
 
-# setting up axis for animation
-fig, ax = plt.subplots(3, 3)
-# plt.rcParams["figure.figsize"] = [7.00, 3.50]
-plt.rcParams["figure.autolayout"] = True
-if args.fullscreen:
-    manager = plt.get_current_fig_manager()
-    manager.full_screen_toggle()
 
-# Setting 3D subplot for trajectory plot
-# ax[0, 2].remove()
-# ax[0, 2] = fig.add_subplot(3, 3, 3, projection='3d')
+def main():
+    # parse command line arguments
+    parser = ArgumentParser(description='Plotting Telemetry Data')
+    parser.add_argument('--scale', action='store_true', help='True: keep aspect ratio, False: scale to fit data (for trajectory plot)')
+    parser.add_argument('--tele-file', type=str, required=True, help='Telemetry csv file from where to read and plot data from')
+    parser.add_argument('--animate', action='store_true', help='True: animate, False: static plot at the end of the simulation')
+    args: Namespace = parser.parse_args()
 
-# starting animation
-ani = FuncAnimation(plt.gcf(), animate, fargs=(ax, args, ), interval=50, blit=False)
-print("TELEMETRY FILE : ", args.tele_file, file=sys.stderr)
-print("Animation plot started...", file=sys.stderr)
-plt.show()
+    ax = setup_axes()
+
+    # Setting 3D subplot for trajectory plot
+    # ax[0, 2].remove()
+    # ax[0, 2] = fig.add_subplot(3, 3, 3, projection='3d')
+
+    # starting animation
+    if args.animate:
+        ani = FuncAnimation(plt.gcf(), animate, fargs=(ax, args.tele_file, ), interval=50, blit=False)
+        print("TELEMETRY FILE : ", args.tele_file, file=sys.stderr)
+        print("Animation plot started...", file=sys.stderr)
+        plt.show()
+    else:
+        animate(0, ax, args.tele_file)
+        plt.show()
+
+
+
+if __name__ == "__main__":
+    main()

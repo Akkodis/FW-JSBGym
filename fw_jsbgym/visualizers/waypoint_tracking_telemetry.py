@@ -263,7 +263,7 @@ def main():
         print("TELEMETRY FILE : ", args.tele_file, file=sys.stderr)
         print("Animation plot started...", file=sys.stderr)
         plt.show()
-    elif not args.animate:
+    else:
         animate(0, ax, args.tele_file)
         plt.show()
 

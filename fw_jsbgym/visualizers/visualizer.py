@@ -23,7 +23,6 @@ class PlotVisualizer(object):
         # if animate is True, we run the animation plot in a separate process
         if animate:
             cmd = f"python {viz_plot_path} --tele-file {telemetry_file} --animate"
-
             self.process: subprocess.Popen = subprocess.Popen(cmd, 
                                                             shell=True,
                                                             stdout=subprocess.PIPE,
@@ -42,6 +41,7 @@ class PlotVisualizer(object):
             from fw_jsbgym.visualizers.attitude_control_telemetry import setup_axes, animate
             ax = setup_axes()
             animate(0, ax, self.telemetry_file)
+            plt.show()
         elif "Waypoint" in self.env_id or "Path" in self.env_id or \
             "CourseAlt" in self.env_id:
             # we run the waypoint tracking telemetry plot in the current process
