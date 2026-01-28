@@ -77,7 +77,7 @@ class WaypointTracking(JSBSimTask):
         self.inout_missed_sphere = False
         self.target_reached = False
 
-        if self.jsbsim_cfg.debug:
+        if self.jsbsim_cfg.debug and WaypointTracking.__name__ == self.__class__.__name__:
             self.print_MDP_info()
 
         self.telemetry_setup(self.telemetry_file)
@@ -315,7 +315,7 @@ class WaypointTrackingENU(WaypointTracking):
         self.inout_missed_sphere = False
         self.target_reached = False
 
-        if self.jsbsim_cfg.debug:
+        if self.jsbsim_cfg.debug and WaypointTrackingENU.__name__ == self.__class__.__name__:
             self.print_MDP_info()
 
         self.telemetry_setup(self.telemetry_file)
@@ -506,7 +506,7 @@ class WaypointVaTracking(WaypointTracking):
 
         self.prev_target_airspeed = 0.0
 
-        if self.jsbsim_cfg.debug:
+        if self.jsbsim_cfg.debug and WaypointVaTracking.__name__ == self.__class__.__name__:
             self.print_MDP_info()
 
         self.telemetry_setup(self.telemetry_file)
@@ -615,7 +615,7 @@ class WaypointTrackingNoVa(WaypointTracking):
                            limit=AeroModel().throttle_limit, is_throttle=True
         )
 
-        if self.jsbsim_cfg.debug:
+        if self.jsbsim_cfg.debug and WaypointTrackingNoVa.__name__ == self.__class__.__name__:
             self.print_MDP_info()
 
         self.telemetry_setup(self.telemetry_file)
@@ -716,7 +716,7 @@ class CourseAltTracking(WaypointTrackingENU):
         self.inout_missed_sphere = False
         self.target_reached = False
 
-        if self.jsbsim_cfg.debug:
+        if self.jsbsim_cfg.debug and CourseAltTracking.__name__ == self.__class__.__name__:
             self.print_MDP_info()
 
         self.telemetry_setup(self.telemetry_file)
@@ -877,7 +877,7 @@ class CourseAltVaTracking(CourseAltTracking):
         self.inout_missed_sphere = False
         self.target_reached = False
 
-        if self.jsbsim_cfg.debug:
+        if self.jsbsim_cfg.debug and CourseAltVaTracking.__name__ == self.__class__.__name__:
             self.print_MDP_info()
 
         self.telemetry_setup(self.telemetry_file)
@@ -985,7 +985,7 @@ class CourseAltNoVaTracking(CourseAltTracking):
         self.inout_missed_sphere = False
         self.target_reached = False
 
-        if self.jsbsim_cfg.debug:
+        if self.jsbsim_cfg.debug and CourseAltNoVaTracking.__name__ == self.__class__.__name__:
             self.print_MDP_info()
 
         self.telemetry_setup(self.telemetry_file)
@@ -1072,7 +1072,7 @@ class StraightPathTracking(WaypointTrackingENU):
         self.inout_missed_sphere = False
         self.target_reached = False
 
-        if self.jsbsim_cfg.debug:
+        if self.jsbsim_cfg.debug and StraightPathTracking.__name__ == self.__class__.__name__:
             self.print_MDP_info()
 
         self.telemetry_setup(self.telemetry_file)
@@ -1228,7 +1228,7 @@ class AltitudeTracking(JSBSimTask):
 
         self.prev_target_z = 0.0
 
-        if self.jsbsim_cfg.debug:
+        if self.jsbsim_cfg.debug and AltitudeTracking.__name__ == self.__class__.__name__:
             self.print_MDP_info()
 
         self.telemetry_setup(self.telemetry_file)

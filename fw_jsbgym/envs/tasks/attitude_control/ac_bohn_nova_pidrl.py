@@ -80,6 +80,8 @@ class ACNoVaPIDRLAddTask(ACBohnNoVaIErrTask):
                             #  limit = 1.0
                              )
 
+        if self.jsbsim_cfg.debug and ACNoVaPIDRLAddTask.__name__ == self.__class__.__name__:
+            self.print_MDP_info()
         
         self.telemetry_setup(self.telemetry_file)
 
@@ -223,6 +225,8 @@ class ACNoVaPIDRLTask(ACBohnNoVaIErrTask):
                             #  limit = 1.0
                              )
 
+        if self.jsbsim_cfg.debug and ACNoVaPIDRLTask.__name__ == self.__class__.__name__:
+            self.print_MDP_info()
         
         self.telemetry_setup(self.telemetry_file) 
 

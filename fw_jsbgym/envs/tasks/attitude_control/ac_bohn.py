@@ -70,8 +70,10 @@ class ACBohnTask(JSBSimTask):
         # set action and observation space from the task
         self.action_space = self.get_action_space()
         self.observation_space = self.get_observation_space()
+        
+        if self.jsbsim_cfg.debug and ACBohnTask.__name__ == self.__class__.__name__:
+            self.print_MDP_info()
 
-        # 
         self.telemetry_setup(self.telemetry_file)
 
 

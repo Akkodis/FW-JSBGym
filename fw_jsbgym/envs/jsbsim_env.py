@@ -197,7 +197,7 @@ class JSBSimEnv(gym.Env, ABC):
         """
 
         # print the class name
-        print("\n *** MDP Info ***")
+        print(f"\n *** MDP Info {self.__class__.__name__} ***")
         print("  States:")
         for state_prp in self.state_prps:
             print(f"    {state_prp.get_legal_name()}")

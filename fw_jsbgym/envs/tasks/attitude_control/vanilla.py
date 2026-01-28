@@ -32,6 +32,8 @@ class ACVanillaTask(ACBohnNoVaTask):
         self.action_space = self.get_action_space()
         self.observation_space = self.get_observation_space()
 
+        if self.jsbsim_cfg.debug and ACVanillaTask.__name__ == self.__class__.__name__:
+            self.print_MDP_info()
         
         self.telemetry_setup(self.telemetry_file)
 
@@ -56,6 +58,8 @@ class ACVanillaYawTask(ACVanillaTask):
         self.action_space = self.get_action_space()
         self.observation_space = self.get_observation_space()
 
+        if self.jsbsim_cfg.debug and ACVanillaYawTask.__name__ == self.__class__.__name__:
+            self.print_MDP_info()
         
         self.telemetry_setup(self.telemetry_file)
 
@@ -73,7 +77,9 @@ class ACVanillaActTask(ACVanillaTask):
         self.action_space = self.get_action_space()
         self.observation_space = self.get_observation_space()
 
-        
+        if self.jsbsim_cfg.debug and ACVanillaActTask.__name__ == self.__class__.__name__:
+            self.print_MDP_info()
+
         self.telemetry_setup(self.telemetry_file)
 
 
@@ -91,7 +97,9 @@ class ACVanillaAlphaTask(ACVanillaTask):
         self.action_space = self.get_action_space()
         self.observation_space = self.get_observation_space()
 
-        
+        if self.jsbsim_cfg.debug and ACVanillaAlphaTask.__name__ == self.__class__.__name__:
+            self.print_MDP_info()
+
         self.telemetry_setup(self.telemetry_file)
 
 
@@ -109,7 +117,9 @@ class ACVanillaBetaTask(ACVanillaTask):
         self.action_space = self.get_action_space()
         self.observation_space = self.get_observation_space()
 
-        
+        if self.jsbsim_cfg.debug and ACVanillaBetaTask.__name__ == self.__class__.__name__:
+            self.print_MDP_info()
+
         self.telemetry_setup(self.telemetry_file)
 
 
@@ -127,7 +137,9 @@ class ACVanillaAlphaBetaTask(ACVanillaTask):
         self.action_space = self.get_action_space()
         self.observation_space = self.get_observation_space()
 
-        
+        if self.jsbsim_cfg.debug and ACVanillaAlphaBetaTask.__name__ == self.__class__.__name__:
+            self.print_MDP_info()
+
         self.telemetry_setup(self.telemetry_file)
 
 
@@ -161,7 +173,9 @@ class ACVanillaThrTask(ACBohnNoVaTask):
         self.action_space = self.get_action_space()
         self.observation_space = self.get_observation_space()
 
-        
+        if self.jsbsim_cfg.debug and ACVanillaThrTask.__name__ == self.__class__.__name__:
+            self.print_MDP_info()
+
         self.telemetry_setup(self.telemetry_file)
 
 
@@ -194,7 +208,9 @@ class ACVanillaIErrTask(ACBohnNoVaIErrTask):
         self.action_space = self.get_action_space()
         self.observation_space = self.get_observation_space()
 
-        
+        if self.jsbsim_cfg.debug and ACVanillaIErrTask.__name__ == self.__class__.__name__:
+            self.print_MDP_info()
+
         self.telemetry_setup(self.telemetry_file)
 
 
@@ -215,6 +231,8 @@ class ACVanillaActIErrTask(ACVanillaIErrTask):
         self.action_space = self.get_action_space()
         self.observation_space = self.get_observation_space()
 
+        if self.jsbsim_cfg.debug and ACVanillaActIErrTask.__name__ == self.__class__.__name__:
+            self.print_MDP_info()
         
         self.telemetry_setup(self.telemetry_file)
 
@@ -236,7 +254,9 @@ class ACVanillaActIErrAlphaTask(ACVanillaActIErrTask):
         self.action_space = self.get_action_space()
         self.observation_space = self.get_observation_space()
 
-        
+        if self.jsbsim_cfg.debug and ACVanillaActIErrAlphaTask.__name__ == self.__class__.__name__:
+            self.print_MDP_info()
+
         self.telemetry_setup(self.telemetry_file)
 
 
@@ -257,6 +277,8 @@ class ACVanillaActIErrBetaTask(ACVanillaActIErrTask):
         self.action_space = self.get_action_space()
         self.observation_space = self.get_observation_space()
 
-        
+        if self.jsbsim_cfg.debug and ACVanillaActIErrBetaTask.__name__ == self.__class__.__name__:
+            self.print_MDP_info()
+
         self.telemetry_setup(self.telemetry_file)
 

@@ -76,7 +76,9 @@ class ACBohnNoVaTask(ACBohnTask):
         self.action_space = self.get_action_space()
         self.observation_space = self.get_observation_space()
 
-        # 
+        if self.jsbsim_cfg.debug and ACBohnNoVaTask.__name__ == self.__class__.__name__:
+            self.print_MDP_info()
+
         self.telemetry_setup(self.telemetry_file)
 
         self.prev_target_roll: float = 0.0
@@ -257,7 +259,9 @@ class ACBohnNoVaIErrTask(ACBohnNoVaTask):
         self.action_space = self.get_action_space()
         self.observation_space = self.get_observation_space()
 
-        # 
+        if self.jsbsim_cfg.debug and ACBohnNoVaIErrTask.__name__ == self.__class__.__name__:
+            self.print_MDP_info()
+
         self.telemetry_setup(self.telemetry_file)
 
 
@@ -312,7 +316,9 @@ class ACBohnNoVaIErrYawTask(ACBohnNoVaIErrTask):
         self.action_space = self.get_action_space()
         self.observation_space = self.get_observation_space()
 
-        # 
+        if self.jsbsim_cfg.debug and ACBohnNoVaIErrYawTask.__name__ == self.__class__.__name__:
+            self.print_MDP_info()
+
         self.telemetry_setup(self.telemetry_file)
 
 
@@ -325,6 +331,8 @@ class ACBohnNoVaIErrWindOracleTask(ACBohnNoVaIErrTask):
         self.action_space = self.get_action_space()
         self.observation_space = self.get_observation_space()
 
-        # 
+        if self.jsbsim_cfg.debug and ACBohnNoVaIErrWindOracleTask.__name__ == self.__class__.__name__:
+            self.print_MDP_info()
+
         self.telemetry_setup(self.telemetry_file)
 

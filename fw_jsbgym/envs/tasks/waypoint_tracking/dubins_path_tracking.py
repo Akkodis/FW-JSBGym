@@ -47,7 +47,7 @@ class DubinsPathTrackingv0(CourseAltTracking):
         self.dubins_points: np.ndarray = np.zeros((0, 5))  # Array to hold the Dubins path points
         self.dubins_pt_idx: int = 0
 
-        if self.jsbsim_cfg.debug:
+        if self.jsbsim_cfg.debug and DubinsPathTrackingv0.__name__ == self.__class__.__name__:
             self.print_MDP_info()
         
         self.telemetry_setup(self.telemetry_file)
@@ -250,7 +250,7 @@ class DubinsPathTrackingv1(DubinsPathTrackingv0):
 
         self.observation_space = self.get_observation_space()
 
-        if self.jsbsim_cfg.debug:
+        if self.jsbsim_cfg.debug and DubinsPathTrackingv1.__name__ == self.__class__.__name__:
             self.print_MDP_info()
         
         self.telemetry_setup(self.telemetry_file)
@@ -340,7 +340,7 @@ class DubinsPathTrackingIndep(DubinsPathTrackingv1):
 
         self.trim_points = TrimPoint()
 
-        if self.jsbsim_cfg.debug:
+        if self.jsbsim_cfg.debug and DubinsPathTrackingIndep.__name__ == self.__class__.__name__:
             self.print_MDP_info()
         self.telemetry_setup(self.telemetry_file)
 
