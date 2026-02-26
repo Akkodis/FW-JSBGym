@@ -5,8 +5,7 @@ import csv
 from copy import deepcopy
 from math import ceil
 
-from typing import Dict, Tuple, NamedTuple
-from collections import namedtuple
+from typing import Dict, Tuple
 from abc import ABC, abstractmethod
 from omegaconf import DictConfig
 
@@ -56,13 +55,10 @@ class JSBSimEnv(gym.Env, ABC):
         Gymnasium JSBSim environment for reinforcement learning.
 
         Args: 
+            - `cfg_env`: the environment configuration (in FW-FlightControl/fw_flightcontrol/config/env/jsbsim)
+            - `telemetry_file`: the path to the telemetry file (csv file storing the flight data)
             - `render_mode`: the mode to render the environment, can be one of the following: `["none", "ext_log", "plot", "plot_scale", "fgear", "fgear_plot", "fgear_plot_scale"]`
-              "ext_log" is for calling telemetry_logging() outside of the env if needed.
-            - `fdm_frequency`: the frequency of the flight dynamics model (JSBSim) simulation
-            - `agent_frequency`: the frequency of the agent (controller) at which it interacts with the environment
-            - `episode_length_s`: the duration of the episode in seconds
             - `aircraft_id`: Aircraft to simulate
-            - `viz_time_factor`: the factor by which the simulation time is scaled for visualization, only taken into account if render mode is not "none"
        """
         # jsbsim level configuration
         self.jsbsim_cfg = cfg_env.jsbsim
@@ -136,18 +132,7 @@ class JSBSimEnv(gym.Env, ABC):
         self.error_prps: Tuple[BoundedProperty, ...] = ()
         self.reward_prps: Tuple[BoundedProperty, ...] = ()
 
-        ## Named tuples containing relevant variables of the env
-        # declaring state NamedTuple structure
-        # self.State: NamedTuple = None
-        # self.state = None
-
-        # self.TargetState: NamedTuple = None
-        # self.target = None
-
-        # # declaring error NamedTuple structure
-        # self.Errors: NamedTuple = None
-        # self.errors = None
-
+        # the reward sent by the env
         self.reward: float = None
         
         # history of past actions (flight control surface) for action fluctuation metric
@@ -181,10 +166,12 @@ class JSBSimEnv(gym.Env, ABC):
     def init(self) -> None:
         # create the Simulation object
         assert self.sim is None, "Simulation object already exists."
-        self.sim = Simulation(fdm_frequency =self.fdm_frequency,
-                                aircraft_id=self.aircraft_id,
-                                viz_time_factor=self.viz_time_factor,
-                                enable_fgear_output=self.enable_fgear_output)
+        self.sim = Simulation(
+            fdm_frequency =self.fdm_frequency,
+            aircraft_id=self.aircraft_id,
+            viz_time_factor=self.viz_time_factor,
+            enable_fgear_output=self.enable_fgear_output
+        )
 
         # convert some properties to SI units @ init time
         conversions.props2si(self.sim)
@@ -238,51 +225,58 @@ class JSBSimEnv(gym.Env, ABC):
         assert self.sim is not None, "Simulation object does not exist. Call init() first."
 
         # reset the simulation to initial conditions
-        print(f"options: {options}")
+        # print(f"options: {options}")
         self.reset_init_conditions(options)
 
         # convert some properties to SI units for the 1st step
         conversions.props2si(self.sim)
         conversions.euler2quaternion(sim=self.sim)
 
-        # if reset arg "options" is provided, overwrite some of the sim_options fields
+        # Get options dict and store in the self.sim_options attribute to keep it across resets
         if options is not None:
-            if "render_mode" in options: 
+            if options.get("render_mode", False):
                 self.render_mode = options["render_mode"]
-            # Get options dict and store in as an attribute to keep it across resets
-            # (the options argument is set to None when SyncVectorEnv autoresets the envs)
-            # setup wind and turbulence
-            if "seed" in options:
+
+            if options.get("seed", False):
                 self.sim_options.seed = options["seed"]
             else:
                 self.sim_options.seed = np.random.randint(0, 9999)
-            if "atmosphere" in options:
+
+            # set the atmosphere options
+            if options.get("atmosphere", False):
                 self.sim_options.atmosphere = options["atmosphere"]
-            if "rand_fdm" in options:
+
+            # set the fdm randomization options
+            if options.get("rand_fdm", False):
                 self.sim_options.rand_fdm = options["rand_fdm"]
+        # the options arg is automatically set to None when SyncVectorEnv autoresets the envs
+        # so just set a different random seed at each reset in this case
         else:
             self.sim_options.seed = np.random.randint(0, 9999)
 
-        # set the jsbsim env internal number generator
+        # Create a RNG for the simulation (will be used for wind direction randomization)
         self.sim_rng = np.random.default_rng(int(self.sim_options.seed))
-        print("self.sim_options: ", self.sim_options)
-        if len(self.sim_options) != 0:
-            if "seed" in self.sim_options:
-                self.sim["simulation/randomseed"] = self.sim_options["seed"]
-                self.sim["atmosphere/randomseed"] = self.sim_options["seed"]
-            if self.fdm_rng is None:
-                self.fdm_rng = np.random.default_rng(int(self.sim["simulation/randomseed"]))
-            if self.sim_options["rand_fdm"]["enable"]:
-                self.randomize_fdm()
-                print(f"CD_alpha = {self.sim[prp.aero_CDalpha]}, Cmq = {self.sim[prp.aero_Cmq]}, Clr = {self.sim[prp.aero_Clr]}")
+
+        print("self.sim_options: ", self.sim_options) # debug print
+
+        # feed the seed to JSBSim's both internal PNRGs (used for Dryden turbulence for example)
+        # refer to JSBSim's docs for more info on each "simulation/randomseed" and "atmosphere/randomseed" properties
+        assert len(self.sim_options) != 0, "Simulation options are empty."
+        assert "seed" in self.sim_options, "Simulation options do not contain 'seed' key."
+        self.sim["simulation/randomseed"] = self.sim_options["seed"]
+        self.sim["atmosphere/randomseed"] = self.sim_options["seed"]
+
+        # randomize the fdm coefs if enabled
+        self.fdm_rng = np.random.default_rng(int(self.sim_options.seed)) # with same seed
+        if self.sim_options["rand_fdm"]["enable"]:
+            self.randomize_fdm()
 
         print(f"JSBSim Seeds:\n" \
-            f"  FDM: {self.sim['simulation/randomseed']} \n" \
+            f"  Simulation: {self.sim['simulation/randomseed']} \n" \
             f"  Atmosphere: {self.sim['atmosphere/randomseed']}"
         )
 
-        # set the atmospehere (wind and turbulences)
-        print(f"Last Ep OOB: {self.prev_ep_oob}")
+        # set the atmospehere parameters (wind and turbulences)
         if self.sim_options.get("atmosphere", False):
             self.set_atmosphere(self.sim_options.atmosphere)
         else:
@@ -318,34 +312,39 @@ class JSBSimEnv(gym.Env, ABC):
         turb_type, turb_w20_fps, turb_severity, severity = 3, 0, 0, 0
         severity_options = ["off", "light", "moderate", "severe"]
         wind_vec = np.zeros(3)
+
         if len(atmo_options) != 0:
-            if atmo_options.get("variable", False): # random wind and turbulence magnitudes
+            if atmo_options.get("variable", False): # random wind and turbulence severities
+                print(f"Variable Severity")
                 severity_id = self.sim_rng.choice(np.arange(0, 4))
                 severity = severity_options[severity_id]
-                print(f"Variable Severity")
-            else: # fixed wind and turbulence magnitudes
-                severity = atmo_options.get("severity", None)
+            else: # fixed wind and turbulence severities from the atmo_options
                 print(f"Fixed Severity")
+                severity = atmo_options.get("severity", None)
+
+            # set wind parameters
             if atmo_options.get("wind", False): # if there's a wind key in dict
                 if atmo_options["wind"].get("enable", False): # if wind is enabled
                     if atmo_options["wind"].get("rand_windspeed", False): # if random wind speed
                         wind_vec = self.random_wind_vector(windspeed_limit=40.0) # default was 82.8
-                        wspeed_n = wind_vec[0] * 0.9115 # kmh to fps
+                        wspeed_n = wind_vec[0] * 0.9115 # kmh to fps (that's the unit JSBSim uses...)
                         wspeed_e = wind_vec[1] * 0.9115 # kmh to fps
                         wspeed_d = wind_vec[2] * 0.9115 # kmh to fps
                     else: # if discrete wind parameters
                         if atmo_options["wind"].get("wind_dir", False): # if wind direction is defined in config
                             wind_dir = np.array(atmo_options.wind.wind_dir)
-                        else: # if wind direction is not defined
+                        else: # if wind direction is not defined, set it randomly
                             wind_dir = self.random_wind_direction()
                         print(f"Wind Dir: {wind_dir}")
+
                         # set wind severity to the selected severity by default
                         wind_severity = severity
                         # overwrite wind severity if it's defined in the wind options
                         if atmo_options["wind"].get("wind_severity", False):
                             wind_severity = atmo_options.wind.wind_severity
+                        # set wind speed based on severity
                         if wind_severity ==  "off": # no wind
-                            wspeed_n= 0.0
+                            wspeed_n = 0.0
                             wspeed_e = 0.0
                             wspeed_d = 0.0
                             print("No Wind")
@@ -383,6 +382,8 @@ class JSBSimEnv(gym.Env, ABC):
                 wspeed_e = 0.0
                 wspeed_d = 0.0
                 print("No Wind")
+
+            # set turbulence parameters
             if atmo_options["turb"].get("enable", False): # if turbulence is enabled
                 if severity == "off": # no turbulence
                     turb_type = 3
@@ -409,7 +410,9 @@ class JSBSimEnv(gym.Env, ABC):
                 turb_w20_fps = 0
                 turb_severity = 0
                 print("No Turbulence")
-            if atmo_options["gust"].get("enable", False): # if gust key in dict
+
+            # set gust parameters
+            if atmo_options["gust"].get("enable", False): # if gust is enabled
                 gust_startup_duration_sec = 0.25
                 gust_steady_duration_sec = 0.5
                 gust_end_duration_sec = 0.25
@@ -439,16 +442,21 @@ class JSBSimEnv(gym.Env, ABC):
             self.sim[prp.turb_type] = turb_type
             self.sim[prp.turb_w20_fps] = turb_w20_fps
             self.sim[prp.turb_severity] = turb_severity
-            print(f"Wind: \n"
-                  f"  N: {self.sim[prp.windspeed_north_fps] * 1.09728} kph\n"
-                  f"  E: {self.sim[prp.windspeed_east_fps] * 1.09728} kph\n"
-                  f"  D: {self.sim[prp.windspeed_down_fps] * 1.09728} kph\n"
-                  f" Magnitude: {np.linalg.norm(wind_vec)} kph\n")
+            print(
+                f"Wind: \n"
+                f"  N: {self.sim[prp.windspeed_north_fps] * 1.09728} kph\n"
+                f"  E: {self.sim[prp.windspeed_east_fps] * 1.09728} kph\n"
+                f"  D: {self.sim[prp.windspeed_down_fps] * 1.09728} kph\n"
+                f" Magnitude: {np.linalg.norm(wind_vec)} kph\n"
+            )
         else:
             print(f"WARNING: No Atmosphere Options Found")
 
 
-    def random_wind_vector(self, windspeed_limit = 82.8):
+    def random_wind_vector(self, windspeed_limit: float=82.8):
+        """
+            Generate a random wind vector with a random direction and a windspeed magnitude up to the windspeed_limit (in kph).
+        """
         wind_dir = self.random_wind_direction()
         wind_norm = self.sim_rng.uniform(0, windspeed_limit)
         wind_vec = wind_dir * wind_norm
@@ -456,8 +464,11 @@ class JSBSimEnv(gym.Env, ABC):
 
 
     def random_wind_direction(self):
-        # rand_vec = self.sim_rng.uniform(-1, 1, size=(3))
-        rand_vec = self.sim_rng.uniform([-1, -1, -0.1], [1, 1, 0.1])
+        """
+            Generate a random wind direction as a unit vector.
+        """
+        # rand_vec = self.sim_rng.uniform(-1, 1, size=(3)) # random vector in a cube
+        rand_vec = self.sim_rng.uniform([-1, -1, -0.1], [1, 1, 0.1]) # random vector in a flattened cube to avoid too much vertical winds
         unit_vector = rand_vec / np.linalg.norm(rand_vec)
         return unit_vector
 
@@ -467,18 +478,15 @@ class JSBSimEnv(gym.Env, ABC):
         self.sim[prp.gust_dir_x_fps] = gust_dir[0]
         self.sim[prp.gust_dir_y_fps] = gust_dir[1]
         self.sim[prp.gust_dir_z_fps] = gust_dir[2]
-        # print(f"Gust Start, direction: x: {gust_dir[0]}, y: {gust_dir[1]}, z: {gust_dir[2]}")
-        # print(f"Gust Start, direction: x: {self.sim[prp.gust_dir_x_fps]}, y: {self.sim[prp.gust_dir_y_fps]}, z: {self.sim[prp.gust_dir_z_fps]}")
         self.sim[prp.gust_start] = 1
-        # self.sim[prp.gust_dir_x_fps] = 0
-        # self.sim[prp.gust_dir_y_fps] = 1
-        # self.sim[prp.gust_dir_z_fps] = 0
-        # self.sim[prp.gust_start] = 1
         print(f"Gust Start @ {self.sim[self.current_step]}")
 
 
     def randomize_fdm(self):
-        print("Sampling new FDM Coefs")
+        """
+            Randomize the FDM coefficients of the simulation, using the separate fdm_rng random number generator.
+        """
+        print("Sampling new FDM Coeffs")
         for prop in self.fdm_aero_1:
             self.sim[prop] = np.clip(self.fdm_rng.normal(self.sim[prop], abs(0.1 * self.sim[prop])), 
                                      self.sim[prop]-abs(self.sim[prop]) * 0.2, self.sim[prop]+abs(self.sim[prop]) * 0.2)
