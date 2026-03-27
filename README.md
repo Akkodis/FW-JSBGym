@@ -4,6 +4,8 @@ RL compatible framework of the JSBSim simulator. All control algorithms, trainin
 ## Installation
 Requires python 3.10
 
+Clone the repository and its submodules: `git clone --recurse-submodules git@github.com:Akkodis/FW-JSBGym.git`
+
 If you wish to use the FlightGear visualization:
 - Install the AppImage from [here](https://www.flightgear.org/download/) and place the file into your `$HOME/Apps/` directory (create it if it does not exist).
 - Launch the AppImage for it to create all the config and data folders.
