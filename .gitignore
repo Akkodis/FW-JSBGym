@@ -17,6 +17,7 @@ fw_jsbgym/models/train/*
 
 # but except those folders and those files
 !fw_jsbgym/fdm_descriptions/aircraft/x8/
+!fw_jsbgym/fdm_descriptions/aircraft/x8_icinco2024/
 !fw_jsbgym/fdm_descriptions/aircraft/c172p/
 !fw_jsbgym/fdm_descriptions/engine/electric800W.xml
 !fw_jsbgym/fdm_descriptions/engine/eng_io320.xml

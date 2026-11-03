@@ -9,6 +9,7 @@ from typing import Dict, Tuple
 from abc import ABC, abstractmethod
 from omegaconf import DictConfig
 
+from fw_jsbgym.envs.sim_profiles import DEFAULT_SIM_PROFILE, SimProfile, get_sim_profile
 from fw_jsbgym.simulation.jsb_simulation import Simulation
 from fw_jsbgym.visualizers.visualizer import PlotVisualizer, FlightGearVisualizer
 from fw_jsbgym.utils import jsbsim_properties as prp
@@ -28,6 +29,7 @@ class JSBSimEnv(gym.Env, ABC):
             - `fdm_frequency`: the frequency of the flight dynamics model (JSBSim) simulation
             - `sim_steps_after_agent_action`: the number of simulation steps to run after the agent action
             - `aircraft_id`: Aircraft to simulate
+            - `sim_profile`: simulator behaviour profile, selected with the `sim_profile` key of the jsbsim config (see `sim_profiles.py`)
             - `telemetry_file`: the path to the telemetry file
             - `telemetry_fieldnames`: the fieldnames of the telemetry file
             - `viz_time_factor`: the factor by which the simulation time is scaled for visualization, only taken into account if render mode is not "none"
@@ -76,6 +78,9 @@ class JSBSimEnv(gym.Env, ABC):
         self.fdm_dt: float = 1 / self.fdm_frequency
         self.sim_steps_after_agent_action: int = int(self.fdm_frequency // self.agent_frequency)
         self.aircraft_id: str = aircraft_id
+        self.sim_profile: SimProfile = get_sim_profile(self.jsbsim_cfg.get("sim_profile", DEFAULT_SIM_PROFILE))
+        self.sim_profile.jsbsim_model(self.aircraft_id) # fail early if the profile does not support the aircraft
+        print(f"Simulator profile: {self.sim_profile.name}")
         self.telemetry_file: str = telemetry_file
         self.telemetry_fieldnames: tuple = ()
 
@@ -168,7 +173,7 @@ class JSBSimEnv(gym.Env, ABC):
         assert self.sim is None, "Simulation object already exists."
         self.sim = Simulation(
             fdm_frequency =self.fdm_frequency,
-            aircraft_id=self.aircraft_id,
+            aircraft_id=self.sim_profile.jsbsim_model(self.aircraft_id),
             viz_time_factor=self.viz_time_factor,
             enable_fgear_output=self.enable_fgear_output
         )
@@ -514,13 +519,11 @@ class JSBSimEnv(gym.Env, ABC):
         if len(atmo_options) != 0:
             if atmo_options["gust"].get("enable"):
                 curr_step = self.sim[self.current_step]
-                if curr_step == 250: # start the gust @ 250 steps (2.5s @ 100Hz)
+                if curr_step in self.sim_profile.gust_start_steps: # e.g. 250 steps = 2.5s @ 100Hz
                     self.gust_start()
 
-        # append the fcs commands to the fcs history for this episode
-        self.fcs_pos_hist.append([self.sim[prp.aileron_combined_pos_rad], 
-                                  self.sim[prp.elevator_pos_rad],
-                                  self.sim[prp.throttle_pos]])
+        if not self.sim_profile.record_surfaces_after_fdm_steps:
+            self.record_fcs_positions()
 
         # apply the action to the simulation
         self.apply_action(action)
@@ -533,6 +536,9 @@ class JSBSimEnv(gym.Env, ABC):
             # decrement the steps left
             self.sim[self.steps_left] -= 1
             self.sim[self.current_step] += 1
+
+        if self.sim_profile.record_surfaces_after_fdm_steps:
+            self.record_fcs_positions()
 
         # conversions here
         conversions.props2si(self.sim)
@@ -570,6 +576,17 @@ class JSBSimEnv(gym.Env, ABC):
                     }
 
         return self.observation, self.reward, terminated, truncated, info
+
+
+    def record_fcs_positions(self) -> None:
+        """
+            Append the current flight control positions to the episode history used for the actuator fluctuation metric:
+            [aileron, elevator] in rad, followed by the normalized throttle position if the simulator profile records it.
+        """
+        fcs_positions = [self.sim[prp.aileron_combined_pos_rad], self.sim[prp.elevator_pos_rad]]
+        if self.sim_profile.record_throttle_position:
+            fcs_positions.append(self.sim[prp.throttle_pos])
+        self.fcs_pos_hist.append(fcs_positions)
 
 
     def apply_action(self, action: np.ndarray) -> None:

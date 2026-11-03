@@ -268,14 +268,18 @@ class ACBohnNoVaIErrTask(ACBohnNoVaTask):
     def set_target_state(self, target_state: np.ndarray) -> None:
         """
             Set the target state of the aircraft, i.e. the target state variables defined in the `target_state_vars` tuple.
-            If the target state changes, reset the integral errors.
+            Resets the integral errors on every call (`current` simulator profile), or only the integral error of
+            an axis whose target changed (e.g. `icinco2024` profile).
             Args: target_state: np.ndarray of target state variables [roll, pitch]. Units: [rad, rad]
         """
+        prev_target_roll, prev_target_pitch = self.prev_target_roll, self.prev_target_pitch
         super().set_target_state(target_state)
 
-        # reset integral errors
-        self.sim[prp.roll_integ_err] = 0.0
-        self.sim[prp.pitch_integ_err] = 0.0
+        reset_all = self.sim_profile.reset_integral_errors_every_target_call
+        if reset_all or target_state[0] != prev_target_roll:
+            self.sim[prp.roll_integ_err] = 0.0
+        if reset_all or target_state[1] != prev_target_pitch:
+            self.sim[prp.pitch_integ_err] = 0.0
 
 
     def update_errors(self, first_err=False) -> None:
