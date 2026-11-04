@@ -25,3 +25,14 @@ changed; its output `fcs/effective-aileron-pos-norm` is the same, and no code re
 property.
 
 Evidence: `FW-FlightControl/reproducibility/reports/2026-10-30_icinco_ppo_seed1_drift_diagnosis.md`.
+
+## Author-supplied submission candidate
+
+On 2026-11-03 the author identified `733a2a8bffe9deb7e0f9ca6e202b7da132d1b168`
+(2024-06-12) as a likely ICINCO submission snapshot. Its
+`jsbgym/initial_conditions/x8_basic_ic.xml` is byte-identical to the profile's
+initial-condition file. Its `jsbgym/fdm_descriptions/aircraft/x8/x8.xml`
+(SHA-256 `8addc7eac02ea95e469e042e561d15ffec4b426d3dedc1b6804e807a475d2ec0`)
+differs from the profile's model only in the component-name correction
+described above; its drag table is identical. This is additional source
+provenance, not a change to the validated profile assets.
