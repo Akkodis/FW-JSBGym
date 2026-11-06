@@ -472,8 +472,8 @@ class JSBSimEnv(gym.Env, ABC):
         """
             Generate a random wind direction as a unit vector.
         """
-        # rand_vec = self.sim_rng.uniform(-1, 1, size=(3)) # random vector in a cube
-        rand_vec = self.sim_rng.uniform([-1, -1, -0.1], [1, 1, 0.1]) # random vector in a flattened cube to avoid too much vertical winds
+        vertical_limit = self.sim_profile.wind_direction_z_limit
+        rand_vec = self.sim_rng.uniform([-1, -1, -vertical_limit], [1, 1, vertical_limit])
         unit_vector = rand_vec / np.linalg.norm(rand_vec)
         return unit_vector
 

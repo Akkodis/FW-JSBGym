@@ -30,6 +30,7 @@ class SimProfile:
               instead of before applying the action
             - `record_throttle_position`: also record the throttle position in `fcs_pos_hist`
             - `gust_start_steps`: episode steps at which a gust starts, when gusts are enabled
+            - `wind_direction_z_limit`: vertical sampling bound before normalizing wind/gust directions
     """
     name: str
     description: str
@@ -38,6 +39,7 @@ class SimProfile:
     record_surfaces_after_fdm_steps: bool
     record_throttle_position: bool
     gust_start_steps: Tuple[int, ...]
+    wind_direction_z_limit: float
 
     def jsbsim_model(self, aircraft_id: str) -> str:
         """
@@ -63,6 +65,7 @@ SIM_PROFILES: Mapping[str, SimProfile] = MappingProxyType({
             record_surfaces_after_fdm_steps=False,
             record_throttle_position=True,
             gust_start_steps=(250,),
+            wind_direction_z_limit=0.1,
         ),
         # Evidence: FW-FlightControl/reproducibility/reports/2026-10-30_icinco_ppo_seed1_drift_diagnosis.md
         SimProfile(
@@ -77,6 +80,8 @@ SIM_PROFILES: Mapping[str, SimProfile] = MappingProxyType({
             record_throttle_position=False,
             # Gusts at timesteps 500 and 1500 (ICINCO 2024 paper, Section 6.2.2; code at 1072782).
             gust_start_steps=(500, 1500),
+            # Uniform cube direction sampling before 18f7300.
+            wind_direction_z_limit=1.0,
         ),
     )
 })

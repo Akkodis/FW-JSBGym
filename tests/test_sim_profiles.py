@@ -12,6 +12,7 @@ import os
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import MagicMock
 
 import gymnasium as gym
 import numpy as np
@@ -228,6 +229,23 @@ class SimProfileEnvironmentTests(unittest.TestCase):
                     env.sim[env.current_step] = current_step
                     step(env, [0.0, 0.0])
                 self.assertEqual(started_at, expected)
+
+    def test_wind_and_gust_direction_sampling(self) -> None:
+        for sim_profile, vertical_limit in ((None, 0.1), ("icinco2024", 1.0)):
+            with self.subTest(sim_profile=sim_profile):
+                env = make_env(sim_profile)
+                env.sim_rng = np.random.default_rng(4235)
+                expected_rng = np.random.default_rng(4235)
+                bounds = ([-1, -1, -vertical_limit], [1, 1, vertical_limit])
+                wind = expected_rng.uniform(*bounds)
+                gust = expected_rng.uniform(*bounds)
+                np.testing.assert_allclose(env.random_wind_direction(), wind / np.linalg.norm(wind), rtol=0, atol=1e-15)
+                env.sim = MagicMock()
+                with redirect_stdout(io.StringIO()):
+                    env.gust_start()
+                writes = {call.args[0]: call.args[1] for call in env.sim.__setitem__.call_args_list}
+                actual_gust = [writes[prp.gust_dir_x_fps], writes[prp.gust_dir_y_fps], writes[prp.gust_dir_z_fps]]
+                np.testing.assert_allclose(actual_gust, gust / np.linalg.norm(gust), rtol=0, atol=1e-15)
 
     def test_gusts_disabled(self) -> None:
         for sim_profile in (None, "icinco2024"):

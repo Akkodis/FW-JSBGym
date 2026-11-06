@@ -32,7 +32,12 @@ pip install -e .
 ## Simulator profiles
 Some simulator behaviour changed after the ICINCO 2024 experiments. To reproduce them, select the `icinco2024` profile with the `sim_profile` key of the `env.jsbsim` config, e.g. `+env.jsbsim.sim_profile=icinco2024` on a FW-FlightControl command line. Without the key, the `current` behaviour is used.
 
-The `icinco2024` profile loads the paper-era X8 model and initial conditions, only resets the integral error of an axis whose target changed, records only the aileron and elevator positions (after the FDM step) for the actuator fluctuation metric, and starts gusts at steps 500 and 1500. Its validation is documented in FW-FlightControl `reproducibility/reports/2026-10-30_icinco_ppo_seed1_drift_diagnosis.md`.
+> [!WARNING]
+> Use JSBSim 1.1.13 for ICINCO disturbance reproduction. The profile does not
+> change the installed JSBSim version; turbulence results differ with 1.2.3.
+> See the FW-FlightControl reproducibility guide for evidence and limitations.
+
+The `icinco2024` profile loads the paper-era X8 model and initial conditions, only resets the integral error of an axis whose target changed, records only the aileron and elevator positions (after the FDM step) for the actuator fluctuation metric, samples wind and gust directions from the historical full cube, and starts gusts at steps 500 and 1500. Its validation is documented in FW-FlightControl `reproducibility/reports/2026-10-30_icinco_ppo_seed1_drift_diagnosis.md`.
 
 
 ## Citation
