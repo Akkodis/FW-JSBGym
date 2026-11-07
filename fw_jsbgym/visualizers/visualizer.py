@@ -1,8 +1,32 @@
 import subprocess
+import sys
 import time
 import matplotlib.pyplot as plt
 from fw_jsbgym.simulation.jsb_simulation import Simulation
 from pkg_resources import resource_filename
+
+
+def _close_process(process):
+    if process.poll() is None:
+        process.terminate()
+        try:
+            process.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            process.wait()
+    if process.stdout is not None:
+        process.stdout.close()
+
+
+def _wait_for_visualizer(process, message, name):
+    while True:
+        out = process.stdout.readline().decode(errors="replace")
+        if not out:
+            _close_process(process)
+            raise RuntimeError(f"{name} exited before it was ready (exit {process.returncode})")
+        print(out.strip())
+        if message in out:
+            return
 
 
 class PlotVisualizer(object):
@@ -10,6 +34,7 @@ class PlotVisualizer(object):
         viz_plot_path: str = ""
         self.env_id = env_id
         self.telemetry_file = telemetry_file
+        self.process = None
 
         if "AC" in env_id:
             viz_plot_path = resource_filename('fw_jsbgym', 'visualizers/attitude_control_telemetry.py')
@@ -18,22 +43,20 @@ class PlotVisualizer(object):
             viz_plot_path = resource_filename('fw_jsbgym', 'visualizers/waypoint_tracking_telemetry.py')
         assert viz_plot_path != "", "Invalid env_id. Please provide a valid env_id."
 
-        cmd: str = ""
         print("Telemetry file: ", telemetry_file)
         # if animate is True, we run the animation plot in a separate process
         if animate:
-            cmd = f"python {viz_plot_path} --tele-file {telemetry_file} --animate"
+            cmd = [sys.executable, viz_plot_path, "--tele-file", telemetry_file, "--animate"]
             self.process: subprocess.Popen = subprocess.Popen(cmd, 
-                                                            shell=True,
                                                             stdout=subprocess.PIPE,
                                                             stderr=subprocess.STDOUT)
             print(f"Started {viz_plot_path} process with PID: {self.process.pid}")
-            while True:
-                out: str = self.process.stdout.readline().decode()
-                print(out.strip())
-                if "Animation plot started..." in out:
-                    print("Animation plot loaded successfully.")
-                    break
+            _wait_for_visualizer(self.process, "Animation plot started...", "Matplotlib")
+            print("Animation plot loaded successfully.")
+
+    def close(self) -> None:
+        if self.process is not None:
+            _close_process(self.process)
 
     def plot(self) -> None:
         if "AC" in self.env_id:
@@ -68,6 +91,9 @@ class FlightGearVisualizer(object):
         self.flightgear_process = self.launch_flightgear(aircraft_fgear_id=sim.aircraft_id)
         time.sleep(15)
 
+    def close(self) -> None:
+        _close_process(self.flightgear_process)
+
     def launch_flightgear(self, aircraft_fgear_id: str = 'c172p') -> subprocess.Popen:
         # cmd for running flightgear(binary apt package version 2020.3.13) from terminal
         # cmd = f'fgfs --fdm=null --native-fdm=socket,in,60,,5550,udp --aircraft=c172p --timeofday=noon \
@@ -85,11 +111,6 @@ class FlightGearVisualizer(object):
                                               stdout=subprocess.PIPE,
                                               stderr=subprocess.STDOUT)
         print("Started FlightGear process with PID: ", flightgear_process.pid)
-        while True:
-            out: str = flightgear_process.stdout.readline().decode()
-            if self.LOADED_MESSAGE in out:
-                print("FlightGear loaded successfully.")
-                break
-            else:
-                print(out.strip())
+        _wait_for_visualizer(flightgear_process, self.LOADED_MESSAGE, "FlightGear")
+        print("FlightGear loaded successfully.")
         return flightgear_process
