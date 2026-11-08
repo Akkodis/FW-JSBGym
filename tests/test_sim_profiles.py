@@ -147,6 +147,13 @@ class SimProfileRegistryTests(unittest.TestCase):
 
 
 class SimProfileEnvironmentTests(unittest.TestCase):
+    def test_close_releases_both_visualizers(self) -> None:
+        env = make_env("icinco2024")
+        env.plot_viz, env.fgear_viz = MagicMock(), MagicMock()
+        env.close()
+        env.plot_viz.close.assert_called_once()
+        env.fgear_viz.close.assert_called_once()
+
     def test_profile_selection(self) -> None:
         self.assertEqual(make_env().sim_profile.name, "current")
         self.assertEqual(make_env("current").sim_profile.name, "current")

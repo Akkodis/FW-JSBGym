@@ -636,6 +636,13 @@ class JSBSimEnv(gym.Env, ABC):
                 self.plot_viz = PlotVisualizer(True, self.spec.id, self.telemetry_file)
 
 
+    def close(self) -> None:
+        if self.plot_viz:
+            self.plot_viz.close()
+        if self.fgear_viz:
+            self.fgear_viz.close()
+
+
     def is_terminated(self) -> Tuple[bool]:
         """
             Check if the episode is terminated. In the current MDP formulation, there's no terminal state.
