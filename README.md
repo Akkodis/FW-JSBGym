@@ -30,7 +30,7 @@ pip install -e .
 - `../tests/` unit tests (run from the repository root with `PYTHONPATH=.:../FW-FlightControl python -m unittest discover -s tests`).
 
 ## Simulator profiles
-Some simulator behaviour changed after the ICINCO 2024 experiments. To reproduce them, select the `icinco2024` profile with the `sim_profile` key of the `env.jsbsim` config, e.g. `+env.jsbsim.sim_profile=icinco2024` on a FW-FlightControl command line. Without the key, the `current` behaviour is used.
+Some simulator behaviour changed after the ICINCO 2024 experiments. To reproduce them, select the `icinco2024` profile with the `sim_profile` key of the `env.jsbsim` config, e.g. `env.jsbsim.sim_profile=icinco2024` on a FW-FlightControl command line (its YAML files default to `current`). Without the key, the `current` behaviour is used.
 
 > [!WARNING]
 > Use JSBSim 1.1.13 for ICINCO disturbance reproduction. The profile does not

@@ -5,8 +5,9 @@ restores such behaviour as one explicit, opt-in choice: historical experiments
 stay reproducible while later work keeps the current defaults.
 
 Select a profile with the ``sim_profile`` key of the ``env.jsbsim`` config, e.g.
-``+env.jsbsim.sim_profile=icinco2024`` on a FW-FlightControl command line.
-Without the key, the ``current`` profile is used.
+``env.jsbsim.sim_profile=icinco2024`` on a FW-FlightControl command line (its
+YAML files default to ``current``). Without the key, the ``current`` profile is
+used.
 """
 
 from dataclasses import dataclass
