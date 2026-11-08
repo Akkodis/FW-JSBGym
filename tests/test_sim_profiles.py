@@ -16,7 +16,7 @@ from unittest.mock import MagicMock
 
 import gymnasium as gym
 import numpy as np
-from omegaconf import OmegaConf
+from omegaconf import OmegaConf, open_dict
 
 import fw_jsbgym
 from fw_jsbgym.envs.sim_profiles import DEFAULT_SIM_PROFILE, SIM_PROFILES, get_sim_profile
@@ -147,6 +147,29 @@ class SimProfileRegistryTests(unittest.TestCase):
 
 
 class SimProfileEnvironmentTests(unittest.TestCase):
+    def test_static_end_plot_can_be_disabled_for_interactive_previews(self) -> None:
+        for enabled, render_mode in ((True, "plot_anim"), (False, "plot_anim"), (False, "fgear")):
+            with self.subTest(enabled=enabled, render_mode=render_mode):
+                cfg = make_cfg("icinco2024")
+                with open_dict(cfg.jsbsim):
+                    cfg.jsbsim.plot_at_episode_end = enabled
+                with redirect_stdout(io.StringIO()):
+                    env = gym.make(
+                        "ACBohnNoVaIErr-v0", cfg_env=cfg,
+                        telemetry_file="telemetry/telemetry.csv", render_mode="none",
+                    ).unwrapped
+                    env.init()
+                    env.reset(options=cfg.jsbsim.eval_sim_options)
+                env.render_mode = render_mode
+                env.plot_viz = MagicMock() if render_mode != "fgear" else None
+                env.telemetry_logging = MagicMock()
+                env.sim[env.steps_left] = 1
+                step(env, [0.0, 0.0])
+                if enabled:
+                    env.plot_viz.plot.assert_called_once()
+                elif env.plot_viz is not None:
+                    env.plot_viz.plot.assert_not_called()
+
     def test_close_releases_both_visualizers(self) -> None:
         env = make_env("icinco2024")
         env.plot_viz, env.fgear_viz = MagicMock(), MagicMock()

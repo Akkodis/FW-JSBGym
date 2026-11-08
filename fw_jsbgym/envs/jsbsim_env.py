@@ -35,6 +35,7 @@ class JSBSimEnv(gym.Env, ABC):
             - `viz_time_factor`: the factor by which the simulation time is scaled for visualization, only taken into account if render mode is not "none"
             - `plot_viz`: the plot visualizer
             - `fgear_viz`: the FlightGear visualizer
+            - `plot_at_episode_end`: whether to open a static plot after each episode, from the `plot_at_episode_end` key of the jsbsim config (True if absent)
             - `render_mode`: the mode to render the environment, can be one of the following: `["none", "plot", "plot_scale", "fgear", "fgear_plot", "fgear_plot_scale"]`
             - `enable_fgear_output`: whether to enable FlightGear output for JSBSim <-> FGear communcation
             - `action_space`: the action space of the environment
@@ -87,6 +88,7 @@ class JSBSimEnv(gym.Env, ABC):
         # visualizers, one for matplotlib and one for FlightGear
         self.plot_viz: PlotVisualizer = None
         self.fgear_viz: FlightGearVisualizer = None
+        self.plot_at_episode_end: bool = self.jsbsim_cfg.get("plot_at_episode_end", True)
 
         # raise error if render mode is not None or not in the render_modes list
         assert render_mode is None or render_mode in self.metadata["render_modes"]
@@ -563,7 +565,8 @@ class JSBSimEnv(gym.Env, ABC):
             self.telemetry_logging()
 
         # if episode is finished plot the episode telemetry
-        if np.logical_or(terminated, truncated) and self.render_mode in self.metadata["render_modes"][4:]:
+        if (np.logical_or(terminated, truncated) and self.plot_at_episode_end
+                and self.render_mode in self.metadata["render_modes"][4:]):
             self.plot_viz.plot()
 
         # info dict for debugging and misc infos
